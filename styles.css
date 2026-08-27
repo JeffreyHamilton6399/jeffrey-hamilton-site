@@ -436,9 +436,12 @@ a { color: inherit; }
   will-change: transform;
 }
 
-/* Hold on whatever caught their eye */
+/* Hold on whatever caught their eye.
+   :focus-visible rather than :focus-within, so a mouse click on a card does
+   not leave the row parked. Clicking sets focus, and :focus-within would keep
+   it paused long after the pointer moved on. Keyboard tabbing still pauses. */
 .marquee[data-cloned="true"]:hover .marquee-track,
-.marquee[data-cloned="true"]:focus-within .marquee-track {
+.marquee[data-cloned="true"]:has(:focus-visible) .marquee-track {
   animation-play-state: paused;
 }
 
@@ -467,6 +470,38 @@ a { color: inherit; }
   object-fit: cover;
   object-position: top center;
   transition: transform .6s var(--ease);
+}
+
+/* ---- Cycling card ----
+   Six images stacked in one frame, cross-fading in turn. Each is visible for
+   1/6 of the cycle (16.667%) with a short fade at each end, and each is held
+   back by --i steps so only one is up at a time. */
+.cycle {
+  position: relative;
+  aspect-ratio: 16 / 10;
+}
+.cycle img {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  opacity: 0;
+  animation: cycle-six 27s linear infinite;
+  animation-delay: calc(var(--i) * 4.5s);
+}
+.cycle img:first-child { position: relative; }   /* one in flow, to hold the box */
+
+@keyframes cycle-six {
+  0%      { opacity: 0; }
+  1.8%    { opacity: 1; }
+  14.9%   { opacity: 1; }
+  16.667% { opacity: 0; }
+  100%    { opacity: 0; }
+}
+
+/* Hovering the row pauses the drift, so pause the cross-fade with it */
+.marquee[data-cloned="true"]:hover .cycle img,
+.marquee[data-cloned="true"]:has(:focus-visible) .cycle img {
+  animation-play-state: paused;
 }
 
 .card:hover .card-shot {
