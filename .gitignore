@@ -1,0 +1,14 @@
+# OS cruft
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Local preview renders
+_*.png
+
+# Logs
+*.log

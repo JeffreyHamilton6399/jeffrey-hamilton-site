@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jeffrey Hamilton, Builder and Digital Designer</title>
+<meta name="description" content="I make browser tools, desktop apps and games. Most of them run on your own machine, and all of them are free.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip" href="#work">Skip to work</a>
+
+<header class="site-head">
+  <div class="wrap">
+    <div class="bubble">
+      <a class="wordmark" href="#top">Jeffrey&nbsp;Hamilton</a>
+      <nav class="nav" aria-label="Primary">
+        <a href="#work">Work</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ── Hero ─────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+
+      <div class="hero-copy">
+        <p class="eyebrow">Digital designer &middot; Builder</p>
+        <h1 class="hero-title">Jeffrey<br>Hamilton</h1>
+        <p class="hero-role">
+          I make software that runs on <em>your</em> computer, not on somebody's server.
+        </p>
+        <p class="lede">
+          Most of it started as something I wanted and couldn't find. Tools that don't ask you
+          to upload your files somewhere first. An assistant that still works when the internet
+          drops. It's all free, and the code is public.
+        </p>
+        <div class="hero-actions">
+          <a class="btn" href="#work">See the work</a>
+          <a class="btn btn-quiet" href="mailto:jeffreyscotthamilton6399@gmail.com">Get in touch</a>
+        </div>
+      </div>
+
+      <figure class="hero-portrait">
+        <img src="assets/portrait.jpg" width="1100" height="1489" fetchpriority="high" decoding="async"
+             alt="Jeffrey Hamilton, arms folded, in a blue quarter-zip against a panelled wall.">
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- ── Selected work ────────────────────────────────────── -->
+  <section id="work" class="work" aria-labelledby="work-heading">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="work-heading">What I've built</h2>
+        <p class="section-note">The three I'd show you first.</p>
+      </div>
+
+      <!-- 01 -->
+      <article class="project">
+        <div class="project-body">
+          <p class="project-index">01</p>
+          <h3 class="project-title">Privacy-First Web Tools</h3>
+          <p class="project-desc">
+            Sixteen small tools I kept needing. Shrinking files, converting formats, cutting the
+            background out of a photo, stripping EXIF data, merging PDFs, pulling the vocals out
+            of a song. They all run inside the browser tab. Your files never get uploaded, because
+            there's nowhere for them to go.
+          </p>
+          <dl class="meta">
+            <div><dt>Built with</dt><dd>TypeScript, React, WebAssembly</dd></div>
+            <div><dt>Size</dt><dd>16 tools, all in the browser</dd></div>
+          </dl>
+          <a class="project-link" href="https://jeffrey-hamilton-tools.vercel.app/" target="_blank" rel="noopener">
+            Open the toolbox<span aria-hidden="true">&#8594;</span>
+          </a>
+        </div>
+        <figure class="project-shot">
+          <img src="assets/shots/tools.png" width="2880" height="1800" loading="lazy" decoding="async"
+               alt="The Privacy-First Web Tools index, showing a grid of tool cards including ShrinkRay, ConvertIt, Cutout and DevToys.">
+        </figure>
+      </article>
+
+      <!-- 02 -->
+      <article class="project project-flip">
+        <div class="project-body">
+          <p class="project-index">02</p>
+          <h3 class="project-title">Buddy</h3>
+          <p class="project-desc">
+            A small orb that sits on top of your other windows. Say &ldquo;Hey Buddy&rdquo; and it starts
+            listening. Talk over it and it stops. The model, the voice and the speech recognition
+            are all bundled into the app, so there's no account to make and no key to paste in, and
+            it keeps working with the wifi off.
+          </p>
+          <dl class="meta">
+            <div><dt>Built with</dt><dd>Electron, llama.cpp, Kokoro TTS, Whisper</dd></div>
+            <div><dt>Runs on</dt><dd>macOS, Windows, Linux</dd></div>
+          </dl>
+          <a class="project-link" href="https://jeffreyhamilton6399.github.io/buddy-desktop" target="_blank" rel="noopener">
+            Download Buddy<span aria-hidden="true">&#8594;</span>
+          </a>
+        </div>
+        <figure class="project-shot">
+          <img src="assets/shots/buddy.png" width="2880" height="1800" loading="lazy" decoding="async"
+               alt="Buddy's landing page: an AI that lives on your desktop, shown beside a chat window with the orb assistant.">
+        </figure>
+      </article>
+
+      <!-- 03 -->
+      <article class="project">
+        <div class="project-body">
+          <p class="project-index">03</p>
+          <h3 class="project-title">Slate</h3>
+          <p class="project-desc">
+            A whiteboard a few people can draw on at the same time, with a 3D editor built into it.
+            Edits show up live for everyone, and you can talk to each other while you work. It
+            installs like a normal app and keeps a copy of your boards on your machine, so the
+            server going down doesn't cost you anything.
+          </p>
+          <dl class="meta">
+            <div><dt>Built with</dt><dd>TypeScript, Yjs, WebRTC, Fastify</dd></div>
+            <div><dt>Does</dt><dd>2D and 3D editing, voice chat, offline</dd></div>
+          </dl>
+          <a class="project-link" href="https://slate-client.vercel.app/" target="_blank" rel="noopener">
+            Open Slate<span aria-hidden="true">&#8594;</span>
+          </a>
+        </div>
+        <figure class="project-shot">
+          <img src="assets/shots/slate.png" width="1600" height="900" loading="lazy" decoding="async"
+               alt="Slate's 3D editor: a white mesh on a purple grid, with hierarchy and properties panels, and a live collaborator cursor labelled Jeffy.">
+        </figure>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ── More work ────────────────────────────────────────── -->
+  <section id="more" class="more" aria-labelledby="more-heading">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="more-heading">Other things</h2>
+        <p class="section-note">Hover to stop on one.</p>
+      </div>
+    </div>
+
+    <div class="marquee" id="marquee">
+      <div class="marquee-viewport">
+        <ul class="marquee-track" role="list">
+
+          <li>
+            <a class="card" href="https://jeffreyhamilton6399.github.io/vela/" target="_blank" rel="noopener">
+              <span class="card-shot">
+                <img src="assets/shots/vela.png" width="2880" height="1800" loading="lazy" decoding="async"
+                     alt="Vela's landing page: a browser that collects nothing, with download buttons for Windows, macOS and Linux.">
+              </span>
+              <span class="card-body">
+                <span class="card-title">Vela</span>
+                <span class="card-desc">
+                  A browser that doesn't collect anything. Ad and tracker blocking is built in,
+                  there's a local AI assistant in the sidebar, and everything it saves goes into
+                  one file you can open and read yourself.
+                </span>
+                <span class="card-tech">Electron &middot; TypeScript</span>
+              </span>
+            </a>
+          </li>
+
+          <li>
+            <a class="card" href="https://inboxpilot-eight.vercel.app" target="_blank" rel="noopener">
+              <span class="card-shot">
+                <img src="assets/shots/inboxpilot.png" width="2880" height="1800" loading="lazy" decoding="async"
+                     alt="InboxPilot's landing page, showing a mock inbox with messages triaged as To Respond, Notification and Awaiting Reply.">
+              </span>
+              <span class="card-body">
+                <span class="card-title">InboxPilot</span>
+                <span class="card-desc">
+                  Connects to your Gmail, sorts what comes in, and writes drafts that sound like
+                  you wrote them. You host it yourself and bring your own API key.
+                </span>
+                <span class="card-tech">TypeScript &middot; Gmail API</span>
+              </span>
+            </a>
+          </li>
+
+          <li>
+            <a class="card" href="https://bulletin-classifieds.vercel.app/" target="_blank" rel="noopener">
+              <span class="card-shot">
+                <img src="assets/shots/bulletin.png" width="2880" height="1800" loading="lazy" decoding="async"
+                     alt="Bulletin's region picker, headlined Where are you looking, with a grid of US cities.">
+              </span>
+              <span class="card-body">
+                <span class="card-title">Bulletin</span>
+                <span class="card-desc">
+                  Classifieds for wherever you live. You can post without making an account,
+                  replies come through a relay so your email stays hidden, and old listings
+                  clear themselves out after a month.
+                </span>
+                <span class="card-tech">Next.js &middot; Prisma</span>
+              </span>
+            </a>
+          </li>
+
+          <li>
+            <a class="card" href="https://signbridge-jet.vercel.app/" target="_blank" rel="noopener">
+              <span class="card-shot">
+                <img src="assets/shots/signbridge.png" width="2880" height="1800" loading="lazy" decoding="async"
+                     alt="SignBridge's landing page: your camera reads the sign, nothing leaves this device.">
+              </span>
+              <span class="card-body">
+                <span class="card-title">SignBridge</span>
+                <span class="card-desc">
+                  Point your webcam at ASL fingerspelling and it reads the letters back. It runs
+                  in the tab, so no video gets sent anywhere, and it tells you how sure it is
+                  instead of pretending.
+                </span>
+                <span class="card-tech">TypeScript &middot; On device ML</span>
+              </span>
+            </a>
+          </li>
+
+          <li>
+            <a class="card" href="https://line-glide.vercel.app" target="_blank" rel="noopener">
+              <span class="card-shot">
+                <img src="assets/shots/lineglide.png" width="2880" height="1800" loading="lazy" decoding="async"
+                     alt="Line Glide's first level, with a rider on a drawn slope and a checkered flag as the goal.">
+              </span>
+              <span class="card-body">
+                <span class="card-title">Line Glide</span>
+                <span class="card-desc">
+                  Draw a line and watch a guy sled down it, like Line Rider. There are levels to
+                  get through, and the physics is all written by hand.
+                </span>
+                <span class="card-tech">Next.js &middot; Canvas</span>
+              </span>
+            </a>
+          </li>
+
+          <li>
+            <a class="card" href="https://pixelparty-eight.vercel.app" target="_blank" rel="noopener">
+              <span class="card-shot">
+                <img src="assets/shots/pixelparty.png" width="2880" height="1800" loading="lazy" decoding="async"
+                     alt="PixelParty's home screen with a Create a room button and a field to join an existing room.">
+              </span>
+              <span class="card-body">
+                <span class="card-title">PixelParty</span>
+                <span class="card-desc">
+                  Make a room, send the link to someone, and draw pixel art together. Nobody has
+                  to sign up for anything.
+                </span>
+                <span class="card-tech">TypeScript &middot; WebSockets</span>
+              </span>
+            </a>
+          </li>
+
+          <li>
+            <a class="card" href="https://counterpoint-six.vercel.app/" target="_blank" rel="noopener">
+              <span class="card-shot">
+                <img src="assets/shots/counterpoint.png" width="1600" height="900" loading="lazy" decoding="async"
+                     alt="Counterpoint in Devil's Advocate mode, picking apart a claim about launching a product on a fixed deadline.">
+              </span>
+              <span class="card-body">
+                <span class="card-title">Counterpoint</span>
+                <span class="card-desc">
+                  An AI that argues with you on purpose. Handy when you want the holes poked in
+                  an idea before somebody else finds them.
+                </span>
+                <span class="card-tech">TypeScript &middot; LLM</span>
+              </span>
+            </a>
+          </li>
+
+          <li>
+            <a class="card" href="https://spellfall.vercel.app" target="_blank" rel="noopener">
+              <span class="card-shot">
+                <img src="assets/shots/spellfall.png" width="2880" height="1800" loading="lazy" decoding="async"
+                     alt="SpellFall's title screen, a word battle royale, with letter tiles scattered around the logo.">
+              </span>
+              <span class="card-body">
+                <span class="card-title">SpellFall</span>
+                <span class="card-desc">
+                  A word game where everybody plays at once. Spell fast enough and you stay in;
+                  the rest get knocked out until one person is left.
+                </span>
+                <span class="card-tech">TypeScript &middot; Multiplayer</span>
+              </span>
+            </a>
+          </li>
+
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── About ────────────────────────────────────────────── -->
+  <section id="about" class="about" aria-labelledby="about-heading">
+    <div class="wrap about-grid">
+      <div class="section-head">
+        <h2 id="about-heading">About</h2>
+      </div>
+      <div class="about-copy">
+        <p class="about-lead">
+          I like making things that just work. No fluff, no broken buttons, no excuses.
+        </p>
+        <p>
+          Most of this started because I wanted something and couldn't find a decent version of
+          it. I didn't want to upload a private file to some random site just to make it smaller.
+          I didn't want to pay every month for an assistant. So I built them instead.
+        </p>
+        <p>
+          I do the design and the code and the part where you actually ship it, and then I put it
+          up for free. Away from the keyboard I'm a black belt, and I post what I'm working on to
+          two YouTube channels.
+        </p>
+        <ul class="links" role="list">
+          <li><a href="https://github.com/JeffreyHamilton6399" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.linkedin.com/in/jeffrey-s-hamilton/" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="https://www.youtube.com/@Jeffrey_Creates" target="_blank" rel="noopener">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Contact ──────────────────────────────────────────── -->
+  <section id="contact" class="contact" aria-labelledby="contact-heading">
+    <div class="wrap">
+      <h2 id="contact-heading">Want to work together?</h2>
+      <p class="contact-note">I'm looking for work, and I'm always up for a good project. Email is the fastest way to reach me.</p>
+      <a class="contact-mail" href="mailto:jeffreyscotthamilton6399@gmail.com">
+        jeffreyscotthamilton6399@gmail.com
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="wrap foot-inner">
+    <p>&copy; 2026 Jeffrey Hamilton</p>
+    <p>Written by hand in a text editor.</p>
+  </div>
+</footer>
+
+<script>
+  /* Duplicate the marquee items once so the loop can wrap seamlessly.
+     Without this the row stays a plain horizontal scroller. The CSS
+     animation only switches on when data-cloned is set. */
+  (function () {
+    var marquee = document.getElementById('marquee');
+    if (!marquee || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var track = marquee.querySelector('.marquee-track');
+    [].slice.call(track.children).forEach(function (item) {
+      var copy = item.cloneNode(true);
+      copy.setAttribute('aria-hidden', 'true');
+      var link = copy.querySelector('a');
+      if (link) link.tabIndex = -1;          /* keep clones out of the tab order */
+      track.appendChild(copy);
+    });
+
+    marquee.dataset.cloned = 'true';
+  })();
+</script>
+
+</body>
+</html>
