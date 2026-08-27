@@ -428,8 +428,11 @@ a { color: inherit; }
   -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
 }
 
+/* 55s for the full set of 11 cards, roughly 5s per card. Slow enough to read
+   a title in passing, fast enough that the last card is not a minute's wait.
+   At the original 120s everything past card four was effectively hidden. */
 .marquee[data-cloned="true"] .marquee-track {
-  animation: marquee-drift 120s linear infinite;
+  animation: marquee-drift 55s linear infinite;
   will-change: transform;
 }
 
