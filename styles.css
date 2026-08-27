@@ -238,6 +238,46 @@ a { color: inherit; }
   border-color: var(--ember);
 }
 
+/* --------------------------------------------------------- Stats strip */
+
+.stats {
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0;
+}
+
+.stats-row > div {
+  padding: clamp(1.5rem, 3vw, 2.25rem) 0;
+  padding-right: 1.5rem;
+  border-left: 1px solid var(--rule);
+  padding-left: clamp(1rem, 2.5vw, 1.75rem);
+}
+.stats-row > div:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.stats-row dt {
+  font-size: .6875rem;
+  text-transform: uppercase;
+  letter-spacing: .11em;
+  color: var(--ink-faint);
+}
+
+.stats-row dd {
+  margin: .35rem 0 0;
+  font-family: var(--serif);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+
 /* --------------------------------------------------------- Section heads */
 
 .section-head {
@@ -536,6 +576,169 @@ a { color: inherit; }
 }
 .links a:hover { color: var(--ember); border-bottom-color: var(--ember); }
 
+/* --------------------------------------------------------- Experience */
+
+.experience {
+  padding-block: var(--section-y);
+  border-top: 1px solid var(--rule);
+}
+
+.jobs {
+  list-style: none;
+  margin: clamp(2.5rem, 5vw, 3.5rem) 0 0;
+  padding: 0;
+}
+
+.job {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  padding-block: clamp(2rem, 4vw, 3rem);
+  border-top: 1px solid var(--rule-soft);
+}
+.job:first-child { border-top: 0; padding-top: 0; }
+
+.job-period {
+  font-size: .8125rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.job-place {
+  margin-top: .3rem;
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--ink-faint);
+}
+
+.job-role {
+  font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+  letter-spacing: -.01em;
+}
+
+.job-org {
+  margin-top: .3rem;
+  font-size: .875rem;
+  color: var(--moss);
+}
+.job-org a {
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--moss) 30%, transparent);
+  padding-bottom: .1rem;
+  transition: color .18s ease, border-color .18s ease;
+}
+.job-org a:hover { color: var(--ember); border-bottom-color: var(--ember); }
+
+.job-desc {
+  margin-top: .875rem;
+  max-width: 56ch;
+  color: var(--ink-soft);
+}
+
+.job-points {
+  list-style: none;
+  margin: 1.125rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: .5rem;
+  max-width: 56ch;
+  font-size: .9375rem;
+  color: var(--ink-soft);
+}
+.job-points li {
+  position: relative;
+  padding-left: 1.125rem;
+}
+.job-points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .6em;
+  width: .3125rem;
+  height: .3125rem;
+  border-radius: 50%;
+  background: var(--sand);
+}
+
+/* --------------------------------------------------------- Credentials */
+
+.credentials {
+  padding-block: var(--section-y);
+  border-top: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.cred-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(2.5rem, 6vw, 5rem);
+  margin-top: clamp(2.5rem, 5vw, 3.5rem);
+}
+
+.cred-sub {
+  font-size: .75rem;
+  font-family: var(--sans);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--ink-faint);
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.edu-list,
+.cert-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.edu-list li {
+  display: grid;
+  gap: .2rem;
+  padding-block: 1.125rem;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.edu-title {
+  font-family: var(--serif);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.edu-meta {
+  font-size: .875rem;
+  color: var(--ink-soft);
+}
+
+.cert-list a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: .875rem;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: .9375rem;
+  text-decoration: none;
+  transition: color .18s ease;
+}
+.cert-list a:hover { color: var(--ember); }
+
+.cert-tag {
+  flex: none;
+  font-size: .625rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  color: var(--ink-faint);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: .2rem .5rem;
+  transition: color .18s ease, border-color .18s ease;
+}
+.cert-list a:hover .cert-tag {
+  color: var(--ember);
+  border-color: color-mix(in srgb, var(--ember) 40%, transparent);
+}
+
 /* --------------------------------------------------------- Contact */
 
 .contact {
@@ -590,9 +793,27 @@ a { color: inherit; }
 @media (max-width: 860px) {
   .hero-grid,
   .project,
-  .about-grid {
+  .about-grid,
+  .job,
+  .cred-grid {
     grid-template-columns: 1fr;
   }
+
+  /* Two-up stats rather than a cramped single row */
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .stats-row > div:nth-child(odd) {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .stats-row > div:nth-child(n + 3) { border-top: 1px solid var(--rule); }
+
+  .job { gap: .75rem; }
+  .job-when {
+    display: flex;
+    align-items: baseline;
+    gap: .75rem;
+  }
+  .job-place { margin-top: 0; }
 
   /* Keep image below copy on every card, including the flipped one */
   .project-flip .project-body { order: 0; }
@@ -657,7 +878,11 @@ a { color: inherit; }
   .work .section-head,
   .more .section-head,
   .about .section-head,
+  .experience .section-head,
+  .credentials .section-head,
   .about-copy,
+  .job,
+  .cred-col,
   .contact h2,
   .contact-note,
   .contact-mail {
