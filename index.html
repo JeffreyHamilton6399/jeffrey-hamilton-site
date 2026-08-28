@@ -678,7 +678,17 @@
       }
 
       cycle.dataset.cycling = 'true';
-      step();                      /* something up before it ever scrolls in */
+
+      /* Something up before it ever scrolls in. At this point nothing has
+         decoded yet, so step() has nothing to choose and would leave the card
+         an empty box until it drifted far enough in for the observer to fire -
+         long enough that you would watch a blank card slide into the row. Put
+         the first frame up regardless and let it paint when it arrives; the
+         normal handoff swaps it out from there. */
+      if (!step()) {
+        showing = frames[0];
+        showing.classList.add('is-on');
+      }
 
       var viewport = cycle.closest('.marquee-viewport');
       if (!viewport || !window.IntersectionObserver) { run(); return; }
