@@ -155,7 +155,7 @@
       <div class="section-head">
         <h2 id="more-heading">Other things</h2>
         <p class="section-note">
-          <span class="note-hover">Hover to pause</span><span class="note-touch">Swipe to browse</span>
+          <span class="note-hover">On a slow loop</span><span class="note-touch">Swipe to browse</span>
         </p>
       </div>
     </div>
@@ -257,14 +257,20 @@
           </li>
 
           <li>
-            <a class="card" href="assets/animations/TimpviewLogo6TBirdTV.gif" target="_blank" rel="noopener">
+            <a class="card" href="assets/animations/TimpviewLogo6TBirdTV.mp4" target="_blank" rel="noopener">
               <span class="card-shot cycle">
-                <img alt="" style="--i:0" src="assets/animations/TimpviewLogo.gif" width="1920" height="1080" loading="lazy" decoding="async">
-                <img alt="" style="--i:1" src="assets/animations/TimpviewLogo2.gif" width="1920" height="1080" loading="lazy" decoding="async">
-                <img alt="" style="--i:2" src="assets/animations/TimpviewLogo3.gif" width="1920" height="1080" loading="lazy" decoding="async">
-                <img alt="" style="--i:3" src="assets/animations/TimpviewLogo4.gif" width="1920" height="1080" loading="lazy" decoding="async">
-                <img alt="" style="--i:4" src="assets/animations/TimpviewLogo5.gif" width="1920" height="1080" loading="lazy" decoding="async">
-                <img alt="" style="--i:5" src="assets/animations/TimpviewLogo6TBirdTV.gif" width="1920" height="1080" loading="lazy" decoding="async">
+                <video style="--i:0" src="assets/animations/TimpviewLogo.mp4" data-hold="5900" poster="assets/animations/poster.jpg"
+                       width="1920" height="1080" muted playsinline preload="metadata"></video>
+                <video style="--i:1" src="assets/animations/TimpviewLogo2.mp4" data-hold="5500"
+                       width="1920" height="1080" muted playsinline preload="metadata"></video>
+                <video style="--i:2" src="assets/animations/TimpviewLogo3.mp4" data-hold="5210"
+                       width="1920" height="1080" muted playsinline preload="metadata"></video>
+                <video style="--i:3" src="assets/animations/TimpviewLogo4.mp4" data-hold="4050"
+                       width="1920" height="1080" muted playsinline preload="metadata"></video>
+                <video style="--i:4" src="assets/animations/TimpviewLogo5.mp4" data-hold="3730"
+                       width="1920" height="1080" muted playsinline preload="metadata"></video>
+                <video style="--i:5" src="assets/animations/TimpviewLogo6TBirdTV.mp4" data-hold="5970"
+                       width="1920" height="1080" muted playsinline preload="metadata"></video>
               </span>
               <span class="card-body">
                 <span class="card-title">School Animations</span>
@@ -496,28 +502,6 @@
 </footer>
 
 <script>
-  /* Shuffle each cycling card so the run starts somewhere different on every
-     visit. Without this the animations always opened on the same logo, which
-     made six variations of it look like one. This runs before the clone step
-     below, so a card and its copy stay in step. */
-  (function () {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    document.querySelectorAll('.cycle').forEach(function (cycle) {
-      var imgs = [].slice.call(cycle.querySelectorAll('img'));
-
-      for (var i = imgs.length - 1; i > 0; i--) {          /* Fisher-Yates */
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = imgs[i]; imgs[i] = imgs[j]; imgs[j] = tmp;
-      }
-
-      imgs.forEach(function (img, k) {
-        img.style.setProperty('--i', k);
-        cycle.appendChild(img);        /* re-append so DOM order matches --i */
-      });
-    });
-  })();
-
   /* Duplicate the marquee items once so the loop can wrap seamlessly.
      Without this the row stays a plain horizontal scroller. The CSS
      animation only switches on when data-cloned is set. */
@@ -535,6 +519,176 @@
     });
 
     marquee.dataset.cloned = 'true';
+  })();
+
+  /* Warm the cycling frames once the page itself has finished. They are lazy
+     (images) or metadata-only (video) in the markup so first paint is not held
+     up by them, but inside an overflow:hidden row the lazy loader often never
+     judges them near enough to fetch - so the later frames of a card were
+     still on the wire when it drifted past, and the cross-fade had nothing to
+     show. One at a time, in document order, so they don't fight for bandwidth. */
+  window.addEventListener('load', function () {
+    var pending = [].slice.call(document.querySelectorAll('.cycle img, .cycle video'));
+
+    (function next() {
+      var el = pending.shift();
+      if (!el) return;
+
+      if (el.tagName === 'VIDEO') {
+        if (el.readyState >= 3) return next();
+        el.addEventListener('canplaythrough', next, { once: true });
+        el.addEventListener('error', next, { once: true });
+        el.preload = 'auto';
+        if (el.readyState === 0) el.load();   /* only kick one that hasn't started */
+      } else {
+        if (el.complete) return next();
+        el.addEventListener('load', next, { once: true });
+        el.addEventListener('error', next, { once: true });
+        el.loading = 'eager';     /* releases the fetch lazy was holding back */
+      }
+    })();
+  });
+
+  /* Cross-fade the cycling cards in a random order, while they are on screen,
+     giving each one long enough to play through.
+
+     Three things were making the School Animations card look like it held two
+     or three frames. The fixed 0-5 order lined up with the loop so every pass
+     came back to the same pair. The card was only in the row for about twenty
+     seconds, so a slow uniform hold spent that window on two of them. And the
+     six idents were 14MB of GIF marked lazy, which inside an overflow:hidden
+     row often never loads, leaving the fade with nothing to show. (They are
+     h264 now, about a megabyte for the set.)
+
+     So: a fresh shuffle dealt as the card drifts into view, each frame held for
+     its own length (data-hold, or the video's own duration) rather than a
+     shared one, frames that have not arrived skipped, and each ident restarted
+     from zero as it comes up so it never opens halfway through. Six full idents
+     run 29s, which is what the 80s drift in styles.css is set to clear - the
+     two are tied, so speeding the row back up will start dropping idents again.
+     Runs after the clone step so copies cycle too. */
+  (function () {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var HOLD  = matchMedia('(hover: none)').matches ? 4200 : 2600;  /* stills */
+    var FADE  = 600;                 /* matches the transition in styles.css */
+    var TAIL  = 250;                 /* let an ident land before it is swapped */
+    var RETRY = 400;                 /* nothing ready yet - look again soon */
+
+    document.querySelectorAll('.cycle').forEach(function (cycle) {
+      var frames = [].slice.call(cycle.querySelectorAll('img, video'));
+      if (frames.length < 2) return;
+
+      var queue = [], showing = null, stack = 0, timer = null;
+
+      function isVideo(el) { return el.tagName === 'VIDEO'; }
+
+      function ready(el) {            /* decoded and actually paintable */
+        return isVideo(el) ? el.readyState >= 2
+                           : el.complete && el.naturalWidth > 0;
+      }
+
+      /* Careful: readiness has to be sampled BEFORE the seek in play(). Seeking
+         drops readyState below HAVE_CURRENT_DATA, and the event that follows is
+         'seeked', not 'loadeddata' - waiting on the latter here left the old
+         frame stuck on top of the card forever while the rest played beneath. */
+      function whenReady(el, fn) {
+        if (ready(el)) return fn();
+        var done = false;
+        var once = function () { if (!done) { done = true; fn(); } };
+        el.addEventListener(isVideo(el) ? 'loadeddata' : 'load', once, { once: true });
+        if (isVideo(el)) el.addEventListener('canplay', once, { once: true });
+        setTimeout(once, 1200);            /* never leave a frame stranded */
+      }
+
+      /* An ident is held for one full play. The file is the authority; the
+         data-hold in the markup is the fallback for before metadata lands. */
+      function holdFor(el) {
+        if (!el) return HOLD;
+        if (isVideo(el) && el.duration) return el.duration * 1000 + TAIL;
+        return +el.dataset.hold || HOLD;
+      }
+
+      function play(el) {
+        if (!isVideo(el)) return;
+        el.currentTime = 0;           /* never open halfway through an ident */
+        var p = el.play();
+        if (p && p.catch) p.catch(function () {});   /* autoplay refused; sits on frame 0 */
+      }
+
+      function refill() {
+        queue = frames.slice();
+        for (var i = queue.length - 1; i > 0; i--) {       /* Fisher-Yates */
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = queue[i]; queue[i] = queue[j]; queue[j] = tmp;
+        }
+        /* don't open a new pass on the frame already up, or it reads as a stall */
+        if (queue[0] === showing) queue.push(queue.shift());
+      }
+
+      function step() {
+        if (!queue.length) refill();
+
+        /* Skip anything still on the wire. Fading to an empty frame is what
+           made the heavy cards look like they only had three images. */
+        var next = null;
+        while (queue.length) {
+          var candidate = queue.shift();
+          if (ready(candidate)) { next = candidate; break; }
+        }
+        if (!next || next === showing) return false;   /* hold, try again soon */
+
+        var prev = showing;
+        var settled = ready(next);         /* sample before play() seeks it */
+        showing = next;
+
+        play(showing);
+        showing.style.zIndex = ++stack;
+        showing.classList.add('is-on');
+
+        /* keep the old frame underneath until the new one has faded in over it */
+        if (prev) {
+          var drop = function () {
+            setTimeout(function () {
+              prev.classList.remove('is-on');
+              if (isVideo(prev)) prev.pause();
+            }, FADE);
+          };
+          if (settled) drop(); else whenReady(showing, drop);
+        }
+        return true;
+      }
+
+      function schedule(delay) {
+        timer = setTimeout(function () {
+          schedule(step() ? holdFor(showing) : RETRY);
+        }, delay);
+      }
+
+      function run() {
+        if (timer) return;
+        refill();                  /* a different frame every time it comes back */
+        schedule(step() ? holdFor(showing) : RETRY);
+      }
+
+      function halt() {            /* off screen: no timers, no decoding */
+        clearTimeout(timer);
+        timer = null;
+        if (showing && isVideo(showing)) showing.pause();
+      }
+
+      cycle.dataset.cycling = 'true';
+      step();                      /* something up before it ever scrolls in */
+
+      var viewport = cycle.closest('.marquee-viewport');
+      if (!viewport || !window.IntersectionObserver) { run(); return; }
+
+      new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) run(); else halt();
+        });
+      }, { root: viewport, threshold: 0.25 }).observe(cycle);
+    });
   })();
 </script>
 

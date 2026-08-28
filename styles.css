@@ -387,8 +387,8 @@ section[id] { scroll-margin-top: 7rem; }
 
 /* ---- Marquee -------------------------------------------------------------
    Without JS this is an ordinary horizontal scroller. Once the script has
-   cloned the items, data-cloned flips it into a slow seamless drift that
-   pauses on hover or keyboard focus.
+   cloned the items, data-cloned flips it into a slow seamless drift that runs
+   uninterrupted; only keyboard focus parks it.
    ------------------------------------------------------------------------ */
 
 .marquee {
@@ -435,19 +435,20 @@ section[id] { scroll-margin-top: 7rem; }
   -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
 }
 
-/* 55s for the full set of 11 cards, roughly 5s per card. Slow enough to read
-   a title in passing, fast enough that the last card is not a minute's wait.
-   At the original 120s everything past card four was effectively hidden. */
+/* 80s for the full set of 11 cards, a bit over 7s per card. Set by the
+   slowest card rather than by reading speed: the six school idents run 29s
+   end to end, and at the old 55s a card was only past for twenty, so two of
+   them never came up. This keeps a card on screen long enough to play all
+   six. At the original 120s everything past card four was effectively
+   hidden. */
 .marquee[data-cloned="true"] .marquee-track {
-  animation: marquee-drift 55s linear infinite;
+  animation: marquee-drift 80s linear infinite;
   will-change: transform;
 }
 
-/* Hold on whatever caught their eye.
-   :focus-visible rather than :focus-within, so a mouse click on a card does
-   not leave the row parked. Clicking sets focus, and :focus-within would keep
-   it paused long after the pointer moved on. Keyboard tabbing still pauses. */
-.marquee[data-cloned="true"]:hover .marquee-track,
+/* Keyboard tabbing parks the row so the focused card can be read; the mouse
+   deliberately does not. Hover-to-pause reads as a stall to anyone who does not
+   know the row is meant to move, and the cursor sits over it constantly. */
 .marquee[data-cloned="true"]:has(:focus-visible) .marquee-track {
   animation-play-state: paused;
 }
@@ -471,7 +472,7 @@ section[id] { scroll-margin-top: 7rem; }
               border-color .45s var(--ease);
 }
 
-.card-shot img {
+.card-shot :is(img, video) {
   width: 100%;
   aspect-ratio: 16 / 10;
   object-fit: cover;
@@ -482,12 +483,14 @@ section[id] { scroll-margin-top: 7rem; }
 /* ---- Cycling card ----
    Six images stacked in one frame, cross-fading in turn. Each is visible for
    1/6 of the cycle (16.667%) with a short fade at each end, and each is held
-   back by --i steps so only one is up at a time. */
+   back by --i steps so only one is up at a time. This fixed 0-5 run is the
+   no-JS fallback; when the script is there it drives the fade instead, in a
+   random order (see [data-cycling] below). */
 .cycle {
   position: relative;
   aspect-ratio: 16 / 10;
 }
-.cycle img {
+.cycle :is(img, video) {
   position: absolute;
   inset: 0;
   height: 100%;
@@ -495,7 +498,7 @@ section[id] { scroll-margin-top: 7rem; }
   animation: cycle-six 27s linear infinite;
   animation-delay: calc(var(--i) * 4.5s);
 }
-.cycle img:first-child { position: relative; }   /* one in flow, to hold the box */
+.cycle :is(img, video):first-child { position: relative; }   /* one in flow, to hold the box */
 
 @keyframes cycle-six {
   0%      { opacity: 0; }
@@ -505,9 +508,19 @@ section[id] { scroll-margin-top: 7rem; }
   100%    { opacity: 0; }
 }
 
-/* Hovering the row pauses the drift, so pause the cross-fade with it */
-.marquee[data-cloned="true"]:hover .cycle img,
-.marquee[data-cloned="true"]:has(:focus-visible) .cycle img {
+/* Once the script takes over, the order is drawn at random rather than run in
+   sequence, so a class drives the fade instead of the keyframes. The incoming
+   frame is stacked on top and the outgoing one is held underneath until the
+   fade finishes, so the card never flashes empty between the two. */
+.cycle[data-cycling="true"] :is(img, video) {
+  animation: none;
+  transition: opacity .6s var(--ease);
+}
+.cycle[data-cycling="true"] :is(img, video).is-on { opacity: 1; }
+
+/* Focus parks the drift, so park the keyframe cross-fade with it. The
+   scripted fade above is not a keyframe animation and keeps its own time. */
+.marquee[data-cloned="true"]:has(:focus-visible) .cycle :is(img, video) {
   animation-play-state: paused;
 }
 
@@ -516,7 +529,7 @@ section[id] { scroll-margin-top: 7rem; }
   border-color: color-mix(in srgb, var(--bark) 34%, transparent);
   box-shadow: 0 10px 26px color-mix(in srgb, var(--bark) 10%, transparent);
 }
-.card:hover .card-shot img { transform: scale(1.03); }
+.card:hover .card-shot :is(img, video) { transform: scale(1.03); }
 
 .card-body {
   flex: 1 1 auto;          /* absorb slack so .card-tech bottom-aligns across the row */
@@ -917,8 +930,8 @@ section[id] { scroll-margin-top: 7rem; }
   .marquee-track > li[aria-hidden="true"] { display: none; }
 
   /* The cross-fade has no pause either, so let it run a little slower */
-  .cycle img { animation-duration: 36s; }
-  .cycle img:nth-child(n) { animation-delay: calc(var(--i) * 6s); }
+  .cycle :is(img, video) { animation-duration: 36s; }
+  .cycle :is(img, video):nth-child(n) { animation-delay: calc(var(--i) * 6s); }
 
   .note-hover { display: none; }
   .note-touch { display: inline; }
@@ -934,6 +947,10 @@ section[id] { scroll-margin-top: 7rem; }
     transition: none !important;
     scroll-behavior: auto !important;
   }
+
+  /* The cross-fade is off with everything else, so leave the first image up
+     rather than an empty frame - the whole stack is transparent by default. */
+  .cycle :is(img, video):first-child { opacity: 1; }
 
   /* With the drift disabled, give the row its scrollbar back so every
      card stays reachable rather than being clipped out of view. */
