@@ -552,23 +552,22 @@ a { color: inherit; }
   background: var(--surface);
 }
 
-/* One pull-quote sized line, then everything else stays small and dense */
-.about-lead {
+/* Quote left, prose right. Deliberately uneven, so the eye has somewhere to
+   land instead of three identical columns of grey text. */
+.bg-top {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: clamp(2rem, 6vw, 5rem);
+  align-items: start;
   margin-top: clamp(2.5rem, 5vw, 3.5rem);
-  max-width: 24ch;
-  font-family: var(--serif);
-  font-size: clamp(1.5rem, 3.4vw, 2.25rem);
-  line-height: 1.22;
-  letter-spacing: -.015em;
 }
 
-.bg-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 4fr) minmax(0, 4fr) minmax(0, 4fr);
-  gap: clamp(2rem, 4vw, 3.5rem);
-  margin-top: clamp(2.5rem, 5vw, 3.5rem);
-  padding-top: clamp(2rem, 4vw, 3rem);
-  border-top: 1px solid var(--rule);
+.about-lead {
+  font-family: var(--serif);
+  font-size: clamp(1.625rem, 3.6vw, 2.625rem);
+  line-height: 1.18;
+  letter-spacing: -.02em;
+  text-wrap: balance;
 }
 
 .bg-intro p {
@@ -576,6 +575,15 @@ a { color: inherit; }
   font-size: .9375rem;
 }
 .bg-intro p + p { margin-top: .875rem; }
+
+.bg-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  margin-top: clamp(3rem, 6vw, 4.5rem);
+  padding-top: clamp(2rem, 4vw, 3rem);
+  border-top: 1px solid var(--rule);
+}
 
 .bg-sub {
   font-family: var(--sans);
@@ -587,78 +595,91 @@ a { color: inherit; }
   padding-bottom: .75rem;
   border-bottom: 1px solid var(--rule);
 }
-.bg-sub-gap { margin-top: 2rem; }
+.bg-sub-gap { margin-top: 2.5rem; }
 
-/* Role / org / year, aligned on a grid rather than separated by punctuation */
-.mini-list {
+/* Years set in the serif carry this column. They are the only thing here
+   with any size to it, which is exactly what the flat version lacked. */
+.timeline {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.mini-list li {
+.timeline li {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0 .75rem;
-  padding-block: .8125rem;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  column-gap: 1.25rem;
+  padding-block: 1.125rem;
   border-bottom: 1px solid var(--rule-soft);
 }
+.timeline li:last-child { border-bottom: 0; }
 
-.mini-role {
-  font-size: .9375rem;
-  font-weight: 500;
+.tl-date {
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
 }
-
-.mini-org {
-  grid-column: 1;
-  font-size: .8125rem;
+.tl-year {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--moss);
+  font-variant-numeric: tabular-nums;
+}
+.tl-span {
+  font-size: .6875rem;
   color: var(--ink-faint);
+  letter-spacing: .04em;
 }
-.mini-org a {
+
+.tl-role { font-size: .9375rem; font-weight: 500; }
+.tl-org  { font-size: .8125rem; color: var(--ink-faint); }
+.tl-org a {
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: color .18s ease, border-color .18s ease;
 }
-.mini-org a:hover { color: var(--ember); border-bottom-color: var(--ember); }
+.tl-org a:hover { color: var(--ember); border-bottom-color: var(--ember); }
 
-.mini-year {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: center;
-  font-size: .8125rem;
-  color: var(--ink-faint);
-  font-variant-numeric: tabular-nums;
+.school-line {
+  margin-top: 1.125rem;
+  font-size: .9375rem;
+  color: var(--ink-soft);
+  max-width: 46ch;
 }
+.school-line strong { color: var(--ink); font-weight: 500; }
 
 .bg-note {
   margin-top: 1rem;
   font-size: .8125rem;
-  line-height: 1.55;
   color: var(--ink-faint);
 }
 
-/* Certificates as chips: nine of them shouldn't cost nine rows */
+/* Certificates as chips, so nine of them do not cost nine rows */
 .chips {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: .4375rem;
-  margin: 1rem 0 0;
+  gap: .5rem;
+  margin: 1.125rem 0 0;
   padding: 0;
 }
 .chips a {
   display: inline-block;
-  padding: .3125rem .625rem;
+  padding: .4375rem .75rem;
   border: 1px solid var(--rule);
   border-radius: 999px;
-  font-size: .75rem;
+  font-size: .8125rem;
   text-decoration: none;
   color: var(--ink-soft);
+  background: color-mix(in srgb, var(--paper) 55%, transparent);
   transition: color .18s ease, border-color .18s ease, background-color .18s ease;
 }
 .chips a:hover {
   color: var(--bark);
-  border-color: color-mix(in srgb, var(--ember) 45%, transparent);
-  background: color-mix(in srgb, var(--sand) 26%, transparent);
+  border-color: color-mix(in srgb, var(--ember) 50%, transparent);
+  background: color-mix(in srgb, var(--sand) 30%, transparent);
 }
 
 .links {
@@ -678,6 +699,7 @@ a { color: inherit; }
   transition: color .18s ease, border-color .18s ease;
 }
 .links a:hover { color: var(--ember); border-bottom-color: var(--ember); }
+
 /* --------------------------------------------------------- Contact */
 
 .contact {
@@ -732,12 +754,13 @@ a { color: inherit; }
 @media (max-width: 860px) {
   .hero-grid,
   .project,
-  .bg-grid {
+  .bg-top,
+  .bg-cols {
     grid-template-columns: 1fr;
   }
 
   /* Stacked columns need their own separators */
-  .bg-col + .bg-col {
+  .bg-cols .bg-col + .bg-col {
     padding-top: 2rem;
     border-top: 1px solid var(--rule);
   }
