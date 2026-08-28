@@ -933,7 +933,6 @@ section[id] { scroll-margin-top: 7rem; }
   .cycle :is(img, video) { animation-duration: 36s; }
   .cycle :is(img, video):nth-child(n) { animation-delay: calc(var(--i) * 6s); }
 
-  .note-hover { display: none; }
   .note-touch { display: inline; }
 }
 
