@@ -17,7 +17,7 @@
   --ink-faint:  color-mix(in srgb, var(--bark) 45%, transparent);
   --rule:       color-mix(in srgb, var(--bark) 14%, transparent);
   --rule-soft:  color-mix(in srgb, var(--bark) 8%,  transparent);
-  --frame:      color-mix(in srgb, var(--bark) 32%, transparent);  /* image borders */
+  --frame:      color-mix(in srgb, var(--bark) 22%, transparent);  /* image borders */
   --surface:    color-mix(in srgb, var(--sand) 12%, var(--paper));
 
   /* Motion */
@@ -104,14 +104,14 @@ a { color: inherit; }
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  padding: .5rem .5rem .5rem 1.25rem;
-  border: 1px solid color-mix(in srgb, var(--bark) 16%, transparent);
+  padding: .4375rem .4375rem .4375rem 1.125rem;
+  border: 1px solid color-mix(in srgb, var(--bark) 12%, transparent);
   border-radius: 999px;
   background: color-mix(in srgb, var(--paper) 82%, transparent);
   backdrop-filter: saturate(1.6) blur(14px);
   -webkit-backdrop-filter: saturate(1.6) blur(14px);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--bark) 6%, transparent),
-              0 8px 24px color-mix(in srgb, var(--bark) 7%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--bark) 4%, transparent),
+              0 6px 20px color-mix(in srgb, var(--bark) 5%, transparent);
 }
 
 .wordmark {
@@ -144,7 +144,7 @@ a { color: inherit; }
 /* --------------------------------------------------------- Hero */
 
 .hero {
-  padding-block: clamp(3rem, 8vw, 6rem) clamp(4rem, 9vw, 7rem);
+  padding-block: clamp(4rem, 10vw, 8rem) clamp(4rem, 9vw, 7rem);
   border-bottom: 1px solid var(--rule);
 }
 
@@ -272,8 +272,8 @@ a { color: inherit; }
 }
 
 .section-head h2 {
-  font-size: clamp(1.5rem, 2.6vw, 2rem);
-  letter-spacing: -.01em;
+  font-size: clamp(1.625rem, 3vw, 2.375rem);
+  letter-spacing: -.015em;
 }
 
 .section-note {
@@ -367,8 +367,8 @@ a { color: inherit; }
   transition: transform .5s var(--ease), box-shadow .5s var(--ease);
 }
 .project-shot:hover img {
-  transform: translateY(-5px);
-  box-shadow: 0 14px 34px color-mix(in srgb, var(--bark) 14%, transparent);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--bark) 11%, transparent);
 }
 
 /* --------------------------------------------------------- More work grid */
@@ -424,8 +424,8 @@ a { color: inherit; }
 .marquee[data-cloned="true"] .marquee-viewport {
   overflow: hidden;
   /* soften both edges so cards fade in and out rather than clipping */
-  mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
 }
 
 /* 55s for the full set of 11 cards, roughly 5s per card. Slow enough to read
@@ -505,11 +505,11 @@ a { color: inherit; }
 }
 
 .card:hover .card-shot {
-  transform: translateY(-5px);
-  border-color: color-mix(in srgb, var(--bark) 48%, transparent);
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--bark) 13%, transparent);
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--bark) 34%, transparent);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--bark) 10%, transparent);
 }
-.card:hover .card-shot img { transform: scale(1.04); }
+.card:hover .card-shot img { transform: scale(1.03); }
 
 .card-body {
   flex: 1 1 auto;          /* absorb slack so .card-tech bottom-aligns across the row */
@@ -790,7 +790,6 @@ a { color: inherit; }
 
 .bubble { animation: drop-in .7s var(--ease) both; }
 
-.hero .eyebrow      { animation: rise .8s var(--ease) .10s both; }
 .hero .hero-title   { animation: rise .9s var(--ease) .18s both; }
 .hero .hero-role    { animation: rise .9s var(--ease) .30s both; }
 .hero .lede         { animation: rise .9s var(--ease) .40s both; }
