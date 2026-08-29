@@ -787,18 +787,6 @@ section[id] { scroll-margin-top: 7rem; }
 }
 .contact-mail:hover { color: var(--paper); border-bottom-color: var(--paper); }
 
-.contact-resume {
-  margin-top: 1.75rem;
-  font-size: .9375rem;
-}
-.contact-resume a {
-  color: color-mix(in srgb, var(--paper) 72%, transparent);
-  text-decoration: none;
-  border-bottom: 1px solid color-mix(in srgb, var(--paper) 30%, transparent);
-  transition: color .18s ease, border-color .18s ease;
-}
-.contact-resume a:hover { color: var(--paper); border-bottom-color: var(--paper); }
-
 /* --------------------------------------------------------- Footer */
 
 .site-foot {

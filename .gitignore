@@ -18,9 +18,9 @@ _*.png
 *.MOV
 *.mov
 
-# Resume source. The PDF carries four referees' phone numbers and email
-# addresses; anything committed here is served publicly at a guessable URL,
-# so it stays out. resume.html is the public version, references withheld.
+# Resume. The PDF and the Docs copy carry four referees' phone numbers and
+# email addresses, and anything committed here is served publicly at a
+# guessable URL, so both stay out of the repo.
 *Resume*.pdf
 *resume*.pdf
 *Resume*.docx
