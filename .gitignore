@@ -17,3 +17,16 @@ _*.png
 # so these need converting to H.264 MP4 before they can go on the site.
 *.MOV
 *.mov
+
+# Resume source. The PDF carries four referees' phone numbers and email
+# addresses; anything committed here is served publicly at a guessable URL,
+# so it stays out. resume.html is the public version, references withheld.
+*Resume*.pdf
+*resume*.pdf
+*Resume*.docx
+*resume*.docx
+
+# Local tooling
+node_modules/
+package.json
+package-lock.json

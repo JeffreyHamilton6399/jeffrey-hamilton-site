@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jeffrey Hamilton — Resume</title>
+<meta name="description" content="Resume: software, work history, certification. Provo, Utah.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  /* Same palette and type as the portfolio, set out for a page you can read
+     top to bottom, print, or drop into a Doc. */
+  :root {
+    --bark:  #283618;
+    --moss:  #606C38;
+    --paper: #FEFAE0;
+    --ember: #BC6C25;
+    --ink:       var(--bark);
+    --ink-soft:  color-mix(in srgb, var(--bark) 68%, transparent);
+    --ink-faint: color-mix(in srgb, var(--bark) 45%, transparent);
+    --rule:      color-mix(in srgb, var(--bark) 14%, transparent);
+    --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .sheet {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: clamp(2.5rem, 7vw, 5rem) clamp(1.25rem, 5vw, 3rem) 5rem;
+  }
+
+  a { color: inherit; }
+
+  /* ---- Masthead ---- */
+  .name {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(2.25rem, 6vw, 3.25rem);
+    line-height: 1.05;
+    letter-spacing: -.015em;
+    margin: 0;
+  }
+  .contact {
+    margin: .75rem 0 0;
+    font-size: .9375rem;
+    color: var(--ink-soft);
+  }
+  .contact a { color: var(--ember); text-decoration: none; border-bottom: 1px solid transparent; }
+  .contact a:hover { border-bottom-color: var(--ember); }
+  .sep { color: var(--ink-faint); padding: 0 .4rem; }
+  /* keep a phone number or an address from breaking across the line */
+  .contact .bit { white-space: nowrap; }
+
+  .summary {
+    margin: 1.75rem 0 0;
+    font-family: var(--serif);
+    font-size: 1.1875rem;
+    line-height: 1.5;
+  }
+  .summary + .summary { margin-top: .875rem; font-size: 1rem; font-family: var(--sans); color: var(--ink-soft); }
+
+  /* ---- Sections ---- */
+  h2 {
+    font-family: var(--sans);
+    font-size: .6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--ink-faint);
+    margin: 3rem 0 0;
+    padding-bottom: .75rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .entry {
+    display: grid;
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    column-gap: 1.5rem;
+    padding-block: 1.25rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--bark) 8%, transparent);
+  }
+  .entry:last-child { border-bottom: 0; }
+  .when {
+    font-family: var(--serif);
+    font-size: 1rem;
+    color: var(--moss);
+    font-variant-numeric: tabular-nums;
+  }
+  .what { margin: 0; font-size: 1.0625rem; font-weight: 600; font-family: var(--serif); }
+  .where { margin: .125rem 0 0; font-size: .875rem; color: var(--ink-faint); }
+  .where a { color: inherit; text-decoration: none; border-bottom: 1px solid transparent; }
+  .where a:hover { color: var(--ember); border-bottom-color: var(--ember); }
+
+  ul.did { margin: .625rem 0 0; padding-left: 1.1rem; font-size: .9375rem; color: var(--ink-soft); }
+  ul.did li { margin-bottom: .25rem; }
+
+  .stack { margin: .5rem 0 0; font-size: .8125rem; color: var(--moss); }
+
+  .also { margin: 1.25rem 0 0; font-size: .9375rem; color: var(--ink-soft); }
+
+  /* ---- Certificates ---- */
+  .certs { list-style: none; margin: 0; padding: 0; }
+  .certs li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .5rem 0;
+    font-size: .9375rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--bark) 8%, transparent);
+  }
+  .certs li:last-child { border-bottom: 0; }
+  .certs .date { color: var(--ink-faint); font-size: .8125rem; white-space: nowrap; }
+  .issuer { margin: 1.25rem 0 .25rem; font-size: .8125rem; font-weight: 600; color: var(--moss); }
+
+  .strengths { margin: 1.25rem 0 0; font-family: var(--serif); font-size: 1.0625rem; }
+
+  .refs { margin: 1.25rem 0 0; font-size: .9375rem; color: var(--ink-soft); }
+
+  .back {
+    display: inline-block;
+    margin-top: 3.5rem;
+    font-size: .875rem;
+    color: var(--ember);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+  .back:hover { border-bottom-color: var(--ember); }
+
+  @media (max-width: 620px) {
+    .entry { grid-template-columns: 1fr; row-gap: .25rem; }
+    .when { font-size: .875rem; }
+  }
+
+  /* Printing and PDF export: white ground, no link chrome, nothing split
+     across a page break mid-entry. */
+  @media print {
+    body { background: #fff; font-size: 10.5pt; }
+    .sheet { max-width: none; padding: 0; }
+    .entry, .certs li { break-inside: avoid; }
+    h2 { margin-top: 1.5rem; }
+    .back { display: none; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <header>
+    <h1 class="name">Jeffrey Hamilton</h1>
+    <p class="contact">
+      <span class="bit">Provo, Utah</span><span class="sep">|</span><span class="bit">801-900-9612</span><span class="sep">|</span><span class="bit"><a href="mailto:jeffreyscotthamilton6399@gmail.com">jeffreyscotthamilton6399@gmail.com</a></span><span class="sep">|</span><span class="bit"><a href="https://github.com/JeffreyHamilton6399">github.com/JeffreyHamilton6399</a></span>
+    </p>
+
+    <p class="summary">
+      I build software that runs on your own computer instead of somebody's server &mdash; sixteen
+      browser tools that never upload your files, a voice assistant that keeps working with the
+      wifi off, a shared whiteboard that survives the server going down.
+    </p>
+    <p class="summary">
+      I have been working since I was nine, starting with a pasture-raised egg business I ran and
+      delivered myself. I am a first degree black belt, and spent three years in my dojo's
+      leadership program teaching classes and judging tournaments. I pick the courses that teach me
+      something I don't already know &mdash; nine state certificates so far, from Java to
+      architectural CAD. I am looking for software engineering work.
+    </p>
+  </header>
+
+  <h2>Selected projects</h2>
+
+  <div class="entry">
+    <div class="when">2026</div>
+    <div>
+      <p class="what">Privacy-First Web Tools</p>
+      <p class="where"><a href="https://jeffrey-hamilton-tools.vercel.app/">jeffrey-hamilton-tools.vercel.app</a></p>
+      <ul class="did">
+        <li>Sixteen tools that shrink files, convert formats, cut backgrounds out of photos, strip EXIF data, merge PDFs and pull vocals out of songs.</li>
+        <li>Everything runs inside the browser tab. Files are never uploaded, because there is nowhere for them to go.</li>
+      </ul>
+      <p class="stack">TypeScript &middot; React &middot; WebAssembly</p>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="when">2026</div>
+    <div>
+      <p class="what">Buddy</p>
+      <p class="where"><a href="https://jeffreyhamilton6399.github.io/buddy-desktop">A desktop voice assistant that runs offline</a></p>
+      <ul class="did">
+        <li>Bundles the language model, the voice and the speech recognition into the app, so there is no account to make and no API key to paste in.</li>
+        <li>Ships for macOS, Windows and Linux.</li>
+      </ul>
+      <p class="stack">Electron &middot; llama.cpp &middot; Whisper &middot; Kokoro TTS</p>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="when">2026</div>
+    <div>
+      <p class="what">Slate</p>
+      <p class="where"><a href="https://slate-client.vercel.app/">A whiteboard several people can draw on at once</a></p>
+      <ul class="did">
+        <li>Live 2D and 3D editing with voice chat, syncing between everyone in the room.</li>
+        <li>Keeps a copy of every board on the machine, so the server going down costs the user nothing.</li>
+      </ul>
+      <p class="stack">TypeScript &middot; Yjs &middot; WebRTC &middot; Fastify</p>
+    </div>
+  </div>
+
+  <p class="also">
+    Also built: <strong>Vela</strong> (Electron), <strong>InboxPilot</strong> (Gmail API),
+    <strong>Bulletin</strong> (Next.js, Prisma), <strong>SignBridge</strong> (on-device ML),
+    <strong>Counterpoint</strong> (LLM), <strong>SpellFall</strong> and <strong>PixelParty</strong>
+    (multiplayer, WebSockets), <strong>Line Glide</strong> (Canvas), and Minecraft mods on Fabric
+    with 1,200 downloads. All of it is at
+    <a href="https://jeffreyhamilton.com">jeffreyhamilton.com</a>.
+  </p>
+
+  <h2>Experience</h2>
+
+  <div class="entry">
+    <div class="when">2026 &ndash; Present</div>
+    <div>
+      <p class="what">Software Engineering</p>
+      <p class="where">Provo CAPS</p>
+    </div>
+  </div>
+
+  <!-- TODO: BMI title goes here once they have it set up, plus the image -->
+  <div class="entry">
+    <div class="when">2026 &ndash; Present</div>
+    <div>
+      <p class="what">BMI</p>
+      <p class="where">Provo, Utah</p>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="when">2026 &ndash; Present</div>
+    <div>
+      <p class="what">Property Manager</p>
+      <p class="where">Apartment 221, 642 N 200 E, Provo, Utah</p>
+      <ul class="did">
+        <li>Manages the unit day to day, including maintenance and turnover.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="when">2026 &ndash; Present</div>
+    <div>
+      <p class="what">Bagger, then Cashier</p>
+      <p class="where">Day's Market &mdash; Provo, Utah</p>
+      <ul class="did">
+        <li>Moved up from bagging to running a register.</li>
+        <li>Stocks shelves, including the heavy lifting.</li>
+        <li>Works the front of the store with customers all shift.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="when">2022 &ndash; 2025</div>
+    <div>
+      <p class="what">Leadership Program Participant</p>
+      <p class="where">Bobby Lawrence Karate &mdash; Orem, Utah</p>
+      <ul class="did">
+        <li>Assisted class instructors and worked with individual students.</li>
+        <li>Led sessions as the example, demonstrating correct technique.</li>
+        <li>Judged competitions involving hundreds of students from several states.</li>
+        <li>Set up and took down equipment for tournaments and special events.</li>
+        <li>Helped with cleaning and maintenance of the facility.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="when">2018 &ndash; 2022</div>
+    <div>
+      <p class="what">Co-owner and Operator</p>
+      <p class="where">Hamilton Egg Business &mdash; Cedar Hills and Lindon, Utah</p>
+      <ul class="did">
+        <li>Ran inventory and collected the weekly orders.</li>
+        <li>Owned door-to-door delivery to existing customers.</li>
+        <li>Found and signed up new customers.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="when">2021 &ndash; Present</div>
+    <div>
+      <p class="what">Volunteer</p>
+      <p class="where">The Church of Jesus Christ of Latter-day Saints</p>
+    </div>
+  </div>
+
+  <h2>Certification and recognition</h2>
+
+  <p class="issuer">Bobby Lawrence Karate</p>
+  <ul class="certs">
+    <li><span>First Degree Black Belt</span><span class="date">May 2025</span></li>
+  </ul>
+
+  <p class="issuer">Utah State Board of Education</p>
+  <ul class="certs">
+    <li><span>Digital Media 2</span><span class="date">May 2026</span></li>
+    <li><span>Game Development Fundamentals</span><span class="date">December 2025</span></li>
+    <li><span>Robotics 1</span><span class="date">December 2025</span></li>
+    <li><span>Computer Programming 2 (Java)</span><span class="date">December 2025</span></li>
+    <li><span>Unmanned Aerial Systems</span><span class="date">December 2025</span></li>
+    <li><span>Architectural Design 2</span><span class="date">May 2025</span></li>
+    <li><span>Computer Programming 1</span><span class="date">May 2025</span></li>
+    <li><span>Digital Media 1</span><span class="date">December 2024</span></li>
+    <li><span>CAD Architectural Design I</span><span class="date">December 2023</span></li>
+  </ul>
+
+  <h2>Education</h2>
+
+  <div class="entry">
+    <div class="when">2023 &ndash; 2027</div>
+    <div>
+      <p class="what">Timpview High School</p>
+      <p class="where">Provo, Utah &mdash; graduating May 2027</p>
+    </div>
+  </div>
+
+  <h2>Strengths</h2>
+  <p class="strengths">Communication &middot; Persistence &middot; Creative thinking &middot; Resilience &middot; Coachability</p>
+
+  <h2>References</h2>
+  <p class="refs">Available on request.</p>
+
+  <a class="back" href="index.html">&#8592; Back to the portfolio</a>
+
+</div>
+
+</body>
+</html>
