@@ -787,6 +787,14 @@ section[id] { scroll-margin-top: 7rem; }
 }
 .contact-mail:hover { color: var(--paper); border-bottom-color: var(--paper); }
 
+/* .links again, but on the dark panel */
+.contact-links { margin-top: 2rem; }
+.contact-links a {
+  color: color-mix(in srgb, var(--paper) 70%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--paper) 24%, transparent);
+}
+.contact-links a:hover { color: var(--paper); border-bottom-color: var(--paper); }
+
 /* --------------------------------------------------------- Footer */
 
 .site-foot {
