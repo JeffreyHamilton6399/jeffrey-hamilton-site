@@ -521,13 +521,45 @@
        fluid read rather than a cut or a slide. */
 
     var HOLD = 2100, MELT = 780;
+    var DEPTH = 16, STEP_Z = 2.6;   /* how many copies, and how far apart */
     var wi = 0;
+
+    /* One word, built in depth: a run of copies of the same text stacked
+       back along z, the front one in ink and the rest walking toward the
+       extrude tone so the side of the letter reads as a lit face rather
+       than a smear. */
+    function build(text) {
+      var wrap = document.createElement('span');
+      wrap.className = 'type-out';
+      var solid = document.createElement('span');
+      solid.className = 'type-3d';
+
+      for (var i = DEPTH - 1; i >= 0; i--) {
+        var face = document.createElement('span');
+        face.className = 'face';
+        face.textContent = text;
+        face.style.transform = 'translateZ(' + (-i * STEP_Z) + 'px)';
+        /* i = 0 is the face you read; everything behind it is the wall */
+        face.style.color = i === 0
+          ? 'var(--void)'
+          : 'color-mix(in srgb, var(--extrude) ' + Math.round(55 + (i / DEPTH) * 45) + '%, var(--void))';
+        solid.appendChild(face);
+      }
+      /* the first child in flow is the one that sizes the box */
+      solid.insertBefore(solid.lastChild, solid.firstChild);
+      wrap.appendChild(solid);
+      return wrap;
+    }
 
     function measureWidth(el) {
       return Math.ceil(el.getBoundingClientRect().width);
     }
 
     function cycle() {
+      /* swap the flat markup word for the built one */
+      var solid = build(out.textContent);
+      out.replaceWith(solid);
+      out = solid;
       skills.style.width = measureWidth(out) + 'px';
       setTimeout(step, HOLD);
     }
@@ -535,9 +567,7 @@
     function step() {
       wi = (wi + 1) % list.length;
 
-      var next = document.createElement('span');
-      next.className = 'type-out';
-      next.textContent = list[wi];
+      var next = build(list[wi]);
       next.style.opacity = '0';
       next.style.filter = 'blur(18px)';
       next.style.transform = 'scale(.86) translateY(14px)';
@@ -573,7 +603,13 @@
         y: 0,
         duration: MELT / 1000,
         ease: 'power3.out',
-        onComplete: function () { setTimeout(step, HOLD); }
+        onComplete: function () {
+          /* Drop the filter entirely rather than leaving it at zero: any
+             filter at all keeps the element flattened, and the extrusion
+             inside would stay collapsed. */
+          gsap.set(next, { clearProps: 'filter' });
+          setTimeout(step, HOLD);
+        }
       });
     }
   })();
@@ -862,15 +898,19 @@
        scrubbed, so it tracks the scroll rather than firing once. */
     if (!reduced && hasGsap) {
       document.querySelectorAll('[data-rise]').forEach(function (el) {
+        /* The contact panel gets the same move with more of everything, and
+           a tilt that flattens out — it is the last thing on the page, so it
+           is allowed the bigger entrance. */
+        var big = el.closest('.contact') !== null;
         gsap.fromTo(el,
-          { y: 74, scale: 0.965 },
+          { y: big ? 130 : 74, scale: big ? 0.92 : 0.965, rotateX: big ? 9 : 0 },
           {
-            y: 0, scale: 1,
+            y: 0, scale: 1, rotateX: 0,
             ease: 'none',
             scrollTrigger: {
               trigger: el,
               start: 'top 92%',
-              end: 'top 42%',
+              end: big ? 'top 30%' : 'top 42%',
               scrub: 0.7,
               invalidateOnRefresh: true
             }
