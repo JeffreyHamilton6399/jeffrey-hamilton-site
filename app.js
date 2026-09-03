@@ -243,17 +243,21 @@
 
      The open, in four beats:
 
-       1. a loading screen — a sheet of page colour over the spiral, with
+       1. a loading screen — a sheet of page colour over the cylinder, with
           nothing on it but the name, which resolves out of a blur
-       2. the name flies up and left, shrinking into the face in the header,
-          while the sheet fades out from under it and the spiral is revealed
-       3. the header lockup arrives to catch it
-       4. the "I build ___" line fades up in the middle of the cylinder and
-          the word starts typing itself out
+       2. the name dips, then breaks into three glowing points, each of which
+          rides its own hand-drawn line to one of the three things in the
+          header: the face on the left, the nav in the middle, the icons on
+          the right
+       3. each landing has its own follow-through — the face catches its
+          point and the lockup slides out from behind it; the middle nav
+          button lights and the other two open out of it left and right; the
+          middle icon shimmers and the other two run in from the right
+       4. the word in the middle of the cylinder fades up and starts its
+          cycle
 
-     Step 2 is a FLIP: measure where the title is, measure where the face is,
-     and hand the difference to one tween. Nothing is hard-coded, so it lands
-     on the face at any size.
+     Every target is measured at flight time, so nothing is hard-coded and it
+     lands correctly at any size.
 
      With the script off or reduced motion on, none of this runs — the name
      and the first word are in the markup, already in their resting place. */
@@ -268,22 +272,28 @@
     var out    = document.querySelector('.type-out');
     var face   = document.querySelector('.mark-face');
     var dot    = document.querySelector('.boot-dot');
+    var nav    = document.querySelector('.nav');
+    var social = document.querySelector('.head-social');
     var list;
     try { list = JSON.parse(skills && skills.getAttribute('data-skills') || '[]'); }
     catch (e) { list = []; }
 
     if (reduced || !list.length || !title || !face || !line) return;
 
-    out.textContent = '';
+    /* The first word stays where the markup put it — the morph swaps it out
+       later. (Clearing it here was the typewriter's job, and the typewriter
+       is gone.) */
     line.classList.add('is-held');
     center.classList.add('intro-armed');
     doc.classList.add('booting');
     doc.classList.add('head-wait');   /* outlives booting: see fly() */
 
-    /* Only now is the lockup allowed to hide, because only now is something
-       guaranteed to come along and open it again. */
+    /* Only now are these allowed to hide, because only now is something
+       guaranteed to come along and open them again. */
     var mark = face.closest ? face.closest('.mark') : null;
-    if (mark) mark.classList.add('is-tucked');
+    if (mark)   mark.classList.add('is-tucked');
+    if (nav)    nav.classList.add('is-held');
+    if (social) social.classList.add('is-held');
 
     var HOLD_NAME = 1250;    /* how long the name has the screen to itself */
     var DIP       = 420;     /* it sinks a little before it goes           */
@@ -308,182 +318,263 @@
       });
     }
 
-    /* The name collapses into the dot it is about to travel as. */
+    /* The name breaks apart into three points of light, one for each thing
+       in the header. */
     function morph() {
-      if (!hasGsap || !dot) { fly(); return; }
-      var t = title.getBoundingClientRect();
-      var box = document.querySelector('.hero-stage').getBoundingClientRect();
-      dot.style.transform = 'translate(' + (t.left + t.width / 2 - box.left) + 'px,' +
-                                           (t.top + t.height / 2 - box.top) + 'px)';
-      gsap.to(title, { scale: 0.05, opacity: 0, duration: MORPH / 1000, ease: 'power2.in' });
-      gsap.to(dot,   { opacity: 1, duration: MORPH / 1000, ease: 'power2.out', onComplete: fly });
+      if (!hasGsap) { fly(); return; }
+      gsap.to(title, { scale: 0.05, opacity: 0, duration: MORPH / 1000, ease: 'power2.in', onComplete: fly });
     }
 
-    /* The name does not go straight up — it swings out on a curve, draws that
-       curve as it goes, and shrinks into the face; the line is then pulled in
-       after it. One quadratic bezier does both jobs: it is sampled into a
-       wobbling polyline for the visible stroke, and evaluated exactly to
-       place the name. (Following a path properly is what GSAP's
-       MotionPathPlugin is for, and it is not among the three files vendored
-       here; the arithmetic for one quadratic is four lines.)
+    var flown = false;
 
-       The stroke is deliberately not the clean curve. A plotted bezier is
-       the thing that reads as machine-drawn, so the samples are pushed off
-       the true curve by two sine waves of different frequency with random
-       phase each load, under an envelope that pins both ends down. That is
-       what makes it look drawn by hand rather than computed. */
-    /* The trip. The dot leaves the dip, turns a full loop, then sweeps up
-       and left into the face, drawing the line as it goes.
-
-       The shape is built as an ordinary path — a curve out, an almost-closed
-       arc for the loop, a cubic to the face — and then resampled into a
-       wobbling polyline so it reads as drawn rather than plotted. Because
-       the loop makes it self-crossing, there is no closed form to evaluate:
-       the dot is placed with getPointAtLength on the same path, which works
-       for any shape and keeps the dot exactly on the ink. */
+    /* Each line: an ideal shape with a loop in it, resampled into a wobbling
+       polyline so it reads as drawn rather than plotted, and a glowing point
+       placed on it with getPointAtLength. The loop makes the path
+       self-crossing, so there is no closed form left to evaluate — asking
+       the path itself where it is at a given length works for any shape and
+       keeps the point exactly on the ink. */
     function fly() {
+      if (flown) return;
+      flown = true;
+
       var stage = document.querySelector('.hero-stage');
       var t = title.getBoundingClientRect();
-      var m = face.getBoundingClientRect();
       var box = stage && stage.getBoundingClientRect();
-      if (!t.width || !m.width || !box) { arrive(); land(); return; }
+      if (!t.width || !box) { arrive(); openNav(); openSocial(); land(); return; }
 
       title.style.transition = 'none';
+      title.style.opacity = '0';
 
-      /* Stage-local, because that is what the svg is measured in. */
-      var x0 = t.left + t.width / 2 - box.left, y0 = t.top + t.height / 2 - box.top;
-      var x1 = m.left + m.width / 2 - box.left, y1 = m.top + m.height / 2 - box.top;
+      var x0 = t.left + t.width / 2 - box.left;
+      var y0 = t.top + t.height / 2 - box.top;
 
-      var len = Math.hypot(x1 - x0, y1 - y0) || 1;
-      var rr  = Math.max(26, Math.min(len * 0.11, 62));
+      /* Where the three points are headed, and what each one sets off. */
+      var legs = [
+        { el: face,                           after: arrive,     spin: -1, hold: 0    },
+        { el: navTarget(),                    after: openNav,    spin:  1, hold: 140  },
+        { el: socialTarget(),                 after: openSocial, spin:  1, hold: 260  }
+      ].filter(function (leg) { return leg.el; });
 
-      /* down and out, one full loop, then the long sweep to the face */
-      var ideal =
-        'M ' + x0 + ' ' + y0 +
-        ' q ' + (rr * 0.95) + ' ' + (rr * 0.75) + ' ' + (rr * 1.25) + ' ' + (rr * 1.15) +
-        ' a ' + rr + ',' + rr + ' 0 1,1 0.7,0.25';
-      var lx = x0 + rr * 1.25 + 0.7, ly = y0 + rr * 1.15 + 0.25;
-      ideal += ' C ' + (lx + len * 0.30) + ' ' + (ly - len * 0.20) +
-               ', ' + (x1 + len * 0.34) + ' ' + (y1 + len * 0.16) +
-               ', ' + x1 + ' ' + y1;
+      if (!legs.length) { arrive(); openNav(); openSocial(); land(); return; }
 
-      var svg  = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      var probe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('class', 'boot-trail');
       svg.setAttribute('viewBox', '0 0 ' + box.width + ' ' + box.height);
       svg.setAttribute('aria-hidden', 'true');
-      probe.setAttribute('d', ideal);
-      probe.style.display = 'none';
-      svg.appendChild(probe);
-      svg.appendChild(path);
       stage.insertBefore(svg, center);
 
-      /* Resample the ideal shape, pushing each point off the true line by two
-         sines of different frequency with a random phase, under an envelope
-         that pins both ends. That wobble is the hand in hand-drawn. */
-      var PL = probe.getTotalLength();
-      var ph1 = Math.random() * 6.28, ph2 = Math.random() * 6.28;
-      var amp = Math.min(PL * 0.012, 9);
-      var d = '', STEPS = 150;
-      for (var k = 0; k <= STEPS; k++) {
-        var tt = k / STEPS;
-        var pt = probe.getPointAtLength(PL * tt);
-        var nb = probe.getPointAtLength(Math.min(PL, PL * tt + 1));
-        var tx = nb.x - pt.x, ty = nb.y - pt.y;
-        var tl = Math.hypot(tx, ty) || 1;
-        var env = Math.sin(Math.PI * tt);
-        var off = (Math.sin(tt * 11.3 + ph1) * 0.6 + Math.sin(tt * 5.1 + ph2) * 0.4) * amp * env;
-        d += (k ? ' L ' : 'M ') +
-             (pt.x + (-ty / tl) * off).toFixed(2) + ' ' +
-             (pt.y + ( tx / tl) * off).toFixed(2);
-      }
-      probe.remove();
-      path.setAttribute('d', d);
-
-      var L = path.getTotalLength();
-      path.style.strokeDasharray  = L;
-      path.style.strokeDashoffset = L;
-
-      /* The sheet goes now, not at the end — the cylinder is revealed while
-         the dot is still travelling over it, which is the whole effect. */
+      /* The sheet goes now — the cylinder is revealed while the points are
+         still travelling over it, which is the whole effect. */
       doc.classList.remove('booting');
       doc.classList.add('booted');
 
-      if (!hasGsap) {
-        svg.remove();
-        if (dot) dot.style.opacity = '0';
-        setTimeout(function () { arrive(); land(); }, FLIGHT);
-        return;
-      }
+      var done = 0;
+      legs.forEach(function (leg, i) { run(leg, i); });
 
-      var at = { p: 0 };
-      gsap.to(at, {
-        p: 1,
-        duration: FLIGHT / 1000,
-        ease: 'power2.inOut',
-        onUpdate: function () {
-          var p = at.p;
-          var pt = path.getPointAtLength(L * p);
-          if (dot) {
-            dot.style.transform = 'translate(' + pt.x + 'px,' + pt.y + 'px)';
-            /* it shrinks into the face over the last stretch */
-            if (p > 0.86) dot.style.opacity = String(1 - (p - 0.86) / 0.14);
-          }
-          path.style.strokeDashoffset = L * (1 - p);
-        },
-        onComplete: function () {
-          if (dot) dot.style.opacity = '0';
-          /* Pull the line in after it, from the tail forward. */
-          gsap.to(path, {
-            strokeDashoffset: -L,
-            duration: 0.5,
-            ease: 'power2.in',
-            onComplete: function () { svg.remove(); }
-          });
-          arrive();
-          land();
+      function run(leg, i) {
+        var m = leg.el.getBoundingClientRect();
+        var x1 = m.left + m.width / 2 - box.left;
+        var y1 = m.top + m.height / 2 - box.top;
+
+        var len = Math.hypot(x1 - x0, y1 - y0) || 1;
+        var rr  = Math.max(22, Math.min(len * 0.10, 54));
+
+        /* out and down, one full loop, then the long sweep to the target */
+        var ideal = 'M ' + x0 + ' ' + y0 +
+          ' q ' + (rr * 0.95 * leg.spin) + ' ' + (rr * 0.75) + ' ' +
+                  (rr * 1.25 * leg.spin) + ' ' + (rr * 1.15) +
+          ' a ' + rr + ',' + rr + ' 0 1,' + (leg.spin > 0 ? 1 : 0) + ' ' + (0.7 * leg.spin) + ',0.25';
+        var lx = x0 + rr * 1.25 * leg.spin + 0.7 * leg.spin;
+        var ly = y0 + rr * 1.15 + 0.25;
+        ideal += ' C ' + (lx + len * 0.30 * leg.spin) + ' ' + (ly - len * 0.20) +
+                 ', ' + (x1 + len * 0.30 * leg.spin) + ' ' + (y1 + len * 0.18) +
+                 ', ' + x1 + ' ' + y1;
+
+        var probe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        var path  = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        probe.setAttribute('d', ideal);
+        probe.style.display = 'none';
+        svg.appendChild(probe);
+        svg.appendChild(path);
+
+        var PL = probe.getTotalLength();
+        var ph1 = Math.random() * 6.28, ph2 = Math.random() * 6.28;
+        var amp = Math.min(PL * 0.012, 9);
+        var d = '', STEPS = 140;
+        for (var k = 0; k <= STEPS; k++) {
+          var tt = k / STEPS;
+          var pt = probe.getPointAtLength(PL * tt);
+          var nb = probe.getPointAtLength(Math.min(PL, PL * tt + 1));
+          var tx = nb.x - pt.x, ty = nb.y - pt.y;
+          var tl = Math.hypot(tx, ty) || 1;
+          var env = Math.sin(Math.PI * tt);
+          var off = (Math.sin(tt * 11.3 + ph1) * 0.6 + Math.sin(tt * 5.1 + ph2) * 0.4) * amp * env;
+          d += (k ? ' L ' : 'M ') +
+               (pt.x + (-ty / tl) * off).toFixed(2) + ' ' +
+               (pt.y + ( tx / tl) * off).toFixed(2);
         }
-      });
+        probe.remove();
+        path.setAttribute('d', d);
+
+        var L = path.getTotalLength();
+        path.style.strokeDasharray  = L;
+        path.style.strokeDashoffset = L;
+
+        /* One travelling point per line. The first reuses the dot already in
+           the markup; the others are clones of it. */
+        var pip = i === 0 ? dot : (dot ? dot.cloneNode(true) : null);
+        if (pip && i > 0) stage.insertBefore(pip, center);
+        if (pip) pip.style.opacity = '1';
+
+        if (!hasGsap) { finish(); return; }
+
+        var at = { p: 0 };
+        gsap.to(at, {
+          p: 1,
+          duration: FLIGHT / 1000,
+          delay: leg.hold / 1000,
+          ease: 'power2.inOut',
+          onUpdate: function () {
+            var p = at.p;
+            var q = path.getPointAtLength(L * p);
+            if (pip) {
+              pip.style.transform = 'translate(' + q.x + 'px,' + q.y + 'px)';
+              if (p > 0.86) pip.style.opacity = String(1 - (p - 0.86) / 0.14);
+            }
+            path.style.strokeDashoffset = L * (1 - p);
+          },
+          onComplete: function () {
+            if (pip) pip.style.opacity = '0';
+            gsap.to(path, {
+              strokeDashoffset: -L,
+              duration: 0.5,
+              ease: 'power2.in',
+              onComplete: function () { if (pip && i > 0) pip.remove(); }
+            });
+            finish();
+          }
+        });
+
+        function finish() {
+          leg.after();
+          if (++done === legs.length) {
+            setTimeout(function () { if (svg.parentNode) svg.remove(); }, 620);
+            land();
+          }
+        }
+      }
     }
 
-    /* The handover: the header appears only now, so the face springing up is
-       read as the name turning into it rather than as a second thing that
-       was already there. Then the ring pings off it, and the lockup slides
-       out from behind. */
+    function navTarget() {
+      if (!nav) return null;
+      var kids = nav.children;
+      return kids[Math.floor(kids.length / 2)] || kids[0] || null;
+    }
+
+    function socialTarget() {
+      if (!social) return null;
+      var kids = social.children;
+      return kids[1] || kids[0] || null;
+    }
+
+    /* The handover on the left: the header appears only now, so the face
+       springing up reads as the name turning into it rather than as a second
+       thing that was already there. */
     function arrive() {
-      doc.classList.remove('head-wait');          /* face springs from 0.28 */
+      doc.classList.remove('head-wait');
       if (!mark) return;
-      mark.classList.add('is-arriving');          /* ring pings */
+      mark.classList.add('is-arriving');
       setTimeout(function () { mark.classList.add('is-open'); }, 420);
     }
 
+    /* The middle: the button the line hit lights first, then the other two
+       open out of it, left and right. */
+    function openNav() {
+      if (!nav) return;
+      nav.classList.add('is-lit');
+      setTimeout(function () { nav.classList.add('is-open'); }, 260);
+    }
+
+    /* The right: the icon it hit shimmers, then the other two run in. */
+    function openSocial() {
+      if (!social) return;
+      social.classList.add('is-lit');
+      setTimeout(function () { social.classList.add('is-open'); }, 300);
+    }
+
+    var landed = false;
     function land() {
-      center.classList.add('name-gone');   /* the name is spent */
+      if (landed) return;
+      landed = true;
+      center.classList.add('name-gone');
       line.classList.remove('is-held');
       line.classList.add('is-lit');
-      setTimeout(type, 380);
+      setTimeout(cycle, 420);
     }
 
-    var TYPE = 55, ERASE = 32, HOLD = 1500, GAP = 420;
+    /* ---- the liquid word ------------------------------------------------
+
+       No typing. Each word melts into the next: the one leaving blurs out,
+       swells and lifts away while the one arriving resolves from a blur
+       underneath it, and the box eases between the two widths so the line
+       never snaps. Overlapping the two through a blur is what gives it the
+       fluid read rather than a cut or a slide. */
+
+    var HOLD = 2100, MELT = 780;
     var wi = 0;
 
-    function type() {
-      var word = list[wi], n = 0;
-      (function tick() {
-        out.textContent = word.slice(0, ++n);
-        if (n < word.length) setTimeout(tick, TYPE + Math.random() * 45);
-        else setTimeout(erase, HOLD);
-      })();
+    function measureWidth(el) {
+      return Math.ceil(el.getBoundingClientRect().width);
     }
 
-    function erase() {
-      var word = out.textContent, n = word.length;
-      (function tick() {
-        out.textContent = word.slice(0, --n);
-        if (n > 0) setTimeout(tick, ERASE);
-        else { wi = (wi + 1) % list.length; setTimeout(type, GAP); }
-      })();
+    function cycle() {
+      skills.style.width = measureWidth(out) + 'px';
+      setTimeout(step, HOLD);
+    }
+
+    function step() {
+      wi = (wi + 1) % list.length;
+
+      var next = document.createElement('span');
+      next.className = 'type-out';
+      next.textContent = list[wi];
+      next.style.opacity = '0';
+      next.style.filter = 'blur(18px)';
+      next.style.transform = 'scale(.86) translateY(14px)';
+
+      var prev = out;
+      prev.classList.add('is-out');
+      skills.appendChild(next);
+      out = next;
+
+      /* the box follows the incoming word */
+      skills.style.width = measureWidth(next) + 'px';
+
+      if (!hasGsap) {
+        prev.remove();
+        next.style.cssText = '';
+        setTimeout(step, HOLD);
+        return;
+      }
+
+      gsap.to(prev, {
+        opacity: 0,
+        filter: 'blur(20px)',
+        scale: 1.14,
+        y: -18,
+        duration: MELT / 1000,
+        ease: 'power2.in',
+        onComplete: function () { prev.remove(); }
+      });
+      gsap.to(next, {
+        opacity: 1,
+        filter: 'blur(0px)',
+        scale: 1,
+        y: 0,
+        duration: MELT / 1000,
+        ease: 'power3.out',
+        onComplete: function () { setTimeout(step, HOLD); }
+      });
     }
   })();
 
@@ -765,7 +856,27 @@
      YouTube. */
 
   (function () {
+    /* [data-rise] is the progression's own way of arriving, and the contact
+       panel borrows it so the end of the page lands the same way the eras
+       do: the block comes up and settles rather than simply appearing. It is
+       scrubbed, so it tracks the scroll rather than firing once. */
     if (!reduced && hasGsap) {
+      document.querySelectorAll('[data-rise]').forEach(function (el) {
+        gsap.fromTo(el,
+          { y: 74, scale: 0.965 },
+          {
+            y: 0, scale: 1,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: el,
+              start: 'top 92%',
+              end: 'top 42%',
+              scrub: 0.7,
+              invalidateOnRefresh: true
+            }
+          });
+      });
+
       document.querySelectorAll('[data-parallax]').forEach(function (el) {
         var d = parseFloat(el.getAttribute('data-parallax')) || 0;
         gsap.fromTo(el, { y: -d }, {

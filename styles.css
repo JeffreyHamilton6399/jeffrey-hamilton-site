@@ -232,9 +232,55 @@ body.head-dark .site-head { color: var(--on-dark); }
   align-items: center;
   gap: 1.5rem;
 }
-/* The third column is empty now that the address is gone; it stays in the
-   grid so the nav keeps its true centre. */
-.head-inner::after { content: ""; }
+
+.head-social {
+  pointer-events: auto;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: .375rem;
+}
+.soc {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  color: inherit;
+  opacity: .62;
+  transition: opacity .3s var(--ease), background-color .3s var(--ease), transform .3s var(--ease);
+}
+.soc svg { width: 1rem; height: 1rem; fill: currentColor; display: block; }
+.soc:hover { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); transform: translateY(-1px); }
+
+/* The two outer icons run in from the right after the middle one is hit. */
+/* The open selectors carry .is-held too. :not() lends its argument's
+   weight, so .is-held .soc:not(:nth-child(2)) outweighs a plain
+   .is-open .soc and the icons would never come back. */
+.head-social.is-held .soc:not(:nth-child(2)) { opacity: 0; transform: translateX(26px); }
+.head-social.is-held .soc:nth-child(2) { opacity: 0; }
+.head-social.is-held.is-lit .soc:nth-child(2) { opacity: .62; }
+.head-social.is-held.is-open .soc { opacity: .62; transform: none; }
+.head-social.is-held.is-open .soc:nth-child(1) { transition-delay: .10s; }
+.head-social.is-held.is-open .soc:nth-child(3) { transition-delay: .02s; }
+.head-social.is-lit .soc:nth-child(2) { animation: socShimmer 1s var(--ease-out); }
+@keyframes socShimmer {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--glow) 90%, transparent),
+                     0 0 22px 8px color-mix(in srgb, var(--glow) 75%, transparent); }
+  100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; }
+}
+
+/* And the nav opens out of its middle button, left and right. */
+.nav.is-held a:not(:nth-child(2)) { opacity: 0; }
+.nav.is-held a:nth-child(1) { transform: translateX(28px); }
+.nav.is-held a:nth-child(3) { transform: translateX(-28px); }
+.nav.is-held a:nth-child(2) { opacity: 0; }
+.nav a { transition: opacity .45s var(--ease-out), transform .45s var(--ease-out), background-color .3s var(--ease), color .3s var(--ease); }
+.nav.is-held.is-lit a:nth-child(2) { opacity: 1; }
+.nav.is-held.is-open a { opacity: .6; transform: none; }
+.nav.is-held.is-open a:nth-child(2) { opacity: 1; }
+.nav.is-held.is-open a:nth-child(1),
+.nav.is-held.is-open a:nth-child(3) { transition-delay: .06s; }
 
 .mark {
   position: relative;
@@ -367,7 +413,7 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 /* .hero-inner is no longer just the cards — it holds the text too, so it
    stays in the flow even when the cylinder is not running. */
 .hero-inner { display: block; }
-.hero-shield, .hero-veil, .hero-cue, .boot-dot { display: none; }
+.hero-shield, .hero-veil, .hero-cue { display: none; }
 
 /* The dot the name packs itself into, and rides to the face on. Positioned
    per frame by app.js from the drawn path, so it always sits exactly on the
@@ -389,9 +435,6 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   opacity: 0;
   pointer-events: none;
 }
-.hero.is-spiral .boot-dot,
-html.booting .boot-dot { display: block; }
-
 /* The line the name draws on its way into the face. Built and removed by
    app.js; sits above the shield and under the dot, so the dot always rides
    on the leading end of its own trail. */
@@ -478,28 +521,42 @@ html.head-wait .site-head { opacity: 0; pointer-events: none; }
   margin: 0 auto;
 }
 .skills-type {
-  display: inline-flex;
-  align-items: baseline;
+  position: relative;
+  display: inline-block;
   font-family: var(--display);
   font-weight: 400;
   font-size: clamp(2rem, 8.5vw, 7rem);
-  line-height: 1;
+  line-height: 1.16;                /* headroom: Anton sits low in its box */
   letter-spacing: -.02em;
   text-transform: uppercase;
   color: var(--void);
   white-space: nowrap;
+  /* the box eases between word widths, which is half the liquid feel */
+  transition: width .75s cubic-bezier(.6, 0, .2, 1);
 }
-.type-out { display: inline-block; }
-.type-caret {
+
+/* The word itself, extruded so it reads as a solid object standing in the
+   middle of the cylinder rather than a label printed on it. */
+.type-out {
   display: inline-block;
-  width: .07em;
-  height: .82em;
-  margin-left: .06em;
-  background: var(--void);
-  transform: translateY(.02em);
-  animation: caret 1.05s steps(1) infinite;
+  will-change: transform, filter, opacity;
+  text-shadow:
+    1px 1px 0   var(--extrude),
+    2px 2px 0   var(--extrude),
+    3px 3px 0   var(--extrude),
+    4px 4px 0   var(--extrude),
+    5px 5px 0   var(--extrude),
+    6px 6px 0   var(--extrude),
+    7px 7px 0   var(--extrude),
+    8px 8px 0   var(--extrude),
+    9px 9px 0   var(--extrude),
+    10px 10px 0 var(--extrude),
+    14px 16px 22px color-mix(in srgb, var(--void) 30%, transparent);
 }
-@keyframes caret { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+/* The outgoing word is lifted out of flow so the incoming one sets the
+   width while the two melt through each other. */
+.type-out.is-out { position: absolute; left: 0; top: 0; }
+
 
 /* ---- the staged open --------------------------------------------------
    app.js arms the centre (everything hidden), then adds boot-in and
@@ -522,8 +579,7 @@ html.motion .hero-skills.is-held {
 }
 html.motion [data-intro].boot-in .hero-title { opacity: 1; transform: none; filter: none; }
 html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
-/* Hide the caret until the line has arrived, so it does not blink alone. */
-html.motion .hero-skills.is-held .type-caret { opacity: 0; animation: none; }
+
 
 /* Once the name has gone into the dot there is nothing left to show. */
 [data-intro].name-gone { display: none; }
@@ -859,6 +915,25 @@ html.motion .hero-skills.is-held .type-caret { opacity: 0; animation: none; }
 .era-text { color: var(--on-dark-soft); max-width: 46ch; }
 .era-text + .era-text { margin-top: .875rem; }
 
+/* What the third era actually is, right now. */
+.era-now {
+  display: grid;
+  gap: .625rem;
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 1.25rem 0 0;
+  border-top: 1px solid var(--rule-dark);
+}
+.era-now li { display: grid; gap: .0625rem; }
+.era-now strong { font-weight: 500; font-size: .9375rem; color: var(--on-dark); }
+.era-now span {
+  font-family: var(--mono);
+  font-size: .625rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--haze);
+}
+
 .era-media { display: grid; gap: clamp(.75rem, 2vw, 1.25rem); }
 .era-media-quad { grid-template-columns: 1fr 1fr; }
 .era-media-solo { grid-template-columns: 1fr; }
@@ -1037,8 +1112,8 @@ html.motion .hero-skills.is-held .type-caret { opacity: 0; animation: none; }
 @media (max-width: 680px) {
   :root { --slab-lift: 1.25rem; }
 
-  .head-inner { grid-template-columns: 1fr auto; }
-  .head-inner::after { display: none; }
+  .head-inner { grid-template-columns: auto 1fr; }
+  .head-social { display: none; }
   /* The location stays on a phone too — it is the thing that slides out of
      the face at the end of the boot, so dropping it loses the beat. */
   .nav { justify-self: end; }
@@ -1070,6 +1145,5 @@ html.motion .hero-skills.is-held .type-caret { opacity: 0; animation: none; }
   html.motion .line > span { opacity: 1; transform: none; }
   html.motion [data-intro] .hero-title,
   html.motion .hero-skills { opacity: 1 !important; transform: none !important; filter: none !important; }
-  .type-caret { animation: none; }
   .slab-inner { transform: none !important; opacity: 1 !important; }
 }
