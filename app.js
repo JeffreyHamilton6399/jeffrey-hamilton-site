@@ -348,11 +348,14 @@
       var x0 = t.left + t.width / 2 - box.left;
       var y0 = t.top + t.height / 2 - box.top;
 
-      /* Where the three points are headed, and what each one sets off. */
+      /* Where the three points are headed, what each one sets off, and which
+         way it wanders on the way. bias is how far the route bows out before
+         it turns for the target: the left one swings out to the left and
+         then climbs, the right one mirrors it, the middle one barely bends. */
       var legs = [
-        { el: face,                           after: arrive,     spin: -1, hold: 0    },
-        { el: navTarget(),                    after: openNav,    spin:  1, hold: 140  },
-        { el: socialTarget(),                 after: openSocial, spin:  1, hold: 260  }
+        { el: face,        after: arrive,     spin: -1, bias: -0.55, hold: 0   },
+        { el: navTarget(), after: openNav,    spin:  1, bias:  0.10, hold: 150 },
+        { el: socialTarget(), after: openSocial, spin: 1, bias: 0.55, hold: 300 }
       ].filter(function (leg) { return leg.el; });
 
       if (!legs.length) { arrive(); openNav(); openSocial(); land(); return; }
@@ -377,43 +380,52 @@
         var y1 = m.top + m.height / 2 - box.top;
 
         var len = Math.hypot(x1 - x0, y1 - y0) || 1;
-        var rr  = Math.max(22, Math.min(len * 0.10, 54));
 
-        /* out and down, one full loop, then the long sweep to the target */
-        var ideal = 'M ' + x0 + ' ' + y0 +
-          ' q ' + (rr * 0.95 * leg.spin) + ' ' + (rr * 0.75) + ' ' +
-                  (rr * 1.25 * leg.spin) + ' ' + (rr * 1.15) +
-          ' a ' + rr + ',' + rr + ' 0 1,' + (leg.spin > 0 ? 1 : 0) + ' ' + (0.7 * leg.spin) + ',0.25';
-        var lx = x0 + rr * 1.25 * leg.spin + 0.7 * leg.spin;
-        var ly = y0 + rr * 1.15 + 0.25;
-        ideal += ' C ' + (lx + len * 0.30 * leg.spin) + ' ' + (ly - len * 0.20) +
-                 ', ' + (x1 + len * 0.30 * leg.spin) + ' ' + (y1 + len * 0.18) +
-                 ', ' + x1 + ' ' + y1;
+        /* The route is one curve with a spiral wound onto it. The curve is a
+           quadratic from the start to the target whose control point is
+           thrown out sideways by bias, so the left leg wanders left before
+           it climbs and the right leg mirrors that. The spiral is a rotation
+           around whatever point the curve is at, with a radius that decays
+           to nothing — so it corkscrews as it sets off and has unwound by
+           the time it arrives, instead of drawing one tidy loop and then
+           going quiet.
 
-        var probe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        var path  = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        probe.setAttribute('d', ideal);
-        probe.style.display = 'none';
-        svg.appendChild(probe);
+           This is what stops it reading as machine-made: a single arc is
+           obviously computed, but something that spirals down to a point
+           looks like a hand that kept moving. */
+        var cx2 = (x0 + x1) / 2 + (y1 - y0) * leg.bias;
+        var cy2 = (y0 + y1) / 2 - (x1 - x0) * leg.bias + len * 0.16;
+
+        var TURNSP = 2.4;
+        var R0 = Math.max(26, Math.min(len * 0.20, 96));
+        var ph0 = Math.random() * 6.28;
+        var ph1 = Math.random() * 6.28, ph2 = Math.random() * 6.28;
+        var amp = Math.min(len * 0.014, 8);
+
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         svg.appendChild(path);
 
-        var PL = probe.getTotalLength();
-        var ph1 = Math.random() * 6.28, ph2 = Math.random() * 6.28;
-        var amp = Math.min(PL * 0.012, 9);
-        var d = '', STEPS = 140;
+        var d = '', STEPS = 220;
         for (var k = 0; k <= STEPS; k++) {
-          var tt = k / STEPS;
-          var pt = probe.getPointAtLength(PL * tt);
-          var nb = probe.getPointAtLength(Math.min(PL, PL * tt + 1));
-          var tx = nb.x - pt.x, ty = nb.y - pt.y;
-          var tl = Math.hypot(tx, ty) || 1;
+          var tt = k / STEPS, qq = 1 - tt;
+
+          /* the carrying curve */
+          var bx = qq * qq * x0 + 2 * qq * tt * cx2 + tt * tt * x1;
+          var by = qq * qq * y0 + 2 * qq * tt * cy2 + tt * tt * y1;
+
+          /* the spiral wound onto it, tightening to zero at the target */
+          var a = ph0 + tt * TURNSP * Math.PI * 2 * leg.spin;
+          var rad = R0 * Math.pow(1 - tt, 1.5);
+          bx += Math.cos(a) * rad;
+          by += Math.sin(a) * rad * 0.72;
+
+          /* and the hand on top of that */
           var env = Math.sin(Math.PI * tt);
           var off = (Math.sin(tt * 11.3 + ph1) * 0.6 + Math.sin(tt * 5.1 + ph2) * 0.4) * amp * env;
-          d += (k ? ' L ' : 'M ') +
-               (pt.x + (-ty / tl) * off).toFixed(2) + ' ' +
-               (pt.y + ( tx / tl) * off).toFixed(2);
+          bx += off; by += off * 0.4;
+
+          d += (k ? ' L ' : 'M ') + bx.toFixed(2) + ' ' + by.toFixed(2);
         }
-        probe.remove();
         path.setAttribute('d', d);
 
         var L = path.getTotalLength();
@@ -946,6 +958,154 @@
         iframe.loading = 'eager';
         frame.replaceChildren(iframe);
       });
+    });
+  })();
+
+  /* ==========================================================================
+     The overture: a spiral wound from the outside in
+
+     The oldest work sits out at the rim and the newest at the centre, so
+     scrolling the section is travelling inward along the years. A marker
+     rides the line, each station lights as it is passed, and reaching the
+     middle is reaching now — which is where it bursts into everything that
+     is going on today.
+
+     The spiral is an Archimedean one drawn in a 1000-unit square viewBox.
+     The box is kept square on purpose: one unit is then the same length on
+     both axes, so a point taken off the path with getPointAtLength can be
+     mapped straight into element coordinates with a single scale factor,
+     and the stations land exactly on the line they are supposed to sit on.
+
+     It only runs where there is room and a ticker to drive it. Everywhere
+     else the same three eras are written out underneath as ordinary
+     sections, which is the whole content — nothing here is load-bearing.
+     ========================================================================== */
+
+  (function () {
+    var orbit = document.querySelector('.path-orbit');
+    var section = document.querySelector('#path');
+    if (!orbit || !section || reduced || !hasGsap) return;
+    if (window.innerWidth < 900) return;
+
+    var svg   = orbit.querySelector('.path-svg');
+    var line  = orbit.querySelector('.path-line');
+    var mark  = orbit.querySelector('.path-mark');
+    var stops = [].slice.call(orbit.querySelectorAll('.path-stops li'));
+    var burst = [].slice.call(orbit.querySelectorAll('.path-burst li'));
+    if (!svg || !line) return;
+
+    orbit.classList.add('is-live');
+
+    /* ---- draw the spiral ------------------------------------------------
+       r falls from the rim to nearly nothing over TURNS, and the path is
+       emitted outside-in so drawing it with a dashoffset walks inward. */
+    var TURNS = 3.1, R_OUT = 460, R_IN = 26, STEPS = 720;
+    var d = '';
+    for (var i = 0; i <= STEPS; i++) {
+      var t = i / STEPS;
+      var a = t * TURNS * Math.PI * 2 - Math.PI / 2;
+      var r = R_OUT + (R_IN - R_OUT) * t;
+      d += (i ? ' L ' : 'M ') +
+           (500 + Math.cos(a) * r).toFixed(2) + ' ' +
+           (500 + Math.sin(a) * r).toFixed(2);
+    }
+    line.setAttribute('d', d);
+
+    var L = line.getTotalLength();
+    line.style.strokeDasharray = L;
+    line.style.strokeDashoffset = L;
+
+    /* Where the three stations sit along the spiral, oldest first. */
+    var AT = [0.10, 0.44, 0.76];
+
+    /* One viewBox unit in element pixels, and the offset of the square
+       inside the orbit box. */
+    var unit = 1, ox = 0, oy = 0;
+
+    function measure() {
+      var sb = svg.getBoundingClientRect();
+      var ob = orbit.getBoundingClientRect();
+      if (!sb.width) return;
+      unit = sb.width / 1000;
+      ox = sb.left - ob.left;
+      oy = sb.top - ob.top;
+      place();
+    }
+
+    function pointAt(p) {
+      var q = line.getPointAtLength(L * Math.max(0, Math.min(1, p)));
+      return { x: ox + q.x * unit, y: oy + q.y * unit };
+    }
+
+    function place() {
+      stops.forEach(function (el, i) {
+        var q = pointAt(AT[i]);
+        el.style.left = q.x + 'px';
+        el.style.top  = q.y + 'px';
+      });
+      /* the burst fans out on a ring from the centre */
+      burst.forEach(function (el, i) {
+        var a = (i / burst.length) * Math.PI * 2 - Math.PI / 2;
+        var rad = Math.min(svg.getBoundingClientRect().width * 0.40, 330);
+        el.dataset.bx = (Math.cos(a) * rad).toFixed(1);
+        el.dataset.by = (Math.sin(a) * rad * 0.78).toFixed(1);
+      });
+    }
+
+    measure();
+
+    var lastBurst = false;
+
+    ScrollTrigger.create({
+      trigger: orbit,
+      start: 'top top',
+      end: '+=220%',
+      pin: true,
+      pinSpacing: true,
+      scrub: 0.6,
+      invalidateOnRefresh: true,
+      onRefresh: measure,
+      onUpdate: function (self) {
+        var p = self.progress;
+
+        /* the line draws inward */
+        line.style.strokeDashoffset = L * (1 - p);
+
+        /* the marker rides its leading end */
+        var q = pointAt(p);
+        mark.style.transform = 'translate(' + q.x + 'px,' + q.y + 'px)';
+        mark.style.opacity = p > 0.01 && p < 0.995 ? '1' : '0';
+
+        /* and at the middle it goes off */
+        var b = Math.min(1, Math.max(0, (p - 0.86) / 0.14));
+
+        /* each station lights as the marker reaches it, dims behind it, and
+           clears out entirely for the burst so the two never sit on top of
+           each other */
+        stops.forEach(function (el, i) {
+          var at = AT[i];
+          var on = Math.min(1, Math.max(0, (p - (at - 0.10)) / 0.10));
+          var off = Math.min(1, Math.max(0, (p - (at + 0.16)) / 0.14));
+          el.style.opacity = (on * (1 - off * 0.72) * (1 - b)).toFixed(3);
+          el.style.transform = 'translate(-50%,-50%) scale(' + (0.86 + on * 0.14) + ')';
+        });
+        if (b > 0 !== lastBurst) lastBurst = b > 0;
+        burst.forEach(function (el, i) {
+          var k = Math.min(1, Math.max(0, (b - (i / burst.length) * 0.18) / 0.82));
+          var e = 1 - Math.pow(1 - k, 3);
+          el.style.opacity = e.toFixed(3);
+          el.style.transform =
+            'translate(calc(-50% + ' + (el.dataset.bx * e) + 'px),' +
+                     'calc(-50% + ' + (el.dataset.by * e) + 'px)) ' +
+            'scale(' + (0.4 + e * 0.6) + ')';
+        });
+      }
+    });
+
+    var t;
+    window.addEventListener('resize', function () {
+      clearTimeout(t);
+      t = setTimeout(measure, 180);
     });
   })();
 

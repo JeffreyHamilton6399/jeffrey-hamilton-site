@@ -911,6 +911,111 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 
 .eras { padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 7rem); }
 
+/* ---- the overture -------------------------------------------------------
+   A spiral wound from the outside in: the oldest work is out at the rim and
+   the scroll walks inward, so arriving at the middle is arriving at now —
+   at which point it bursts into everything that is going on today. Off by
+   default; app.js turns it on only where there is room and a ticker to
+   drive it. */
+.path-orbit { display: none; }
+.path-orbit.is-live {
+  display: block;
+  height: 100vh;
+  height: 100svh;
+  position: relative;
+  overflow: hidden;
+}
+.path-orbit-in {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* Square, so one viewBox unit is the same length on both axes and anything
+   placed from the path lands where the path drew it. */
+.path-svg {
+  position: absolute;
+  width: min(86vh, 86vw);
+  aspect-ratio: 1;
+  overflow: visible;
+}
+.path-line {
+  stroke: var(--iris-lo);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: .5;
+}
+
+.path-mark {
+  position: absolute;
+  left: 0; top: 0;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--glow);
+  box-shadow: 0 0 16px 5px color-mix(in srgb, var(--glow) 65%, transparent);
+  opacity: 0;
+}
+
+/* The three stations, dropped onto the spiral by app.js. */
+.path-stops { position: absolute; inset: 0; list-style: none; margin: 0; padding: 0; }
+.path-stops li {
+  position: absolute;
+  left: 0; top: 0;
+  width: max-content;
+  max-width: 15rem;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  opacity: 0;
+}
+.ps-year {
+  display: block;
+  font-family: var(--mono);
+  font-size: .625rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--haze);
+  margin-bottom: .25rem;
+}
+.ps-title {
+  display: block;
+  font-family: var(--display);
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--on-dark);
+}
+
+/* What it explodes into. */
+.path-burst {
+  position: absolute;
+  left: 50%; top: 50%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 0;
+  height: 0;
+}
+.path-burst li {
+  position: absolute;
+  left: 0; top: 0;
+  width: max-content;
+  transform: translate(-50%, -50%) scale(.4);
+  padding: .4375rem .875rem;
+  border: 1px solid color-mix(in srgb, var(--glow) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--void) 82%, transparent);
+  font-family: var(--mono);
+  font-size: .625rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--on-dark);
+  white-space: nowrap;
+  opacity: 0;
+}
+
 .era { padding-block: clamp(3.5rem, 9vw, 7rem); }
 
 .era-grid {
