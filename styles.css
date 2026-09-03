@@ -1005,6 +1005,23 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 }
 .path-dial li.is-now { color: var(--glow); }
 
+/* The twelve o'clock marker holds both labels stacked on the same spot, and
+   cross-fades between them: the year the line starts on is the same place
+   the hand arrives back at, so it is the same marker, not two. */
+.path-dial li.is-origin { display: grid; }
+.path-dial li.is-origin .dy {
+  grid-area: 1 / 1;
+  transition: opacity .5s var(--ease-out);
+}
+.path-dial li.is-origin .now { opacity: 0; color: var(--glow); }
+.path-dial li.is-origin.is-arrived .then { opacity: 0; }
+.path-dial li.is-origin.is-arrived .now  { opacity: 1; }
+
+/* Once the hand is back at twelve the other years have said what they had
+   to say, and the middle of the face belongs to what is going on now. */
+.path-dial.is-arrived li:not(.is-origin) { opacity: .22; }
+.path-dial li { transition: opacity .5s var(--ease-out); }
+
 /* the line down from the Timeline button */
 .path-feed {
   position: absolute;
@@ -1032,6 +1049,109 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   background: var(--glow);
   box-shadow: 0 0 16px 5px color-mix(in srgb, var(--glow) 65%, transparent);
   opacity: 0;
+}
+
+/* ---- Now ---------------------------------------------------------------
+   Both of these read as ordinary blocks at the foot of the section until
+   app.js lifts them onto the dial, at which point they are placed and faded
+   by the sweep like everything else. */
+.path-now {
+  max-width: var(--wrap);
+  margin: clamp(3rem, 7vw, 5rem) auto 0;
+  padding-inline: var(--gutter);
+}
+.pn-kicker {
+  font-family: var(--mono);
+  font-size: .625rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--glow);
+  margin: 0 0 .5rem;
+}
+.pn-title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--on-dark);
+  margin: 0 0 1rem;
+}
+.pn-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; }
+.pn-list li {
+  display: grid;
+  gap: .125rem;
+  padding-top: .75rem;
+  border-top: 1px solid var(--rule-dark);
+}
+.pn-list strong { font-size: .9375rem; font-weight: 600; color: var(--on-dark); }
+.pn-list span { font-size: .8125rem; color: var(--on-dark-soft); }
+
+.path-certs {
+  list-style: none;
+  margin: clamp(2rem, 5vw, 3rem) auto 0;
+  padding: 0 var(--gutter);
+  max-width: var(--wrap);
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.path-certs a {
+  display: inline-block;
+  padding: .4375rem .75rem;
+  border: 1px solid var(--rule-dark);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: .625rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--on-dark-soft);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color .35s var(--ease), color .35s var(--ease);
+}
+.path-certs a:hover, .path-certs a:focus-visible {
+  border-color: var(--haze);
+  color: var(--on-dark);
+}
+
+/* On the dial: the card takes one side and the certificates come down the
+   other on a vertical coil — a sine in x against a steady fall in y, which
+   is a helix seen edge on. Nine of them in a straight column would be a
+   list; wound, they read as the last turn of the same line. */
+.path-orbit.is-live .path-now {
+  position: absolute;
+  padding: 0;
+  top: 50%;
+  left: clamp(1rem, 4vw, 4rem);
+  width: min(24vw, 21rem);
+  margin: 0;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+}
+.path-orbit.is-live .path-certs {
+  position: absolute;
+  top: 0; left: 0;
+  display: block;
+  width: 0; height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+}
+.path-orbit.is-live .path-certs li {
+  position: absolute;
+  left: 0; top: 0;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+/* tighter on the dial than in the flow: the column has to share the width
+   with the Now card on one side and the burst in the middle */
+.path-orbit.is-live .path-certs a {
+  padding: .3125rem .5625rem;
+  font-size: .5rem;
+  letter-spacing: .06em;
 }
 
 /* The same idea as .hero-veil and for the same reason — opacity on an
@@ -1067,6 +1187,8 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .is-live-era .vid-cap { margin-top: .375rem; }
 .is-live-era .vid-title { font-size: .75rem; }
 .is-live-era .era-apps { display: none; }
+/* the first era has no footage — there was nothing to film */
+.era-plain .era-grid { display: block; }
 .is-live-era .era-now { margin-top: 1rem; padding-top: .875rem; }
 
 /* what it explodes into at the centre */

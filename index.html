@@ -418,10 +418,12 @@
          one the panel handoff transforms, and a transformed ancestor makes a
          pinned child fixed to the ancestor instead of the viewport.
 
-         Everything in here is decorative — the same three eras are written
-         out properly underneath, which is also what shows if this never
-         runs. -->
-    <div class="path-orbit" aria-hidden="true">
+         The drawing in here is decorative and marked so. The eras and the
+         certificates are not: they are written out properly underneath and
+         app.js lifts the real elements onto the dial, so what is on the
+         watch is the content itself rather than a copy of it. That is also
+         what shows if this never runs. -->
+    <div class="path-orbit">
       <div class="path-orbit-in">
         <svg class="path-feed" aria-hidden="true"><path/></svg>
         <svg class="path-svg" viewBox="0 0 1000 1400">
@@ -441,20 +443,23 @@
           <line class="path-hand" x1="500" y1="736" x2="500" y2="452"/>
           <circle class="path-hub" cx="500" cy="700" r="7"/>
         </svg>
-        <ol class="path-dial">
-          <li>2018</li><li>2020</li><li>2022</li><li>2024</li><li>Now</li>
+        <!-- Four markers on the quarters. The first one carries both labels:
+             the hand comes back round to it at the end of its revolution, and
+             the year it started on turns into the moment it arrives at. -->
+        <ol class="path-dial" aria-hidden="true">
+          <li class="is-origin"><span class="dy then">2018</span><span class="dy now">Now</span></li>
+          <li>2022</li><li>2024</li><li>2025</li>
         </ol>
-        <div class="path-intro">
+        <div class="path-intro" aria-hidden="true">
           <span class="pi-kicker">How I got here</span>
           <span class="pi-title">2018 &rarr; now</span>
           <span class="pi-note">Three turns, so far</span>
         </div>
         <span class="path-mark"></span>
-        <ul class="path-burst">
-          <li>Provo CAPS</li>
-          <li>DBI internship</li>
+        <ul class="path-burst" aria-hidden="true">
           <li>Web applications</li>
           <li>Desktop software</li>
+          <li>Developer tools</li>
           <li>On-device AI</li>
           <li>Seventeen shipped</li>
         </ul>
@@ -476,11 +481,29 @@
       </div>
 
       <div class="era-scenes">
-      <!-- 01 ─ games, edits, 3D -->
+      <!-- 01 ─ 2018, before any of it -->
+      <article class="era era-plain">
+        <div class="wrap era-grid">
+          <div class="era-copy" data-stagger="0.08" data-rise>
+            <p class="era-index" data-reveal>01 &middot; 2018</p>
+            <h3 class="era-title" data-reveal>The egg business</h3>
+            <p class="era-text" data-reveal>
+              The first thing I ever ran was selling eggs. That was the whole enterprise, and it
+              is on here because it is honestly where the line starts.
+            </p>
+            <p class="era-text" data-reveal>
+              I hadn't built anything yet. Most of that stretch went on hanging out with friends.
+              Nothing on this page existed, and it would be four years before any of it did.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- 02 ─ games, edits, 3D -->
       <article class="era">
         <div class="wrap era-grid">
           <div class="era-copy" data-stagger="0.08" data-rise>
-            <p class="era-index" data-reveal>01 &middot; where it started</p>
+            <p class="era-index" data-reveal>02 &middot; 2022 &middot; where it started</p>
             <h3 class="era-title" data-reveal>Making things move</h3>
             <p class="era-text" data-reveal>
               Before any of the apps it was games, edits and 3D. I taught myself Blender, cut
@@ -526,11 +549,11 @@
         </div>
       </article>
 
-      <!-- 02 ─ minecraft mods with AI -->
+      <!-- 03 ─ minecraft mods with AI -->
       <article class="era era-flip">
         <div class="wrap era-grid">
           <div class="era-copy" data-stagger="0.08" data-rise>
-            <p class="era-index" data-reveal>02 &middot; the switch</p>
+            <p class="era-index" data-reveal>03 &middot; 2024 &middot; the switch</p>
             <h3 class="era-title" data-reveal>Teaching the machine</h3>
             <p class="era-text" data-reveal>
               Then I started leaning on AI to build things faster than I could alone, and the first
@@ -554,11 +577,11 @@
         </div>
       </article>
 
-      <!-- 03 ─ vibe-coded apps -->
+      <!-- 04 ─ vibe-coded apps -->
       <article class="era">
         <div class="wrap era-grid">
           <div class="era-copy" data-stagger="0.08" data-rise>
-            <p class="era-index" data-reveal>03 &middot; now</p>
+            <p class="era-index" data-reveal>04 &middot; 2025 &middot; shipping</p>
             <h3 class="era-title" data-reveal>Vibe-coded and shipped</h3>
             <p class="era-text" data-reveal>
               Now it is real apps, built fast and for fun, and actually put in front of people.
@@ -610,6 +633,31 @@
         </div>
       </article>
       </div>
+
+      <!-- Now. app.js lifts both of these onto the dial when the watch is
+           running and the hand comes back round to the top; without it they
+           read as the last block of the section, which is what they are. -->
+      <div class="path-now">
+        <p class="pn-kicker">Now</p>
+        <h3 class="pn-title">Where the hand is</h3>
+        <ul class="pn-list" role="list">
+          <li><strong>Software Engineering</strong><span>Provo CAPS</span></li>
+          <li><strong>Intern</strong><span>Doing Business Intelligently</span></li>
+          <li><strong>Seventeen shipped</strong><span>Apps, tools and mods, all public</span></li>
+        </ul>
+      </div>
+
+      <ul class="path-certs" role="list" aria-label="Certificates earned at school">
+        <li><a href="assets/certificates/computer-programming-1.pdf" target="_blank" rel="noopener">Computer Programming 1</a></li>
+        <li><a href="assets/certificates/computer-programming-2-java.pdf" target="_blank" rel="noopener">Computer Programming 2 &middot; Java</a></li>
+        <li><a href="assets/certificates/game-development-fundamentals.pdf" target="_blank" rel="noopener">Game Development Fundamentals</a></li>
+        <li><a href="assets/certificates/digital-media-1.pdf" target="_blank" rel="noopener">Digital Media 1</a></li>
+        <li><a href="assets/certificates/digital-media-2.pdf" target="_blank" rel="noopener">Digital Media 2</a></li>
+        <li><a href="assets/certificates/robotics-1.pdf" target="_blank" rel="noopener">Robotics 1</a></li>
+        <li><a href="assets/certificates/unmanned-aerial-systems.pdf" target="_blank" rel="noopener">Unmanned Aerial Systems</a></li>
+        <li><a href="assets/certificates/cad-architectural-design-1.pdf" target="_blank" rel="noopener">Architectural Design 1</a></li>
+        <li><a href="assets/certificates/architectural-design-2.pdf" target="_blank" rel="noopener">Architectural Design 2</a></li>
+      </ul>
 
     </div>
   </section>

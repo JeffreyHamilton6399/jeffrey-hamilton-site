@@ -1046,13 +1046,21 @@
      there, leather and numbers and all, waiting to be read.
 
      Then it is pinned and the hand makes exactly one revolution, twelve back
-     round to twelve, with the arc it has covered drawn in behind it. That
-     revolution is the years: each era holds a side of the case while the
-     hand crosses its stretch of the dial, the current work opens out of the
-     middle as the hand reaches Now at the last marker, and when the hand
-     comes back to the top the pin lets go and the page carries on. Nothing
+     round to twelve, with the arc it has covered drawn in behind it. Nothing
      spirals into anything — the hand is where it says it is, which is the
      only reason a watch is worth using as the diagram.
+
+     The years sit on the quarters, and each era owns the quarter that starts
+     at its own marker: 2018 at twelve, 2022 at three, 2024 at six, 2025 at
+     nine. The panel takes whichever side of the case the hand is on, so the
+     eye follows the hand to the words rather than hunting for them.
+
+     Twelve o'clock is the year it started and the moment it arrives at, both
+     — so that marker carries two labels and cross-fades from 2018 to Now as
+     the hand closes the circle. That is when the last turn opens: the work
+     of today out of the middle of the face, what I am doing now on one side,
+     and the certificates coming down the other on a vertical coil. Then the
+     pin lets go and the page carries on.
 
      The viewBox is 1000 x 1400 and the element holds that ratio, so one unit
      is the same length on both axes and anything measured off the geometry
@@ -1083,6 +1091,10 @@
     var years = [].slice.call(orbit.querySelectorAll('.path-dial li'));
     var burst = [].slice.call(orbit.querySelectorAll('.path-burst li'));
     var eras  = [].slice.call(document.querySelectorAll('.era-scenes .era'));
+    var origin = orbit.querySelector('.path-dial .is-origin');
+    var now   = document.querySelector('.path-now');
+    var certs = document.querySelector('.path-certs');
+    var certItems = certs ? [].slice.call(certs.children) : [];
     var parts = [].slice.call(orbit.querySelectorAll('.watch-strap, .watch-crown, .watch-case'));
     var stitching = orbit.querySelector('.watch-stitching');
     if (!svg || !sweep || !eras.length) return;
@@ -1136,20 +1148,33 @@
     if (hub) hub.style.opacity = '0';
     if (intro) intro.style.opacity = '0';
 
-    /* ---- the eras take the sides ---------------------------------------- */
+    /* ---- the eras take the sides ----------------------------------------
+       The side is the half of the dial the hand is in over that era's
+       quarter: twelve to six is the right of the case, six back to twelve is
+       the left. So the panel is always on the side the hand is pointing to. */
     eras.forEach(function (era, i) {
       era.classList.add('is-live-era');
-      era.classList.add(i % 2 === 0 ? 'side-left' : 'side-right');
+      era.classList.add(i < eras.length / 2 ? 'side-right' : 'side-left');
       inner.appendChild(era);
     });
+    var scenes = document.querySelector('.era-scenes');
+    if (now) inner.appendChild(now);
+    if (certs && scenes) inner.appendChild(certs);
+    else certs = null;
 
-    /* Where things sit in the one revolution. The years are five markers
-       evenly round the dial, so Now falls at four fifths — which leaves the
-       last fifth for the hand to climb back to twelve while the current work
-       stays up. */
-    var NOW = 0.8;
-    var OPEN = 0.08;                        /* the note in the middle clears */
-    var span = (NOW - OPEN) / eras.length;
+    /* The drawing is decorative and says so element by element. The eras,
+       the Now card and the certificates are the real content and have just
+       been moved in here, so the container itself must not be hidden. */
+    orbit.removeAttribute('aria-hidden');
+
+    /* Where things sit in the one revolution. Each era opens as the hand
+       reaches its own marker on the quarter and holds most of the way to the
+       next; the last one is cut short so the arrival back at twelve has room
+       to itself. */
+    var NOW = 0.88;                     /* the hand closes on twelve         */
+    var OPEN = 0.06;                    /* the note in the middle clears     */
+    var HOLD = 0.20;                    /* how long a panel stays up         */
+    var quarter = 1 / Math.max(eras.length, 1);
 
     var unit = 1, ox = 0, oy = 0;
 
@@ -1173,14 +1198,90 @@
         intro.style.top  = (oy + CY * unit) + 'px';
       }
 
-      burst.forEach(function (el, i) {
-        var a = (i / burst.length) * Math.PI * 2 - Math.PI / 2;
-        var rad = Math.min(R_CASE * unit * 0.66, 210);
-        el.dataset.bx = (Math.cos(a) * rad).toFixed(1);
-        el.dataset.by = (Math.sin(a) * rad).toFixed(1);
-      });
+      layoutNow();
 
       drawFeed();
+    }
+
+    /* What Now looks like once the hand is home: the card on one side, the
+       certificates coiling down the other, the current work thrown out
+       around the case in the middle.
+
+       All three are laid out from one budget, because at the narrower end
+       of the range there is not enough width for three columns and a ring —
+       and guessing that there is puts chips through the card on one side
+       and through the certificates on the other. So the card and the column
+       are placed first, their real edges are measured, and the ring is only
+       ever as wide as the gap they leave. If the gap is not worth having,
+       the certificates stay in the flow below and the ring gets the room. */
+    /* Where the chips land, as fractions of the ellipse.
+
+       Spacing them evenly round it does not work, and cannot: any number of
+       points evenly spaced on a circle is symmetric about the vertical, so
+       they come in pairs at exactly the same height — and two chips at the
+       same height, each wider than the case is deep, run through each other
+       in the middle. These are placed by hand instead, no two at the same
+       height, which reads as thrown out rather than arranged anyway. */
+    var SCATTER = [
+      [-0.92, -0.52], [ 0.78, -1.00], [-1.00,  0.14],
+      [ 0.95,  0.52], [-0.40,  1.00], [ 0.60,  0.56]
+    ];
+
+    function widest(list) {
+      var w = 0;
+      for (var i = 0; i < list.length; i++) w = Math.max(w, list[i].offsetWidth);
+      return w;
+    }
+
+    function layoutNow() {
+      var ob = orbit.getBoundingClientRect();
+      var mid = ox + CX * unit;
+      var halfChip = widest(burst) / 2;
+
+      var leftEdge = now ? now.offsetLeft + now.offsetWidth + 20 : 0;
+      var rightEdge = ob.width;
+
+      if (certItems.length) {
+        var chip = widest(certItems);
+        var amp = Math.min(ob.width * 0.06, 70);
+        var half = chip / 2 + amp;
+        var cx = ob.width - half - Math.min(ob.width * 0.03, 40);
+
+        /* only worth a column of its own if it leaves the ring somewhere
+           to be; otherwise leave the certificates where they were written */
+        if (cx - half - 20 - mid > R_CASE * unit * 0.75) {
+          if (certs.parentElement !== inner) inner.appendChild(certs);
+          certs.classList.remove('is-flowed');
+          var fall = Math.min(ob.height * 0.82, 640);
+          certItems.forEach(function (el, i) {
+            var q = certItems.length > 1 ? i / (certItems.length - 1) : 0.5;
+            el.style.left = (cx + Math.sin(q * Math.PI * 2.4) * amp) + 'px';
+            el.style.top  = (ob.height / 2 - fall / 2 + q * fall) + 'px';
+          });
+          rightEdge = cx - half - 20;
+        } else {
+          certs.classList.add('is-flowed');
+          if (certs.parentElement === inner) scenes.parentElement.appendChild(certs);
+          certs.style.opacity = '';
+          certs.style.pointerEvents = '';
+          certItems.forEach(function (el) {
+            el.style.left = ''; el.style.top = ''; el.style.transform = ''; el.style.opacity = '';
+          });
+        }
+      }
+
+      var rx = Math.min(R_CASE * unit * 1.5,
+                        mid - leftEdge - halfChip,
+                        rightEdge - mid - halfChip,
+                        380);
+      rx = Math.max(rx, R_CASE * unit * 0.45);
+      var ry = Math.min(R_CASE * unit * 1.28, 275);
+
+      burst.forEach(function (el, i) {
+        var q = SCATTER[i % SCATTER.length];
+        el.dataset.bx = (q[0] * rx).toFixed(1);
+        el.dataset.by = (q[1] * ry).toFixed(1);
+      });
     }
 
     /* The line down out of the Timeline button, into the top of the strap. */
@@ -1261,7 +1362,7 @@
     ScrollTrigger.create({
       trigger: orbit,
       start: 'top top',
-      end: '+=420%',
+      end: '+=520%',
       pin: true,
       pinSpacing: true,
       scrub: 0.6,
@@ -1293,25 +1394,33 @@
           el.classList.toggle('is-now', p >= i / years.length - 0.01);
         });
 
-        /* each era holds a side while the hand crosses its stretch */
-        var b = ramp(p, NOW, NOW + 0.10);
+        /* each era opens on its own marker and holds the side the hand is
+           on, and all of them are out of the way by the time Now arrives */
+        var b = ramp(p, NOW, 1);
         eras.forEach(function (era, i) {
-          var a0 = OPEN + i * span;
-          var local = (p - a0) / span;
+          var a0 = i === 0 ? OPEN : i * quarter;
+          /* the last one is clipped so it is gone before Now opens */
+          var hold = i === eras.length - 1 ? Math.max(NOW - a0, 0.08) : HOLD;
+          var local = (p - a0) / hold;
           var vis;
           if (local < 0 || local > 1) vis = 0;
           else if (local < 0.16) vis = local / 0.16;
           else if (local > 0.84) vis = (1 - local) / 0.16;
           else vis = 1;
           vis = clamp01(vis) * (1 - b);
-          var dir = i % 2 === 0 ? -1 : 1;
+          var dir = era.classList.contains('side-left') ? -1 : 1;
           era.style.opacity = vis.toFixed(3);
           era.style.transform =
             'translateY(-50%) translateX(' + (dir * (1 - vis) * 70).toFixed(1) + 'px)';
         });
 
-        /* and at Now the current work opens out of the middle, and stays up
-           while the hand climbs the last fifth back to twelve */
+        /* twelve is both ends of the line, so the marker changes what it
+           says as the hand closes on it */
+        if (origin) origin.classList.toggle('is-arrived', p > NOW - 0.04);
+        if (dial) dial.classList.toggle('is-arrived', p > NOW - 0.02);
+
+        /* and the last turn opens: today out of the middle of the face, what
+           I am doing now on one side, the certificates down the other */
         burst.forEach(function (el, i) {
           var k = clamp01((b - (i / burst.length) * 0.18) / 0.82);
           var e = 1 - Math.pow(1 - k, 3);
@@ -1321,6 +1430,24 @@
                      'calc(-50% + ' + (el.dataset.by * e) + 'px)) ' +
             'scale(' + (0.4 + e * 0.6) + ')';
         });
+
+        if (now) {
+          var nv = ramp(p, NOW + 0.02, NOW + 0.10);
+          now.style.opacity = nv.toFixed(3);
+          now.style.transform = 'translateY(-50%) translateX(' + (-(1 - nv) * 60).toFixed(1) + 'px)';
+          now.style.pointerEvents = nv > 0.9 ? 'auto' : 'none';
+        }
+
+        if (certs && !certs.classList.contains('is-flowed')) {
+          certs.style.opacity = String(ramp(p, NOW + 0.04, NOW + 0.12));
+          certs.style.pointerEvents = p > NOW + 0.12 ? 'auto' : 'none';
+          certItems.forEach(function (el, i) {
+            var k = clamp01((ramp(p, NOW + 0.04, 1) - (i / certItems.length) * 0.5) / 0.5);
+            var e = 1 - Math.pow(1 - k, 3);
+            el.style.opacity = e.toFixed(3);
+            el.style.transform = 'translate(-50%,-50%) translateX(' + ((1 - e) * 44).toFixed(1) + 'px)';
+          });
+        }
       }
     });
 
