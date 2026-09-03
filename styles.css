@@ -940,21 +940,25 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   stroke: var(--haze);
   stroke-width: 3;
 }
-.path-line {
+/* how far round the hand has come, drawn on the dial behind it */
+.path-sweep {
   stroke: var(--iris-lo);
-  stroke-width: 2;
+  stroke-width: 3;
   stroke-linecap: round;
-  opacity: .55;
+  opacity: .6;
 }
 .path-tick  { stroke: var(--on-dark-faint); stroke-width: 1.5; }
 .path-tick.is-major { stroke: var(--haze); stroke-width: 2.5; }
 .path-hand {
   stroke: var(--glow);
-  stroke-width: 2;
+  stroke-width: 4;
   stroke-linecap: round;
-  opacity: .85;
+  opacity: .9;
 }
 .path-hub { fill: var(--glow); }
+
+/* the numbers are part of the watch, so they arrive with it */
+.path-dial, .path-ticks { opacity: 0; }
 
 /* What the face says before the hand starts moving. */
 .path-intro {
@@ -986,6 +990,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 
 /* the years around the bezel */
 .path-dial { position: absolute; inset: 0; list-style: none; margin: 0; padding: 0; }
+.path-dial li.is-now { font-weight: 700; }
 .path-dial li {
   position: absolute;
   left: 0; top: 0;
@@ -1027,6 +1032,19 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   background: var(--glow);
   box-shadow: 0 0 16px 5px color-mix(in srgb, var(--glow) 65%, transparent);
   opacity: 0;
+}
+
+/* The same idea as .hero-veil and for the same reason — opacity on an
+   ancestor would flatten what is underneath — but a violet wash rather than
+   a paper one, so arriving at contact does not read as the same handoff the
+   timeline already made over the hero. */
+.path-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  background: color-mix(in srgb, var(--iris) 52%, var(--void));
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ---- the eras, riding the sides of the dial --------------------------- */

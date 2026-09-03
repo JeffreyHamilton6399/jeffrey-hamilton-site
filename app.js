@@ -1036,26 +1036,28 @@
   /* ==========================================================================
      The watch
 
-     The progression is a wristwatch. A line comes down out of the Timeline
-     button — the control this section belongs to — and the watch draws
-     itself from it: strap, stitching, crown, then the case closing and the
-     dial filling in. Nothing is there before you scroll to it.
+     The progression is a wristwatch, and it behaves like one.
 
-     Once the face is up it says what you are looking at, and that note
-     clears as the hand starts to move. Then a spiral wound inside the dial
-     is drawn from the rim inward, so travelling it is travelling the years:
-     the oldest work is out at the edge, now is at the centre.
+     It is built on the way in, not on the way through: a line comes down out
+     of the Timeline button — the control this section belongs to — and the
+     watch draws itself from it as the section rises, strap and stitching and
+     crown, then the case closing, the dial filling in and the numbers coming
+     up. By the time the section takes the screen the whole watch is sitting
+     there, leather and numbers and all, waiting to be read.
 
-     The eras ride the sides of the case rather than stacking below it. Each
-     one slides in, holds while the hand crosses its stretch of the spiral,
-     and clears for the next — so the whole progression is one scene instead
-     of a column of sections.
+     Then it is pinned and the hand makes exactly one revolution, twelve back
+     round to twelve, with the arc it has covered drawn in behind it. That
+     revolution is the years: each era holds a side of the case while the
+     hand crosses its stretch of the dial, the current work opens out of the
+     middle as the hand reaches Now at the last marker, and when the hand
+     comes back to the top the pin lets go and the page carries on. Nothing
+     spirals into anything — the hand is where it says it is, which is the
+     only reason a watch is worth using as the diagram.
 
      The viewBox is 1000 x 1400 and the element holds that ratio, so one unit
-     is still the same length on both axes. A point taken off the path with
-     getPointAtLength therefore maps into element coordinates with a single
-     scale factor, and the marker, the hand and the year labels land exactly
-     on the geometry rather than near it.
+     is the same length on both axes and anything measured off the geometry
+     maps into element coordinates with a single scale factor. The year
+     labels and the burst land exactly on the dial rather than near it.
 
      It only runs where there is room and a ticker to drive it. Everywhere
      else the eras stay in the flow as ordinary sections, which is the whole
@@ -1069,7 +1071,7 @@
 
     var inner = orbit.querySelector('.path-orbit-in');
     var svg   = orbit.querySelector('.path-svg');
-    var line  = orbit.querySelector('.path-line');
+    var sweep = orbit.querySelector('.path-sweep');
     var ticks = orbit.querySelector('.path-ticks');
     var hand  = orbit.querySelector('.path-hand');
     var hub   = orbit.querySelector('.path-hub');
@@ -1077,17 +1079,18 @@
     var feed  = orbit.querySelector('.path-feed');
     var feedPath = feed && feed.querySelector('path');
     var intro = orbit.querySelector('.path-intro');
+    var dial  = orbit.querySelector('.path-dial');
     var years = [].slice.call(orbit.querySelectorAll('.path-dial li'));
     var burst = [].slice.call(orbit.querySelectorAll('.path-burst li'));
     var eras  = [].slice.call(document.querySelectorAll('.era-scenes .era'));
     var parts = [].slice.call(orbit.querySelectorAll('.watch-strap, .watch-crown, .watch-case'));
     var stitching = orbit.querySelector('.watch-stitching');
-    if (!svg || !line || !eras.length) return;
+    if (!svg || !sweep || !eras.length) return;
 
     orbit.classList.add('is-live');
 
     /* The case, in viewBox units. Everything else is measured off these. */
-    var CX = 500, CY = 700, R_CASE = 292;
+    var CX = 500, CY = 700, R_CASE = 292, R_TRACK = 222;
 
     /* ---- the dial ------------------------------------------------------- */
     var TICKS = 60;
@@ -1101,45 +1104,37 @@
         'x2="' + (CX + Math.cos(a) * R_CASE).toFixed(1) + '" y2="' + (CY + Math.sin(a) * R_CASE).toFixed(1) + '"/>';
     }
     ticks.innerHTML = tickMarkup;
-    ticks.style.opacity = '0';
 
-    /* ---- the spiral, rim to centre -------------------------------------- */
-    var TURNS = 3.1, R_OUT = R_CASE - 55, R_IN = 20, STEPS = 720;
-    var d = '';
+    /* ---- the arc the hand covers ---------------------------------------- */
+    var STEPS = 360, d = '';
     for (var i = 0; i <= STEPS; i++) {
-      var q = i / STEPS;
-      var ang = q * TURNS * Math.PI * 2 - Math.PI / 2;
-      var r = R_OUT + (R_IN - R_OUT) * q;
+      var ang = (i / STEPS) * Math.PI * 2 - Math.PI / 2;
       d += (i ? ' L ' : 'M ') +
-           (CX + Math.cos(ang) * r).toFixed(2) + ' ' +
-           (CY + Math.sin(ang) * r).toFixed(2);
+           (CX + Math.cos(ang) * R_TRACK).toFixed(2) + ' ' +
+           (CY + Math.sin(ang) * R_TRACK).toFixed(2);
     }
-    line.setAttribute('d', d);
+    sweep.setAttribute('d', d);
+    var L = sweep.getTotalLength();
+    sweep.style.strokeDasharray = L;
+    sweep.style.strokeDashoffset = L;
 
-    var L = line.getTotalLength();
-    line.style.strokeDasharray = L;
-    line.style.strokeDashoffset = L;
-
-    /* ---- the watch draws itself ----------------------------------------
+    /* ---- the parts that get drawn on -------------------------------------
        Strap, crown and case are all strokes, so each one can be walked on
-       with a dashoffset. They are drawn in that order as the section opens,
-       which is what makes it build rather than appear.
-
-       The stitching is left out of that: its dashes are its dasharray, and
-       walking a path on needs the dasharray for the walk. It fades up once
-       the strap it belongs to is closed instead. */
+       with a dashoffset. The stitching is left out of that: its dashes are
+       its dasharray, and walking a path on needs the dasharray for the walk.
+       It fades up once the strap it belongs to is closed instead. */
     var built = parts.map(function (el) {
       var len = el.getTotalLength ? el.getTotalLength() : 0;
       if (!len) return null;
       el.style.strokeDasharray = len;
       el.style.strokeDashoffset = len;
-      /* the case is the only filled part; hold its fill back until it closes */
       if (el.classList.contains('watch-case')) el.style.fillOpacity = '0';
-      return { el: el, len: len };
+      return { el: el, len: len, hot: false };
     }).filter(Boolean);
 
     if (hand) hand.style.opacity = '0';
     if (hub) hub.style.opacity = '0';
+    if (intro) intro.style.opacity = '0';
 
     /* ---- the eras take the sides ---------------------------------------- */
     eras.forEach(function (era, i) {
@@ -1148,10 +1143,13 @@
       inner.appendChild(era);
     });
 
-    /* The opening builds the watch and shows the face; then each era owns a
-       stretch of the sweep; then it bursts. */
-    var BUILD = 0.16, INTRO_OUT = 0.36, TAIL = 0.14;
-    var span = (1 - INTRO_OUT - TAIL) / eras.length;
+    /* Where things sit in the one revolution. The years are five markers
+       evenly round the dial, so Now falls at four fifths — which leaves the
+       last fifth for the hand to climb back to twelve while the current work
+       stays up. */
+    var NOW = 0.8;
+    var OPEN = 0.08;                        /* the note in the middle clears */
+    var span = (NOW - OPEN) / eras.length;
 
     var unit = 1, ox = 0, oy = 0;
 
@@ -1177,7 +1175,7 @@
 
       burst.forEach(function (el, i) {
         var a = (i / burst.length) * Math.PI * 2 - Math.PI / 2;
-        var rad = Math.min(R_CASE * unit * 0.74, 230);
+        var rad = Math.min(R_CASE * unit * 0.66, 210);
         el.dataset.bx = (Math.cos(a) * rad).toFixed(1);
         el.dataset.by = (Math.sin(a) * rad).toFixed(1);
       });
@@ -1206,17 +1204,64 @@
       feedPath.style.strokeDashoffset = fl;
     }
 
-    function pointAt(p) {
-      var q = line.getPointAtLength(L * Math.max(0, Math.min(1, p)));
-      return { x: ox + q.x * unit, y: oy + q.y * unit };
-    }
+    function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+    function ramp(v, a, b) { return clamp01((v - a) / (b - a)); }
 
     measure();
 
+    /* ---- 1. the build, on the way in -------------------------------------
+       This one is not pinned. It runs over the approach — from the moment
+       the section's top enters the bottom of the screen to the moment it
+       reaches the top — so the watch is finished and readable before the
+       part where scrolling drives the hand. */
+    ScrollTrigger.create({
+      trigger: orbit,
+      start: 'top bottom',
+      end: 'top top',
+      scrub: 0.5,
+      invalidateOnRefresh: true,
+      onRefresh: measure,
+      onUpdate: function (self) {
+        var p = self.progress;
+
+        /* the feed comes down out of the button, and goes once it has fed */
+        if (feedPath) {
+          var fl = feedPath.getTotalLength();
+          feedPath.style.strokeDashoffset = fl * (1 - ramp(p, 0, 0.30));
+          feedPath.style.opacity = String(0.85 * (1 - ramp(p, 0.62, 0.86)));
+        }
+
+        /* then the watch draws itself, part after part */
+        var bp = ramp(p, 0.18, 0.80);
+        built.forEach(function (part, i) {
+          var slice = 1 / built.length;
+          var k = clamp01((bp - i * slice * 0.72) / slice);
+          part.el.style.strokeDashoffset = part.len * (1 - k);
+          if (part.el.classList.contains('watch-case')) part.el.style.fillOpacity = String(k);
+          /* lit while it is being drawn, and cooling to its own colour once
+             it lands — the shimmer is the line arriving, not a loop */
+          var hot = k > 0.001 && k < 0.999;
+          if (hot !== part.hot) {
+            part.hot = hot;
+            if (hot) part.el.style.stroke = 'var(--glow)';
+            else part.el.style.removeProperty('stroke');
+          }
+        });
+
+        if (stitching) stitching.style.opacity = String(ramp(p, 0.34, 0.56));
+        ticks.style.opacity = String(ramp(p, 0.68, 0.86));
+        if (dial) dial.style.opacity = String(ramp(p, 0.76, 0.94));
+        if (hand) hand.style.opacity = String(ramp(p, 0.84, 0.98) * 0.9);
+        if (hub) hub.style.opacity = String(ramp(p, 0.84, 0.98));
+        if (intro) intro.style.opacity = String(ramp(p, 0.88, 1));
+      }
+    });
+
+    /* ---- 2. the revolution, while pinned --------------------------------- */
     ScrollTrigger.create({
       trigger: orbit,
       start: 'top top',
-      end: '+=460%',
+      end: '+=420%',
       pin: true,
       pinSpacing: true,
       scrub: 0.6,
@@ -1225,83 +1270,50 @@
       onUpdate: function (self) {
         var p = self.progress;
 
-        /* 1. the feed comes down out of the button */
-        if (feedPath) {
-          var fl = feedPath.getTotalLength();
-          var fp = Math.min(1, p / (BUILD * 0.42));
-          feedPath.style.strokeDashoffset = fl * (1 - fp);
-          feedPath.style.opacity = String(0.85 * (1 - Math.min(1, Math.max(0, (p - BUILD) / 0.10))));
-        }
-
-        /* 2. and the watch draws itself, part after part */
-        var bp = Math.min(1, Math.max(0, (p - BUILD * 0.30) / (BUILD * 0.70)));
-        built.forEach(function (part, i) {
-          var slice = 1 / built.length;
-          var k = Math.min(1, Math.max(0, (bp - i * slice * 0.72) / slice));
-          part.el.style.strokeDashoffset = part.len * (1 - k);
-          if (part.el.classList.contains('watch-case')) part.el.style.fillOpacity = String(k);
-          /* lit while it is being drawn, and cooling to its own colour once
-             it lands -- the shimmer is the line arriving, not a loop */
-          var hot = k > 0.001 && k < 0.999;
-          if (hot !== part.hot) {
-            part.hot = hot;
-            if (hot) part.el.style.stroke = 'var(--glow)';
-            else part.el.style.removeProperty('stroke');
-          }
-        });
-        if (stitching) {
-          stitching.style.opacity =
-            String(Math.min(1, Math.max(0, (p - BUILD * 0.55) / (BUILD * 0.4))));
-        }
-        ticks.style.opacity = String(Math.min(1, Math.max(0, (p - BUILD * 0.86) / (BUILD * 0.5))));
-        if (hand) hand.style.opacity = String(Math.min(1, Math.max(0, (p - BUILD) / 0.06)) * 0.85);
-        if (hub) hub.style.opacity = String(Math.min(1, Math.max(0, (p - BUILD) / 0.06)));
-
-        /* 3. the face says what this is, then clears */
+        /* the note in the middle of the face clears as the hand sets off */
         if (intro) {
-          var iin = Math.min(1, Math.max(0, (p - BUILD * 0.75) / 0.06));
-          var iout = Math.min(1, Math.max(0, (p - (INTRO_OUT - 0.07)) / 0.07));
-          intro.style.opacity = (iin * (1 - iout)).toFixed(3);
-          intro.style.transform = 'translate(-50%,-50%) scale(' + (1 - iout * 0.12) + ')';
+          var out = ramp(p, 0, OPEN);
+          intro.style.opacity = (1 - out).toFixed(3);
+          intro.style.transform = 'translate(-50%,-50%) scale(' + (1 - out * 0.12) + ')';
         }
 
-        /* 4. then the spiral is drawn from the rim inward */
-        var sp = Math.min(1, Math.max(0, (p - INTRO_OUT) / (1 - INTRO_OUT)));
-        line.style.strokeDashoffset = L * (1 - sp);
+        /* one revolution, twelve back round to twelve */
+        var deg = p * 360;
+        if (hand) hand.setAttribute('transform', 'rotate(' + deg.toFixed(2) + ' ' + CX + ' ' + CY + ')');
+        sweep.style.strokeDashoffset = L * (1 - p);
 
-        var q = pointAt(sp);
-        if (hand) {
-          hand.setAttribute('x2', (q.x - ox) / unit);
-          hand.setAttribute('y2', (q.y - oy) / unit);
-        }
-        mark.style.transform = 'translate(' + q.x + 'px,' + q.y + 'px)';
-        mark.style.opacity = sp > 0.01 && sp < 0.995 ? '1' : '0';
+        var a = deg * Math.PI / 180 - Math.PI / 2;
+        mark.style.transform = 'translate(' +
+          (ox + (CX + Math.cos(a) * R_TRACK) * unit) + 'px,' +
+          (oy + (CY + Math.sin(a) * R_TRACK) * unit) + 'px)';
+        mark.style.opacity = p > 0.005 && p < 0.995 ? '1' : '0';
 
-        var b = Math.min(1, Math.max(0, (p - (1 - TAIL * 0.72)) / (TAIL * 0.72)));
-
+        /* a year lights as the hand reaches its marker */
         years.forEach(function (el, i) {
-          el.classList.toggle('is-now', sp >= i / years.length - 0.04);
+          el.classList.toggle('is-now', p >= i / years.length - 0.01);
         });
 
-        /* 5. each era holds a side while the hand crosses its stretch */
+        /* each era holds a side while the hand crosses its stretch */
+        var b = ramp(p, NOW, NOW + 0.10);
         eras.forEach(function (era, i) {
-          var a0 = INTRO_OUT + i * span;
+          var a0 = OPEN + i * span;
           var local = (p - a0) / span;
           var vis;
           if (local < 0 || local > 1) vis = 0;
           else if (local < 0.16) vis = local / 0.16;
           else if (local > 0.84) vis = (1 - local) / 0.16;
           else vis = 1;
-          vis = Math.max(0, Math.min(1, vis)) * (1 - b);
+          vis = clamp01(vis) * (1 - b);
           var dir = i % 2 === 0 ? -1 : 1;
           era.style.opacity = vis.toFixed(3);
           era.style.transform =
             'translateY(-50%) translateX(' + (dir * (1 - vis) * 70).toFixed(1) + 'px)';
         });
 
-        /* 6. and the middle goes off */
+        /* and at Now the current work opens out of the middle, and stays up
+           while the hand climbs the last fifth back to twelve */
         burst.forEach(function (el, i) {
-          var k = Math.min(1, Math.max(0, (b - (i / burst.length) * 0.18) / 0.82));
+          var k = clamp01((b - (i / burst.length) * 0.18) / 0.82);
           var e = 1 - Math.pow(1 - k, 3);
           el.style.opacity = e.toFixed(3);
           el.style.transform =
@@ -1311,6 +1323,23 @@
         });
       }
     });
+
+    /* ---- 3. the wash the contact panel arrives behind --------------------- */
+    var veil = document.querySelector('.path-veil');
+    var contact = document.querySelector('#contact');
+    if (veil && contact) {
+      gsap.fromTo(veil, { opacity: 0 }, {
+        opacity: 0.88,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: contact,
+          start: 'top bottom',
+          end: 'top 24%',
+          scrub: 0.5,
+          invalidateOnRefresh: true
+        }
+      });
+    }
 
     var rt;
     window.addEventListener('resize', function () {
