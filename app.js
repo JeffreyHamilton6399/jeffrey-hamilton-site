@@ -198,24 +198,28 @@
   /* ==========================================================================
      The cylinder
 
-     A drum of a fixed size sitting in the middle of the screen, with the
-     cards fixed to its surface and the whole thing turning. Each card keeps
-     its own station along the axis and never travels, so the shape on screen
-     is always the same cylinder rather than a stream of cards crossing the
-     frame from one corner to the other.
+     A drum of a fixed radius lying across the middle of the screen. The
+     cards are on its surface and they do two things at once: they travel
+     along the axis, left to right, and they turn around it. So the shape
+     never changes — it is always the same tube — while the contents flow
+     through it.
 
-         x   = its station along the axis, fixed
-         ang = (base + i·TURNS/N)·2π       every card offset around the drum
+         u   = the card's place along the tube, 0…1, wrapping
+         x   = (u − ½)·LEN                 left to right along the axis
+         ang = (u·TURNS + i/N)·2π          and round the tube as it goes
          y   = cos(ang)·R                  over the top, under the bottom
          z   = sin(ang)·R                  behind the text, then in front
 
-     Because nothing travels there is no seam to hide: rotation is periodic
-     on its own, so no exit fade and no wrap. TURNS spreads the stations
-     around the drum so neighbours sit most of a turn apart, and it reads as
-     a spiral wound round the cylinder rather than a row of cards.
+     The text sits at depth zero on that axis, so it is inside the tube: the
+     near half of the cylinder passes in front of the words and the far half
+     behind them.
+
+     TURNS is a whole number, which is what makes the wrap invisible: at u=0
+     and u=1 the angle differs by an exact multiple of 2π, so only x jumps —
+     and the fade at both ends means the card is already gone by then.
 
      R is the same vertically and in depth, so the cross section is a circle
-     and the drum reads as genuinely round.
+     and the tube reads as genuinely round.
 
      TURNS must stay a whole number: at u = 0 and u = 1 the spin angle then
      differs by an exact multiple of 2π, so the only thing that jumps at the
@@ -259,16 +263,19 @@
     if (!center) return;
 
     var title  = center.querySelector('.hero-title');
-    var skills = center.querySelector('.skills-type');
-    var out    = center.querySelector('.type-out');
+    var line   = document.querySelector('.hero-skills');
+    var skills = document.querySelector('.skills-type');
+    var out    = document.querySelector('.type-out');
     var face   = document.querySelector('.mark-face');
+    var dot    = document.querySelector('.boot-dot');
     var list;
     try { list = JSON.parse(skills && skills.getAttribute('data-skills') || '[]'); }
     catch (e) { list = []; }
 
-    if (reduced || !list.length || !title || !face) return;
+    if (reduced || !list.length || !title || !face || !line) return;
 
     out.textContent = '';
+    line.classList.add('is-held');
     center.classList.add('intro-armed');
     doc.classList.add('booting');
     doc.classList.add('head-wait');   /* outlives booting: see fly() */
@@ -278,13 +285,39 @@
     var mark = face.closest ? face.closest('.mark') : null;
     if (mark) mark.classList.add('is-tucked');
 
-    var HOLD_NAME = 1500;    /* how long the name has the screen to itself */
-    var FLIGHT    = 1150;    /* the trip up to the face                    */
+    var HOLD_NAME = 1250;    /* how long the name has the screen to itself */
+    var DIP       = 420;     /* it sinks a little before it goes           */
+    var MORPH     = 280;     /* then packs itself into the dot             */
+    var FLIGHT    = 1450;    /* and the dot rides the line to the face     */
 
     requestAnimationFrame(function () {
       setTimeout(function () { center.classList.add('boot-in'); }, 420);
-      setTimeout(fly, HOLD_NAME);
+      setTimeout(dip, HOLD_NAME);
     });
+
+    /* A beat of settling before the launch — the name drops slightly, as if
+       gathering itself, and that dip is where the line starts. */
+    function dip() {
+      if (!hasGsap) { fly(); return; }
+      title.style.transition = 'none';
+      gsap.to(title, {
+        y: 42, scale: 0.96,
+        duration: DIP / 1000,
+        ease: 'power2.inOut',
+        onComplete: morph
+      });
+    }
+
+    /* The name collapses into the dot it is about to travel as. */
+    function morph() {
+      if (!hasGsap || !dot) { fly(); return; }
+      var t = title.getBoundingClientRect();
+      var box = document.querySelector('.hero-stage').getBoundingClientRect();
+      dot.style.transform = 'translate(' + (t.left + t.width / 2 - box.left) + 'px,' +
+                                           (t.top + t.height / 2 - box.top) + 'px)';
+      gsap.to(title, { scale: 0.05, opacity: 0, duration: MORPH / 1000, ease: 'power2.in' });
+      gsap.to(dot,   { opacity: 1, duration: MORPH / 1000, ease: 'power2.out', onComplete: fly });
+    }
 
     /* The name does not go straight up — it swings out on a curve, draws that
        curve as it goes, and shrinks into the face; the line is then pulled in
@@ -299,66 +332,87 @@
        the true curve by two sine waves of different frequency with random
        phase each load, under an envelope that pins both ends down. That is
        what makes it look drawn by hand rather than computed. */
+    /* The trip. The dot leaves the dip, turns a full loop, then sweeps up
+       and left into the face, drawing the line as it goes.
+
+       The shape is built as an ordinary path — a curve out, an almost-closed
+       arc for the loop, a cubic to the face — and then resampled into a
+       wobbling polyline so it reads as drawn rather than plotted. Because
+       the loop makes it self-crossing, there is no closed form to evaluate:
+       the dot is placed with getPointAtLength on the same path, which works
+       for any shape and keeps the dot exactly on the ink. */
     function fly() {
       var stage = document.querySelector('.hero-stage');
       var t = title.getBoundingClientRect();
       var m = face.getBoundingClientRect();
       var box = stage && stage.getBoundingClientRect();
-      if (!t.width || !m.width || !box) { land(); return; }
+      if (!t.width || !m.width || !box) { arrive(); land(); return; }
 
-      /* Hand over cleanly: the class transition and the per-frame writes
-         would otherwise both be setting transform on the same element. */
       title.style.transition = 'none';
 
       /* Stage-local, because that is what the svg is measured in. */
       var x0 = t.left + t.width / 2 - box.left, y0 = t.top + t.height / 2 - box.top;
       var x1 = m.left + m.width / 2 - box.left, y1 = m.top + m.height / 2 - box.top;
 
-      /* Bow the curve out to the right before it turns back into the face,
-         so it reads as a drawn arc rather than a straight shot. */
-      var vx = x1 - x0, vy = y1 - y0;
-      var len = Math.hypot(vx, vy) || 1;
-      var nx = -vy / len, ny = vx / len;
-      if (nx < 0) { nx = -nx; ny = -ny; }
-      var bow = len * 0.42;
-      var cx = (x0 + x1) / 2 + nx * bow, cy = (y0 + y1) / 2 + ny * bow;
+      var len = Math.hypot(x1 - x0, y1 - y0) || 1;
+      var rr  = Math.max(26, Math.min(len * 0.11, 62));
+
+      /* down and out, one full loop, then the long sweep to the face */
+      var ideal =
+        'M ' + x0 + ' ' + y0 +
+        ' q ' + (rr * 0.95) + ' ' + (rr * 0.75) + ' ' + (rr * 1.25) + ' ' + (rr * 1.15) +
+        ' a ' + rr + ',' + rr + ' 0 1,1 0.7,0.25';
+      var lx = x0 + rr * 1.25 + 0.7, ly = y0 + rr * 1.15 + 0.25;
+      ideal += ' C ' + (lx + len * 0.30) + ' ' + (ly - len * 0.20) +
+               ', ' + (x1 + len * 0.34) + ' ' + (y1 + len * 0.16) +
+               ', ' + x1 + ' ' + y1;
 
       var svg  = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      var probe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       svg.setAttribute('class', 'boot-trail');
       svg.setAttribute('viewBox', '0 0 ' + box.width + ' ' + box.height);
       svg.setAttribute('aria-hidden', 'true');
-      /* Sample the curve into a wobbling polyline. */
-      var ph1 = Math.random() * 6.28, ph2 = Math.random() * 6.28;
-      var amp = Math.min(len * 0.035, 16);
-      var d = '', STEPS = 64;
-      for (var k = 0; k <= STEPS; k++) {
-        var tt = k / STEPS, qq = 1 - tt;
-        var bx = qq * qq * x0 + 2 * qq * tt * cx + tt * tt * x1;
-        var by = qq * qq * y0 + 2 * qq * tt * cy + tt * tt * y1;
-        /* the envelope keeps the two ends exactly on the anchors */
-        var env = Math.sin(Math.PI * tt);
-        var off = (Math.sin(tt * 9.1 + ph1) * 0.6 + Math.sin(tt * 4.3 + ph2) * 0.4) * amp * env;
-        d += (k ? ' L ' : 'M ') + (bx + nx * off).toFixed(2) + ' ' + (by + ny * off).toFixed(2);
-      }
-      path.setAttribute('d', d);
+      probe.setAttribute('d', ideal);
+      probe.style.display = 'none';
+      svg.appendChild(probe);
       svg.appendChild(path);
       stage.insertBefore(svg, center);
+
+      /* Resample the ideal shape, pushing each point off the true line by two
+         sines of different frequency with a random phase, under an envelope
+         that pins both ends. That wobble is the hand in hand-drawn. */
+      var PL = probe.getTotalLength();
+      var ph1 = Math.random() * 6.28, ph2 = Math.random() * 6.28;
+      var amp = Math.min(PL * 0.012, 9);
+      var d = '', STEPS = 150;
+      for (var k = 0; k <= STEPS; k++) {
+        var tt = k / STEPS;
+        var pt = probe.getPointAtLength(PL * tt);
+        var nb = probe.getPointAtLength(Math.min(PL, PL * tt + 1));
+        var tx = nb.x - pt.x, ty = nb.y - pt.y;
+        var tl = Math.hypot(tx, ty) || 1;
+        var env = Math.sin(Math.PI * tt);
+        var off = (Math.sin(tt * 11.3 + ph1) * 0.6 + Math.sin(tt * 5.1 + ph2) * 0.4) * amp * env;
+        d += (k ? ' L ' : 'M ') +
+             (pt.x + (-ty / tl) * off).toFixed(2) + ' ' +
+             (pt.y + ( tx / tl) * off).toFixed(2);
+      }
+      probe.remove();
+      path.setAttribute('d', d);
 
       var L = path.getTotalLength();
       path.style.strokeDasharray  = L;
       path.style.strokeDashoffset = L;
 
-      var scale = m.width / t.width;
-
-      /* The sheet goes now, not at the end — the spiral is revealed while
-         the name is still travelling over it, which is the whole effect. */
+      /* The sheet goes now, not at the end — the cylinder is revealed while
+         the dot is still travelling over it, which is the whole effect. */
       doc.classList.remove('booting');
       doc.classList.add('booted');
 
       if (!hasGsap) {
         svg.remove();
-        title.style.opacity = '0';
+        if (dot) dot.style.opacity = '0';
         setTimeout(function () { arrive(); land(); }, FLIGHT);
         return;
       }
@@ -369,16 +423,17 @@
         duration: FLIGHT / 1000,
         ease: 'power2.inOut',
         onUpdate: function () {
-          var p = at.p, q = 1 - p;
-          var x = q * q * x0 + 2 * q * p * cx + p * p * x1;
-          var y = q * q * y0 + 2 * q * p * cy + p * p * y1;
-          title.style.transform =
-            'translate(' + (x - x0) + 'px,' + (y - y0) + 'px) scale(' + (1 + (scale - 1) * p) + ')';
-          /* Hold full until it is nearly home, then dissolve into the face. */
-          title.style.opacity = p < 0.72 ? '1' : String(1 - (p - 0.72) / 0.28);
+          var p = at.p;
+          var pt = path.getPointAtLength(L * p);
+          if (dot) {
+            dot.style.transform = 'translate(' + pt.x + 'px,' + pt.y + 'px)';
+            /* it shrinks into the face over the last stretch */
+            if (p > 0.86) dot.style.opacity = String(1 - (p - 0.86) / 0.14);
+          }
           path.style.strokeDashoffset = L * (1 - p);
         },
         onComplete: function () {
+          if (dot) dot.style.opacity = '0';
           /* Pull the line in after it, from the tail forward. */
           gsap.to(path, {
             strokeDashoffset: -L,
@@ -404,8 +459,9 @@
     }
 
     function land() {
-      center.classList.add('name-gone');   /* take it out of the flow */
-      center.classList.add('intro-line');
+      center.classList.add('name-gone');   /* the name is spent */
+      line.classList.remove('is-held');
+      line.classList.add('is-lit');
       setTimeout(type, 380);
     }
 
@@ -449,12 +505,13 @@
        the back would be too small to make sense of. */
     var MIN_WIDTH = 900;
 
-    var TURNS  = 4;     /* how many turns the stations wind round the drum    */
+    var TURNS  = 3;     /* whole turns a card makes crossing the tube        */
     var FACE   = 22;    /* deg a card turns as it comes round the cylinder    */
     var ROLL   = 6;     /* deg of in-plane roll, for life                     */
     var CENTRE = 0.12;  /* how lit a card is at dead centre, behind the text  */
     var BACK   = 0.34;  /* how lit a card is round the back of the drum       */
-    var TURN   = 34;    /* seconds for one unattended revolution              */
+    var EDGEF  = 0.10;  /* fraction of each end spent fading in and out       */
+    var TURN   = 40;    /* seconds for one unattended pass end to end         */
     var SCROLL = 0.30;  /* revolutions added by scrolling the hero away       */
     var GAIN   = 1.0;   /* how much of a drag carries into the spin           */
     var DECAY  = 0.04;  /* of the fling speed left after one second           */
@@ -474,7 +531,9 @@
       var h = stage.offsetHeight || window.innerHeight;
       var cw = cards[0].offsetWidth || 220;
 
-      LEN  = w * 1.2;
+      /* Long enough that the ends sit well outside the frame, so the wrap
+         happens off screen; the fade at each end covers what is left. */
+      LEN  = Math.max(w * 1.9, (w + cw) * 1.3);
       R    = Math.max(Math.min(w * 0.26, h * 0.34), cw * 0.6);
       EDGE = w * 0.34;                /* x at which a card is fully lit */
     }
@@ -489,22 +548,24 @@
       var focus = 0, best = -Infinity;
 
       for (var i = 0; i < N; i++) {
-        /* Its station on the drum: fixed, evenly spread along the axis. */
-        var slot = N > 1 ? (i / (N - 1)) - 0.5 : 0;
-        var x = slot * LEN;
+        /* Where it is along the tube, and — from the same number — where it
+           is around it. Travel and spin off one parameter is what makes it a
+           helix rather than a ring that happens to slide. */
+        var u = wrap01(base + i / N);
+        var x = (u - 0.5) * LEN;
 
-        /* And its place around the drum, which is the only thing that moves. */
-        var ang = (base + (i * TURNS) / N) * Math.PI * 2;
+        var ang = (u * TURNS + i / N) * Math.PI * 2;
         var ca  = Math.cos(ang);
         var sa  = Math.sin(ang);
 
         var y = ca * R;
         var z = sa * R;
 
-        /* Two dimmers multiplied. Depth is the one that moves: a card lights
-           up as it swings to the front and settles back as it goes round.
-           The x one is fixed per station, and is what keeps whatever sits
-           behind the text permanently faint. */
+        /* Three dimmers multiplied: depth as it swings round, distance from
+           centre so nothing bright ever sits behind the text, and the ends
+           of the tube so the wrap is never seen. */
+        var edge = Math.min(u, 1 - u) / EDGEF;
+        var ends = edge >= 1 ? 1 : edge * edge * (3 - 2 * edge);
         var depth = BACK + (1 - BACK) * ((sa + 1) / 2);
         var n     = Math.min(Math.abs(x) / EDGE, 1);
         var lit   = CENTRE + (1 - CENTRE) * (n * n * (3 - 2 * n));
@@ -516,12 +577,12 @@
         st.setProperty('--z',  z.toFixed(2) + 'px');
         st.setProperty('--ry', (ca * FACE).toFixed(2) + 'deg');
         st.setProperty('--rz', (sa * ROLL).toFixed(2) + 'deg');
-        st.opacity = (lit * depth).toFixed(3);
+        st.opacity = (lit * depth * ends).toFixed(3);
 
-        /* Round the back of the drum there is no room for the caption. */
+        /* Round the back of the tube there is no room for the caption. */
         card.classList.toggle('is-far', sa < -0.4);
 
-        var score = lit * depth;
+        var score = lit * depth * ends;
         if (score > best) { best = score; focus = i; }
       }
 

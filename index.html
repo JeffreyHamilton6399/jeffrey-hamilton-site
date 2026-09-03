@@ -48,30 +48,35 @@
   <section class="hero" aria-labelledby="hero-heading">
     <div class="hero-stage">
 
-      <!-- Layer 1: the spiral. Its own 3D rendering context, holding nothing
-           but the cards, so they sort against each other by depth and
-           against nothing else. -->
-      <div class="hero-inner"></div>
-
-      <!-- Layer 8: the loading screen. Covers the spiral while the name is
-           on its own, then fades out from under it. -->
-      <span class="boot" aria-hidden="true"></span>
-
-      <!-- Layer 9: the shield. A soft blurred ellipse over the dead centre
-           that the cards dive behind, so the text never has to compete with
-           whatever is circling through. -->
-      <span class="hero-shield" aria-hidden="true"></span>
-
-      <!-- Layer 10: the text, straight and level, always on top. Staged by
-           app.js — the name fades in first, then this line glides up, then
-           the word types itself out and cycles. The word in the markup is
-           the first entry, so with the script off the line still reads. -->
-      <div class="hero-center" data-intro>
-        <h1 class="hero-title" id="hero-heading">Jeffrey Hamilton</h1>
+      <!-- The cylinder, and everything that lives inside it. One 3D
+           rendering context: the cards, the shield behind the text, and the
+           text itself at depth zero — so a card on the near side of the drum
+           passes in front of the words and one on the far side passes behind
+           them. That is what puts the text inside the cylinder rather than
+           on a sheet over it, and it is why nothing in here sets z-index:
+           within a 3D context the browser sorts by depth, and a z-index
+           pulls the element out of that and flattens it. -->
+      <div class="hero-inner">
+        <span class="hero-shield" aria-hidden="true"></span>
         <p class="hero-skills" aria-label="What I build: web tools, desktop apps, browser games, on-device AI, motion graphics, Minecraft mods">
           <span class="skills-type" data-skills='["WEB TOOLS","DESKTOP APPS","BROWSER GAMES","ON-DEVICE AI","MOTION GRAPHICS","MINECRAFT MODS"]'><span class="type-out">WEB TOOLS</span><span class="type-caret" aria-hidden="true"></span></span>
         </p>
       </div>
+
+      <!-- Layer 8: the loading screen. Covers the cylinder while the name is
+           on its own, then fades out from under it. -->
+      <span class="boot" aria-hidden="true"></span>
+
+      <!-- Layer 10: the boot name. Outside the cylinder because it has to
+           sit over the loading sheet, and because it leaves — it dips, packs
+           itself into the travelling dot, and is gone. -->
+      <div class="hero-center" data-intro>
+        <h1 class="hero-title" id="hero-heading">Jeffrey Hamilton</h1>
+      </div>
+
+      <!-- The glowing dot the name becomes, and the line it draws. Both are
+           positioned by app.js and removed when the trip is over. -->
+      <span class="boot-dot" aria-hidden="true"></span>
 
       <div class="hero-cue" aria-hidden="true">
         <span class="cue-pill">Drag to spin &middot; Scroll to explore <span class="cue-arrow">&#8595;</span></span>

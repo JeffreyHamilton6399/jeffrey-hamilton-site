@@ -23,6 +23,7 @@
   --rule-soft: color-mix(in srgb, var(--ink) 7%,  transparent);
   --frame:     color-mix(in srgb, var(--ink) 16%, transparent);
   --extrude:   #b9b3a6;   /* the side face of the extruded display type */
+  --glow:      #FFC93C;   /* the warm shimmer the name lands with       */
 
   /* Derived — dark ground */
   --on-dark:       #F4F1EA;
@@ -255,14 +256,25 @@ body.head-dark .site-head { color: var(--on-dark); }
   height: var(--face);
   margin-top: calc(var(--face) / -2);
   border-radius: 50%;
-  border: 2px solid var(--iris);
+  border: 2px solid var(--glow);
   opacity: 0;
   pointer-events: none;
 }
-.mark.is-arriving::before { animation: markPing .85s var(--ease-out) forwards; }
+.mark.is-arriving::before { animation: markPing 1s var(--ease-out) forwards; }
 @keyframes markPing {
-  0%   { opacity: .9; transform: scale(.7); }
-  100% { opacity: 0;  transform: scale(1.75); }
+  0%   { opacity: 1;  transform: scale(.7); }
+  100% { opacity: 0;  transform: scale(1.9); }
+}
+
+/* And the face itself takes the warm glow for a moment as it catches the
+   name, then settles back to nothing. */
+.mark.is-arriving .mark-face { animation: markShimmer 1.15s var(--ease-out) forwards; }
+@keyframes markShimmer {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--glow) 92%, transparent),
+                     0 0 26px 10px color-mix(in srgb, var(--glow) 78%, transparent); }
+  55%  { box-shadow: 0 0 0 2px color-mix(in srgb, var(--glow) 55%, transparent),
+                     0 0 20px 6px color-mix(in srgb, var(--glow) 42%, transparent); }
+  100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; }
 }
 
 .mark-face {
@@ -352,11 +364,37 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   padding: clamp(7rem, 18vw, 10rem) var(--gutter) clamp(2rem, 6vw, 4rem);
 }
 .hero-center { position: relative; z-index: 10; text-align: center; max-width: 36rem; margin-inline: auto; }
-.hero-inner, .hero-shield, .hero-veil, .hero-cue { display: none; }
+/* .hero-inner is no longer just the cards — it holds the text too, so it
+   stays in the flow even when the cylinder is not running. */
+.hero-inner { display: block; }
+.hero-shield, .hero-veil, .hero-cue, .boot-dot { display: none; }
+
+/* The dot the name packs itself into, and rides to the face on. Positioned
+   per frame by app.js from the drawn path, so it always sits exactly on the
+   line it is drawing. */
+.boot-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 11;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: var(--glow);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--glow) 34%, transparent),
+    0 0 18px 5px color-mix(in srgb, var(--glow) 70%, transparent),
+    0 0 42px 12px color-mix(in srgb, var(--glow) 34%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+.hero.is-spiral .boot-dot,
+html.booting .boot-dot { display: block; }
 
 /* The line the name draws on its way into the face. Built and removed by
-   app.js; sits above the shield and under the name itself, so the name
-   always rides on top of its own trail. */
+   app.js; sits above the shield and under the dot, so the dot always rides
+   on the leading end of its own trail. */
 .boot-trail {
   position: absolute;
   inset: 0;
@@ -372,7 +410,7 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   stroke-width: 2.25;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: .8;
+  opacity: .82;
 }
 
 /* ---- the loading screen ------------------------------------------------
@@ -470,7 +508,7 @@ html.head-wait .site-head { opacity: 0; pointer-events: none; }
 html.motion [data-intro] .hero-title {
   transition: opacity 1.1s var(--ease-out), transform 1.1s var(--ease-out), filter 1.1s var(--ease-out);
 }
-html.motion [data-intro] .hero-skills {
+html.motion .hero-skills {
   transition: opacity .8s var(--ease-out), transform .8s var(--ease-out);
 }
 html.motion [data-intro].intro-armed .hero-title {
@@ -478,25 +516,17 @@ html.motion [data-intro].intro-armed .hero-title {
   transform: scale(1.06);
   filter: blur(14px);
 }
-html.motion [data-intro].intro-armed .hero-skills {
+html.motion .hero-skills.is-held {
   opacity: 0;
   transform: translateY(22px);
 }
 html.motion [data-intro].boot-in .hero-title { opacity: 1; transform: none; filter: none; }
-html.motion [data-intro].intro-line .hero-skills { opacity: 1; transform: none; }
+html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 /* Hide the caret until the line has arrived, so it does not blink alone. */
-html.motion [data-intro].intro-armed:not(.intro-line) .type-caret { opacity: 0; animation: none; }
+html.motion .hero-skills.is-held .type-caret { opacity: 0; animation: none; }
 
-/* Once the name has flown to the header it is out of the flow, so the typed
-   line takes the true centre of the cylinder rather than sitting under a
-   gap the size of a title. */
-[data-intro].name-gone .hero-title {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  pointer-events: none;
-}
+/* Once the name has gone into the dot there is nothing left to show. */
+[data-intro].name-gone { display: none; }
 
 .hero.is-spiral .hero-stage {
   height: 100vh;
@@ -513,11 +543,20 @@ html.motion [data-intro].intro-armed:not(.intro-line) .type-caret { opacity: 0; 
 .hero.is-spiral .hero-stage.is-dragging { cursor: grabbing; }
 
 .hero.is-spiral .hero-inner {
-  display: block;
+  display: grid;
+  place-items: center;              /* centres the text on the axis */
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
   will-change: transform;
+}
+
+/* Dead centre of the drum, at depth zero, so the near half of the cylinder
+   passes in front of the words and the far half behind them. */
+.hero.is-spiral .hero-skills {
+  position: relative;
+  transform: translateZ(0);
+  pointer-events: none;
 }
 
 /* ---- the layer sandwich ---------------------------------------------
@@ -531,12 +570,13 @@ html.motion [data-intro].intro-armed:not(.intro-line) .type-caret { opacity: 0; 
 .hero.is-spiral .hero-shield {
   display: block;
   position: absolute;
-  z-index: 9;
   left: 50%;
   top: 50%;
   width: min(96vw, 72rem);
   aspect-ratio: 1.7;
-  transform: translate(-50%, -50%);
+  /* A hair behind the text, so it backs the words without hiding the cards
+     that come round the near side in front of them. */
+  transform: translate(-50%, -50%) translateZ(-2px);
   pointer-events: none;
   /* Blur what passes behind, and wash it toward the page colour, both faded
      out at the rim by the same mask so the shield has no visible edge. */
@@ -1029,7 +1069,7 @@ html.motion [data-intro].intro-armed:not(.intro-line) .type-caret { opacity: 0; 
   html.motion [data-reveal],
   html.motion .line > span { opacity: 1; transform: none; }
   html.motion [data-intro] .hero-title,
-  html.motion [data-intro] .hero-skills { opacity: 1 !important; transform: none !important; filter: none !important; }
+  html.motion .hero-skills { opacity: 1 !important; transform: none !important; filter: none !important; }
   .type-caret { animation: none; }
   .slab-inner { transform: none !important; opacity: 1 !important; }
 }
