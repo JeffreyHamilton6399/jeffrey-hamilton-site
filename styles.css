@@ -143,7 +143,7 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 /* --------------------------------------------------------- Shared bits */
 
-.section-note, .card-tech, .tl-when, .nav, .mark-where {
+.section-note, .card-tech, .era-index, .vid-kind, .nav, .mark-where {
   font-family: var(--mono);
   letter-spacing: .14em;
   text-transform: uppercase;
@@ -308,20 +308,15 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 .hero-glow, .hero-veil, .hero-cue { display: none; }
 
 .hero-title {
-  font-size: clamp(3rem, 15vw, 13rem);
+  font-size: clamp(3rem, 12vw, 10rem);
+  line-height: .9;
   letter-spacing: -.015em;
   text-transform: uppercase;
   color: var(--void);
 }
-/* The reveal mask clips to the line box, and Anton's caps are taller than a
-   .84 line box — set at the tight leading the name wants, the tops and
-   bottoms of the letters were being cut off. So: a line box tall enough to
-   hold the glyphs, pulled back together with a negative margin. */
-.hero-title .line { line-height: 1.06; }
-.hero-title .line + .line { margin-top: -.17em; }
 
-/* The cycling skill line, s0animation style: a small lead-in and one big
-   word in the display face that swaps in place. */
+/* The "I build ___" line: a small mono lead-in and one big typed word with a
+   blinking caret. */
 .hero-skills {
   display: flex;
   flex-wrap: wrap;
@@ -337,32 +332,53 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   text-transform: uppercase;
   color: var(--ink-faint);
 }
-.skills-rotator {
-  position: relative;
-  display: inline-block;
-  overflow: hidden;              /* the mask the words slide through */
-  vertical-align: bottom;
+.skills-type {
+  display: inline-flex;
+  align-items: baseline;
   font-family: var(--display);
   font-weight: 400;
   font-size: clamp(1.75rem, 5vw, 4rem);
-  /* A hair over 1 so the mask has headroom for Anton's caps — at line-height
-     1 the overflow:hidden box sat exactly on the glyphs and shaved their
-     feet off. */
   line-height: 1;
   letter-spacing: -.01em;
   text-transform: uppercase;
   color: var(--iris);
   white-space: nowrap;
-  /* Anton's ink sits low in the line box, so a mask cut to the line height
-     shaves the feet off. Real padding inside the overflow:hidden box gives
-     the glyphs somewhere to sit; the words slide by transform, which padding
-     does not touch, so the reveal still works. */
-  padding: .1em .04em .18em;
-  transition: width .5s var(--ease);   /* the box tracks the new word's width */
 }
-.skills-rotator .word { display: inline-block; line-height: 1; will-change: transform; }
-/* the outgoing word is taken out of flow so the incoming one sets the width */
-.skills-rotator .word.is-out { position: absolute; left: 0; top: 0; }
+.type-out { display: inline-block; }
+.type-caret {
+  display: inline-block;
+  width: .07em;
+  height: .92em;
+  margin-left: .06em;
+  background: var(--iris);
+  transform: translateY(.04em);
+  animation: caret 1.05s steps(1) infinite;
+}
+@keyframes caret { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+
+/* ---- the staged open --------------------------------------------------
+   app.js arms the centre (everything hidden), then adds intro-name and
+   intro-line in turn. With no script, or reduced motion, none of this is
+   set and the name and line just sit there. */
+html.motion [data-intro] .hero-title {
+  transition: opacity 1s var(--ease-out), transform 1s var(--ease-out), filter 1s var(--ease-out);
+}
+html.motion [data-intro] .hero-skills {
+  transition: opacity .8s var(--ease-out), transform .8s var(--ease-out);
+}
+html.motion [data-intro].intro-armed .hero-title {
+  opacity: 0;
+  transform: translateY(20px);
+  filter: blur(8px);
+}
+html.motion [data-intro].intro-armed .hero-skills {
+  opacity: 0;
+  transform: translateY(22px);
+}
+html.motion [data-intro].intro-name .hero-title { opacity: 1; transform: none; filter: none; }
+html.motion [data-intro].intro-line .hero-skills { opacity: 1; transform: none; }
+/* Hide the caret until the line has arrived, so it does not blink alone. */
+html.motion [data-intro].intro-armed:not(.intro-line) .type-caret { opacity: 0; animation: none; }
 
 .hero.is-spiral .hero-stage {
   height: 100vh;
@@ -392,7 +408,9 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 .hero.is-spiral .hero-center {
   position: relative;
   transform: translateZ(0);
-  max-width: min(96vw, 68rem);
+  /* Kept narrow so the name wraps to two stacked lines and stays inside the
+     open middle of the hoop rather than running out under the side cards. */
+  max-width: min(78vw, 40rem);
   pointer-events: none;
 }
 .hero.is-spiral .hero-skills { pointer-events: none; }
@@ -618,90 +636,148 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 .section-note { font-size: .625rem; font-weight: 500; color: var(--ink-faint); }
 .on-dark .section-note { color: var(--haze); }
 
-/* --------------------------------------------------------- Timeline
+/* --------------------------------------------------------- The path: eras
 
-   A line that snakes down between the stops and turns two loops on the way.
-   app.js builds the path from where the nodes actually landed and draws it
-   as the section scrolls, so the curve follows the layout rather than the
-   layout being bent to fit a curve. */
+   Three scenes, each a copy column beside a media column. The media drifts
+   against the copy on scroll (app.js, [data-parallax]) so one scene slides
+   into the next rather than cutting. Videos are facades — a thumbnail with a
+   play badge that app.js swaps for the real player on click. */
 
-.timeline { padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 7rem); }
+.eras { padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 7rem); }
 
-.tl-rail { position: relative; }
+.era { padding-block: clamp(3.5rem, 9vw, 7rem); }
 
-.tl-line {
+.era-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(2rem, 6vw, 5rem);
+  align-items: center;
+}
+.era-flip .era-copy  { order: 2; }
+.era-flip .era-media { order: 1; }
+
+.era-index {
+  font-family: var(--mono);
+  font-size: .6875rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--haze);
+  margin-bottom: 1rem;
+}
+.era-title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  line-height: .95;
+  letter-spacing: -.01em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+.era-text { color: var(--on-dark-soft); max-width: 46ch; }
+.era-text + .era-text { margin-top: .875rem; }
+
+.era-media { display: grid; gap: clamp(.75rem, 2vw, 1.25rem); }
+.era-media-quad { grid-template-columns: 1fr 1fr; }
+.era-media-solo { grid-template-columns: 1fr; }
+
+/* A video facade. The frame holds the thumbnail (or, once clicked, the
+   iframe); the play badge sits over it; the caption rides underneath. */
+.vid { display: block; text-decoration: none; color: var(--on-dark); }
+.vid-frame {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--rule-dark);
+  background: color-mix(in srgb, var(--on-dark) 5%, var(--void));
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--void) 24%, transparent);
+}
+.vid-frame img,
+.vid-frame iframe {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  overflow: visible;
-  pointer-events: none;
+  border: 0;
+  object-fit: cover;
+  display: block;
+  transition: transform .6s var(--ease-out);
 }
-.tl-line path {
-  stroke: var(--iris-lo);
-  stroke-width: 2;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--iris-lo) 55%, transparent));
-}
+.vid:hover .vid-frame img { transform: scale(1.04); }
 
-.tl-stops { display: grid; gap: clamp(3rem, 8vw, 6.5rem); list-style: none; margin: 0; padding: 0; }
-
-.tl-stop {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 8rem minmax(0, 1fr);
-  align-items: start;
-}
-.tl-stop[data-side="left"]  .tl-card { grid-column: 1; justify-self: end; text-align: right; }
-.tl-stop[data-side="right"] .tl-card { grid-column: 3; }
-
-.tl-node {
-  grid-column: 2;
-  justify-self: center;
-  margin-top: 1.1rem;
-  width: .625rem;
-  height: .625rem;
+.vid-play {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: clamp(3rem, 5vw, 4rem);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: var(--void);
-  border: 2px solid var(--iris-lo);
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--iris) 16%, transparent);
+  background: color-mix(in srgb, var(--void) 55%, transparent);
+  border: 1px solid color-mix(in srgb, #fff 45%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: transform .3s var(--ease), background-color .3s var(--ease);
 }
-/* Offsetting the nodes to alternate sides is what gives the drawn line
-   something to weave between. */
-.tl-stop[data-side="left"]  .tl-node { transform: translateX(-2.25rem); }
-.tl-stop[data-side="right"] .tl-node { transform: translateX(2.25rem); }
+.vid-play::before {
+  content: "";
+  position: absolute;
+  left: 54%; top: 50%;
+  transform: translate(-50%, -50%);
+  border-style: solid;
+  border-width: .5em 0 .5em .8em;
+  border-color: transparent transparent transparent #fff;
+}
+.vid:hover .vid-play { transform: translate(-50%, -50%) scale(1.08); background: color-mix(in srgb, var(--iris) 72%, transparent); }
 
-.tl-card { max-width: 30rem; }
-
-.tl-when { font-size: .625rem; font-weight: 500; color: var(--haze); margin-bottom: .625rem; }
-.tl-when span { color: var(--on-dark-faint); }
-
-.tl-title { font-size: clamp(1.375rem, 2.8vw, 1.875rem); margin-bottom: .75rem; }
-.tl-text { color: var(--on-dark-soft); }
-.tl-text + .tl-text { margin-top: .75rem; }
-
-.tl-role { margin-top: 1rem; font-size: .875rem; color: var(--on-dark-faint); }
-.tl-role a,
-.tl-list a {
+.vid-cap { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-top: .625rem; }
+.vid-title { font-weight: 500; font-size: .9375rem; }
+.vid-kind {
+  font-family: var(--mono);
+  font-size: .625rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
   color: var(--haze);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color .3s var(--ease);
+  white-space: nowrap;
 }
-.tl-role a:hover, .tl-list a:hover { border-bottom-color: currentColor; }
 
-.tl-list {
+/* The three flagship apps under era 3. */
+.era-apps {
   display: grid;
-  gap: .5rem;
-  list-style: none;
-  margin: 1rem 0 0;
-  padding: 0;
-  font-size: .9375rem;
-  color: var(--on-dark-soft);
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+  margin-top: clamp(2.5rem, 6vw, 4rem);
 }
-.tl-list strong { font-weight: 500; color: var(--on-dark); }
+.app-card {
+  display: block;
+  text-decoration: none;
+  color: var(--on-dark);
+  border-radius: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--on-dark) 6%, var(--void));
+  border: 1px solid var(--rule-dark);
+  transition: border-color .4s var(--ease), transform .4s var(--ease), box-shadow .4s var(--ease);
+}
+.app-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--iris-lo) 55%, transparent);
+  box-shadow: 0 22px 50px color-mix(in srgb, var(--void) 30%, transparent);
+}
+.app-shot { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: color-mix(in srgb, var(--on-dark) 5%, var(--void)); }
+.app-shot img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.app-body { display: block; padding: 1rem 1.125rem 1.125rem; }
+.app-title { display: block; font-weight: 600; font-size: 1.0625rem; letter-spacing: -.01em; margin-bottom: .375rem; }
+.app-desc { display: block; font-size: .8125rem; line-height: 1.5; color: var(--on-dark-soft); }
+.app-go {
+  display: inline-block;
+  margin-top: .875rem;
+  font-size: .8125rem;
+  font-weight: 500;
+  color: var(--haze);
+}
+.app-card:hover .app-go { color: var(--on-dark); }
 
 .chips { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 1.25rem 0 0; padding: 0; }
-.tl-stop[data-side="left"] .chips { justify-content: flex-end; }
 .chips a {
   display: inline-block;
   padding: .375rem .75rem;
@@ -719,91 +795,10 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   flex-wrap: wrap;
   gap: .5rem 2rem;
   list-style: none;
-  margin: clamp(3.5rem, 9vw, 6rem) 0 0;
+  margin: clamp(3rem, 7vw, 5rem) 0 0;
   padding: clamp(1.5rem, 3vw, 2rem) 0 0;
   border-top: 1px solid var(--rule-dark);
   font-size: .9375rem;
-}
-
-/* --------------------------------------------------------- Three up close */
-
-.work { padding-block: clamp(5rem, 11vw, 9rem); }
-
-.project {
-  display: grid;
-  grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
-  gap: clamp(2rem, 6vw, 4.5rem);
-  align-items: center;
-  padding-block: clamp(3rem, 8vw, 6rem);
-  border-top: 1px solid var(--rule-soft);
-}
-.project:first-of-type { border-top: 0; padding-top: 0; }
-.project-flip .project-body { order: 2; }
-
-.project-index {
-  font-family: var(--mono);
-  font-size: .75rem;
-  letter-spacing: .16em;
-  color: var(--iris);
-  margin-bottom: 1rem;
-}
-
-.project-title { font-size: clamp(1.5rem, 3.2vw, 2.25rem); margin-bottom: 1.125rem; }
-.project-desc { color: var(--ink-soft); max-width: 48ch; }
-
-.meta {
-  display: grid;
-  gap: .625rem;
-  margin: 1.75rem 0;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--rule);
-}
-.meta > div {
-  display: grid;
-  grid-template-columns: 7.5rem minmax(0, 1fr);
-  gap: 1rem;
-  font-size: .875rem;
-}
-.meta dt {
-  font-family: var(--mono);
-  font-size: .625rem;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  padding-top: .25em;
-}
-.meta dd { margin: 0; color: var(--ink-soft); }
-
-.project-link {
-  display: inline-flex;
-  align-items: center;
-  gap: .5rem;
-  font-weight: 500;
-  font-size: .9375rem;
-  color: var(--iris);
-  text-decoration: none;
-}
-.project-link span { transition: transform .45s var(--ease-out); }
-.project-link:hover span { transform: translateX(5px); }
-
-/* The shot sits in a fixed-ratio frame with the image inside it taller than
-   the frame, so app.js has room to slide it for the parallax without ever
-   exposing an edge. */
-.project-shot {
-  margin: 0;
-  overflow: hidden;
-  border-radius: 6px;
-  border: 1px solid var(--frame);
-  background: var(--shell);
-  aspect-ratio: 16 / 10;
-}
-.project-shot img {
-  width: 100%;
-  height: 118%;
-  object-fit: cover;
-  object-position: center top;
-  transform: translate3d(0, var(--par, 0px), 0);
-  will-change: transform;
 }
 
 /* --------------------------------------------------------- Contact */
@@ -847,23 +842,12 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 
 /* --------------------------------------------------------- Responsive */
 
-@media (max-width: 1000px) {
-  .project, .project-flip { grid-template-columns: 1fr; }
-  .project-flip .project-body { order: 0; }
-}
-
-@media (max-width: 860px) {
-  /* One column, the line down the left, every stop hanging off it. */
-  .tl-stop { grid-template-columns: 2.5rem minmax(0, 1fr); column-gap: 1.25rem; }
-  .tl-stop .tl-card,
-  .tl-stop[data-side="left"] .tl-card,
-  .tl-stop[data-side="right"] .tl-card { grid-column: 2; justify-self: stretch; text-align: left; }
-  .tl-node { grid-column: 1; justify-self: center; }
-  .tl-stop[data-side="left"]  .tl-node { transform: translateX(-.4rem); }
-  .tl-stop[data-side="right"] .tl-node { transform: translateX(.4rem); }
-  .tl-stop[data-side="left"] .chips { justify-content: flex-start; }
-
-  .meta > div { grid-template-columns: 1fr; gap: .125rem; }
+@media (max-width: 900px) {
+  /* Each era stacks: copy over media, media never flipped under the copy. */
+  .era-grid { grid-template-columns: 1fr; gap: clamp(1.5rem, 5vw, 2.5rem); }
+  .era-flip .era-copy,
+  .era-flip .era-media { order: 0; }
+  .era-apps { grid-template-columns: 1fr; }
   .section-head { display: grid; gap: .5rem; }
 }
 
@@ -901,7 +885,8 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   }
   html.motion [data-reveal],
   html.motion .line > span { opacity: 1; transform: none; }
-  .project-shot img { height: 100%; transform: none; }
+  html.motion [data-intro] .hero-title,
+  html.motion [data-intro] .hero-skills { opacity: 1 !important; transform: none !important; filter: none !important; }
+  .type-caret { animation: none; }
   .slab-inner { transform: none !important; opacity: 1 !important; }
-  .tl-line path { stroke-dasharray: none !important; stroke-dashoffset: 0 !important; }
 }

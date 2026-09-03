@@ -196,118 +196,93 @@
   })();
 
   /* ==========================================================================
-     The spiral
+     The hoop
 
-     Cards wind around a horizontal axis running left to right across the
-     screen. Each card has a position u in [0,1) along that axis; u advances
-     and wraps, so the row is endless.
+     The spiral from the reference, turned onto its side and opened out into a
+     frame. Every card rides one ellipse — a hoop — and the hoop is tilted
+     back around its own horizontal axis, so its top edge leans away from you
+     and its bottom edge swings toward you. Because each card sits out on the
+     rim, the middle of the hoop is always clear: that hole is where the name
+     sits, dead straight and level, framed by the cards turning around it.
 
-         x   = (u − ½)·2·SPAN            far left to far right
-         ang = u·2π·TURNS + π
-         y   = sin(ang)·RY               over the top, then under the bottom
-         z   = cos(ang)·RZ               behind the axis, then in front of it
+         ang = (base + i/N)·2π          even spacing, the whole hoop spins
+         x   = cos(ang)·RX              left … right
+         y   = sin(ang)·RY·cos(tilt)    the lean foreshortens the vertical
+         z   = sin(ang)·RY·sin(tilt)    and turns the rest into depth
 
-     TURNS is what makes it a spiral rather than a queue. At three turns over
-     the path two neighbours are most of a revolution apart, so the card next
-     to the one at the front is round the far side and small — they wind past
-     each other instead of lining up. TURNS has to stay a whole number: the
-     wrap from u=1 back to u=0 only disappears because the angle differs by
-     an exact multiple of 2π there, leaving nothing but the jump in x, which
-     happens well off screen.
+     Nothing crosses the centre, so unlike the earlier through-the-name
+     version the name never has to fight a card for the middle. The cards
+     still sort by depth in the one 3D context, which is why nothing in the
+     subtree sets z-index (it would flatten the context); the frame reads as
+     near cards at the bottom passing in front, far cards at the top behind.
 
-     The axis runs through the name, which sits at depth zero in the same 3D
-     rendering context — so the cards orbit it, and the ones coming round the
-     near side cover it while the ones on the far side are covered by it. The
-     name is set wide enough that a card at the front can only ever take a
-     bite out of it, never the whole thing. That sorting is the picture, and it is why nothing in the
-     subtree sets z-index or opacity — either one flattens the context.
-
-     Three things move the position, and they simply add:
+     Three things spin it, and they simply add:
 
        auto    a constant drift, so it turns on its own
        scroll  a scrubbed offset while the hero is pinned
        drag    the pointer, with a fling that decays after release
      ========================================================================== */
 
-  /* ---------------------------------------------------------- Skills rotator
+  /* ---------------------------------------------------------- Hero intro
 
-     The one big word under the name cycles through the list in its data
-     attribute, s0animation style: the word in view slides up out of the
-     mask while the next slides up into it, and the mask's width eases to the
-     new word so the layout never jumps. With the script off, or with reduced
-     motion, the first word just stands there. */
+     A staged open, then a running typewriter:
+
+       1. the name fades up on its own, like a title card
+       2. a beat later the "I build ___" line rises into place
+       3. the word types itself out, holds, deletes, and types the next —
+          around the list forever, with a blinking caret
+
+     The markup already reads correctly (name + first word visible) so with
+     the script off or reduced motion on, step 1's end-state is just the
+     resting page and nothing below animates. */
 
   (function () {
-    var box = document.querySelector('.skills-rotator');
-    if (!box) return;
+    var center = document.querySelector('[data-intro]');
+    if (!center) return;
 
-    var words;
-    try { words = JSON.parse(box.getAttribute('data-skills') || '[]'); }
-    catch (e) { words = []; }
-    if (words.length < 2) return;
+    var skills = center.querySelector('.skills-type');
+    var out    = center.querySelector('.type-out');
+    var list;
+    try { list = JSON.parse(skills && skills.getAttribute('data-skills') || '[]'); }
+    catch (e) { list = []; }
 
-    var DWELL = 2200;   /* how long a word holds before the next swap */
-    var SLIDE = 620;    /* the slide, matched to the transition below */
+    if (reduced || !list.length) { center.classList.add('intro-done'); return; }
 
-    /* Replace the plain text with a measured span so the mask can size to it. */
-    box.textContent = '';
-    var current = wordEl(words[0]);
-    box.appendChild(current);
-    setWidth(current);
+    /* Hold everything back, then release in order. The classes drive the
+       fade/slide in the CSS; the typewriter waits for the line to arrive. */
+    out.textContent = '';
+    center.classList.add('intro-armed');
 
-    var i = 0, timer = setTimeout(swap, DWELL);
+    var startDelay = 620;    /* let the name land first          */
+    var lineDelay  = 1180;   /* then the "I build" line rises     */
 
-    /* Keep the box sized to the live word across a font load or a resize. */
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(function () { setWidth(current); });
+    requestAnimationFrame(function () {
+      setTimeout(function () { center.classList.add('intro-name'); }, startDelay);
+      setTimeout(function () {
+        center.classList.add('intro-line');
+        setTimeout(type, 560);           /* start once the line has risen */
+      }, lineDelay);
+    });
+
+    var TYPE = 55, ERASE = 32, HOLD = 1500, GAP = 420;
+    var wi = 0;
+
+    function type() {
+      var word = list[wi], n = 0;
+      (function tick() {
+        out.textContent = word.slice(0, ++n);
+        if (n < word.length) setTimeout(tick, TYPE + Math.random() * 45);
+        else setTimeout(erase, HOLD);
+      })();
     }
-    window.addEventListener('resize', function () { setWidth(current); });
 
-    function wordEl(text) {
-      var el = document.createElement('span');
-      el.className = 'word';
-      el.textContent = text;
-      return el;
-    }
-
-    /* Width only — the height comes from the word's own line box plus the
-       mask's padding, so it never needs pinning and never clips. */
-    function setWidth(el) {
-      box.style.width = Math.ceil(el.getBoundingClientRect().width) + 'px';
-    }
-
-    function swap() {
-      i = (i + 1) % words.length;
-      var next = wordEl(words[i]);
-
-      if (reduced) {
-        box.replaceChildren(next);
-        setWidth(next);
-        current = next;
-        timer = setTimeout(swap, DWELL);
-        return;
-      }
-
-      /* incoming starts a line below, outgoing is lifted out of flow so the
-         box can resize to the incoming word while the two animate together */
-      next.style.transform = 'translateY(105%)';
-      box.appendChild(next);
-      current.classList.add('is-out');
-      setWidth(next);
-
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          current.style.transition = 'transform ' + SLIDE + 'ms ' + 'cubic-bezier(.16,1,.3,1)';
-          next.style.transition    = 'transform ' + SLIDE + 'ms ' + 'cubic-bezier(.16,1,.3,1)';
-          current.style.transform = 'translateY(-105%)';
-          next.style.transform = 'translateY(0)';
-        });
-      });
-
-      var out = current;
-      setTimeout(function () { out.remove(); }, SLIDE + 40);
-      current = next;
-      timer = setTimeout(swap, DWELL);
+    function erase() {
+      var word = out.textContent, n = word.length;
+      (function tick() {
+        out.textContent = word.slice(0, --n);
+        if (n > 0) setTimeout(tick, ERASE);
+        else { wi = (wi + 1) % list.length; setTimeout(type, GAP); }
+      })();
     }
   })();
 
@@ -329,36 +304,44 @@
        the back would be too small to make sense of. */
     var MIN_WIDTH = 900;
 
-    var TURNS  = 3;     /* whole revolutions across the path — must be integer */
-    var TILT   = 30;    /* deg a card turns to face the middle                 */
-    var ROLL   = 7;     /* deg of in-plane roll, tied to height on the path    */
-    var SEAM   = 0.08;  /* fraction of the path spent fading through the wrap  */
-    var BACK   = 0.28;  /* how visible a card is at the very back              */
-    var TURN   = 74;    /* seconds for one unattended pass of the whole path   */
-    var SCROLL = 0.30;  /* passes added by scrolling the hero away             */
-    var GAIN   = 1.8;   /* how much of a drag carries into the spiral          */
+    var TILT   = 40;    /* deg the whole hoop leans back toward the viewer     */
+    var FACE   = 14;    /* deg each card turns to face the middle              */
+    var BACK   = 0.32;  /* how visible a card is at the far top of the hoop    */
+    var TURN   = 46;    /* seconds for one unattended revolution               */
+    var SCROLL = 0.30;  /* revolutions added by scrolling the hero away        */
+    var GAIN   = 1.1;   /* how much of a drag carries into the spin            */
     var DECAY  = 0.04;  /* of the fling speed left after one second            */
 
-    var SPAN = 0, RY = 0, RZ = 0;
+    var RX = 0, RY = 0, RZ = 0;
+    var SIN = Math.sin(TILT * Math.PI / 180);
+    var COS = Math.cos(TILT * Math.PI / 180);
 
     var auto = 0, scrolled = 0, thrown = 0, vel = 0;
     var dragging = false, moved = 0, lastX = 0, lastT = 0;
     var ticking = false, active = false, pin = null;
     var lastBase = -1, lastFocus = -1;
 
+    /* The cards ride a single ellipse — a hoop — tilted back around its own
+       horizontal axis so the top edge leans away and the bottom swings
+       toward you. Because every card sits out at the rim, the middle of the
+       hoop is always empty: that hole is the frame the name lives in. The
+       radii are set wide and tall enough that the rim clears the title on
+       every side, with a card-based floor so it never collapses on a small
+       window. */
     function measure() {
       var w = window.innerWidth;
       var h = stage.offsetHeight || window.innerHeight;
-      /* Spacing is 2·SPAN/N, so this is what decides how many cards are on
-         screen and how much air is between them. 1.5 viewports of travel
-         puts six or so in view at once. The card-width floor is what holds
-         at the narrow end, where the card stops shrinking with the viewport
-         and a pure viewport fraction would start stacking them. */
-      var cw = cards[0].offsetWidth || 200;
-      SPAN = Math.max(w * 1.35, cw * 9);
-      RY   = Math.min(h * 0.34, 300);
-      RZ   = 440;                     /* paired with the 1700px perspective:
-                                         1.35x at the front, 0.79x at the back */
+      var cw = cards[0].offsetWidth || 220;
+      var ch = cw * 0.62;
+
+      /* The hoop has to be bigger than the title it frames, on both axes. On
+         screen the vertical rim sits at RY*cos(tilt); that plus a card's half
+         height has to clear the name's half height, and RX plus a card's half
+         width has to clear the name's half width — hence the generous
+         fractions and the card-based floors. */
+      RX = Math.max(w * 0.36, cw * 1.5);
+      RY = Math.max(h * 0.40, ch * 2.2) / COS;
+      RZ = RY * SIN;                  /* depth comes out of the lean, not a knob */
     }
 
     function wrap01(v) { v %= 1; return v < 0 ? v + 1 : v; }
@@ -371,36 +354,29 @@
       var focus = 0, best = -Infinity;
 
       for (var i = 0; i < N; i++) {
-        var u = wrap01(0.5 + base - i / N);
+        /* Even spacing around the hoop; the whole thing rotates with base. */
+        var ang = (base + i / N) * Math.PI * 2;
+        var ex  = Math.cos(ang);      /* -1 left … +1 right */
+        var ey  = Math.sin(ang);      /* -1 top  … +1 bottom (before the lean) */
 
-        var ang = u * Math.PI * 2 * TURNS + Math.PI;
-        var x   = (u - 0.5) * 2 * SPAN;
-        var c   = Math.cos(ang);
-        var y   = Math.sin(ang) * RY;
-        var z   = c * RZ;
+        var x = ex * RX;
+        var y = ey * RY * COS;        /* the lean foreshortens the vertical */
+        var z = ey * RZ;              /* and turns it into depth: bottom near */
 
-        /* Two fades multiplied. The first hides the jump in x at the wrap;
-           the second just settles the far side back so the near side reads
-           first. Kept gentle — the whole point is that you can see a lot of
-           them at once. */
-        var edge  = Math.min(u, 1 - u);
-        var seam  = edge >= SEAM ? 1 : edge / SEAM;
-        var depth = (c + 1) / 2;                            /* 0 back, 1 front */
+        var depth = (ey + 1) / 2;     /* 0 at the far top, 1 at the near bottom */
 
         var card = cards[i];
         var s = card.style;
         s.setProperty('--x',  x.toFixed(2) + 'px');
         s.setProperty('--y',  y.toFixed(2) + 'px');
         s.setProperty('--z',  z.toFixed(2) + 'px');
-        s.setProperty('--ry', (x / SPAN * TILT).toFixed(2) + 'deg');
-        s.setProperty('--rz', (-y / RY * ROLL).toFixed(2) + 'deg');
-        s.opacity = (seam * (BACK + (1 - BACK) * depth)).toFixed(3);
+        s.setProperty('--ry', (-ex * FACE).toFixed(2) + 'deg');
+        s.setProperty('--rz', (ex * 4).toFixed(2) + 'deg');
+        s.opacity = (BACK + (1 - BACK) * depth).toFixed(3);
 
-        card.classList.toggle('is-far', c < -0.55);
+        card.classList.toggle('is-far', ey < -0.35);
 
-        /* Whichever card is nearest the front, and not off in the wings. */
-        var score = c - Math.abs(x) / SPAN;
-        if (score > best) { best = score; focus = i; }
+        if (depth > best) { best = depth; focus = i; }
       }
 
       if (focus !== lastFocus) {
@@ -430,9 +406,9 @@
 
     /* ---- drag ------------------------------------------------------------
 
-       x maps linearly to u, so a drag is just dx / (2·SPAN) — the card under
-       the pointer keeps up with it. GAIN lifts that a little, because at this
-       spacing a one-to-one drag asks for a very long swipe. */
+       A drag across the width of the stage turns the hoop about one full
+       revolution; GAIN trims that to taste. The fling carries the last
+       velocity and decays. */
 
     function onDown(e) {
       if (e.button > 0) return;
@@ -453,7 +429,7 @@
       lastT = e.timeStamp;
       moved += Math.abs(dx);
 
-      var du = (dx * GAIN) / (2 * SPAN);
+      var du = (dx * GAIN) / Math.max(window.innerWidth, 1);
       thrown += du;
       vel = du / dt;              /* carried into the fling on release */
     }
@@ -572,105 +548,53 @@
     return { decide: decide, refresh: function () { if (active) { lastBase = -1; render(); } } };
   })();
 
-  /* ==========================================================================
-     The drawn timeline
+  /* ---------------------------------------------------------- Era media
 
-     The stops are laid out first, as an ordinary alternating grid, and the
-     line is built afterwards from wherever the nodes actually landed — so
-     the curve follows the layout rather than the layout being bent to fit a
-     curve, and it survives any reflow by being rebuilt.
+     Each era's media column drifts against the copy as the era crosses the
+     viewport — the parallax that carries one scene into the next. And each
+     video is a facade: the thumbnail stands in until it is clicked, then the
+     real player is swapped in, so the page never loads six embeds up front.
+     The <a> is the no-JS path; if the swap cannot run the click just opens
+     YouTube. */
 
-     Between two stops the path is a cubic with its control points pulled
-     vertically, which gives the S-bend as the nodes alternate sides. At two
-     of the joins it also turns a full loop: an arc with the large-arc and
-     sweep flags both set and an end point a hair from the start draws a
-     circle that closes on itself, which is the loop, and the path carries on
-     from where it was.
-     ========================================================================== */
-
-  var timelineLine = (function () {
-    var rail = document.querySelector('.tl-rail');
-    if (!rail) return null;
-
-    var svg  = rail.querySelector('.tl-line');
-    var path = svg && svg.querySelector('path');
-    var nodes = [].slice.call(rail.querySelectorAll('.tl-node'));
-    if (!svg || !path || nodes.length < 2) return null;
-
-    var length = 0;
-
-    function build() {
-      var box = rail.getBoundingClientRect();
-      if (!box.width || !box.height) return;
-
-      svg.setAttribute('viewBox', '0 0 ' + box.width + ' ' + box.height);
-
-      var pts = nodes.map(function (n) {
-        var r = n.getBoundingClientRect();
-        return [r.left - box.left + r.width / 2, r.top - box.top + r.height / 2];
-      });
-
-      /* One smooth line that weaves between the nodes — no loops, no tricks.
-         The earlier version turned full 360 circles at two of the joins,
-         which read as a gimmick stuck onto the layout. This is a plain cubic
-         from each node to the next with the control handles pulled straight
-         down and up, so the curve leaves and meets every node vertically and
-         the whole thing flows as one hand-drawn stroke. Start a little above
-         the first node and finish below the last, so it reads as passing
-         through them rather than starting and stopping. */
-      var d = 'M ' + pts[0][0] + ' ' + (pts[0][1] - 56) +
-              ' L ' + pts[0][0] + ' ' + pts[0][1];
-
-      for (var i = 0; i < pts.length - 1; i++) {
-        var a = pts[i], b = pts[i + 1];
-        var bend = (b[1] - a[1]) * 0.5;
-        d += ' C ' + a[0] + ' ' + (a[1] + bend) +
-             ', ' + b[0] + ' ' + (b[1] - bend) +
-             ', ' + b[0] + ' ' + b[1];
-      }
-
-      var last = pts[pts.length - 1];
-      d += ' L ' + last[0] + ' ' + (last[1] + 56);
-
-      path.setAttribute('d', d);
-      length = path.getTotalLength();
-
-      if (reduced) {
-        path.style.strokeDasharray = 'none';
-        path.style.strokeDashoffset = '0';
-      } else {
-        path.style.strokeDasharray = length;
-        /* Keep whatever fraction is already drawn across a rebuild, rather
-           than snapping the line back to empty on a resize. */
-        var drawn = parseFloat(path.dataset.drawn || '0');
-        path.style.strokeDashoffset = length * (1 - drawn);
-      }
-    }
-
-    build();
-
+  (function () {
     if (!reduced && hasGsap) {
-      ScrollTrigger.create({
-        trigger: rail,
-        start: 'top 78%',
-        end: 'bottom 65%',
-        scrub: 0.7,
-        invalidateOnRefresh: true,
-        onRefreshInit: build,
-        onUpdate: function (self) {
-          path.dataset.drawn = self.progress;
-          path.style.strokeDashoffset = length * (1 - self.progress);
-        }
+      document.querySelectorAll('[data-parallax]').forEach(function (el) {
+        var d = parseFloat(el.getAttribute('data-parallax')) || 0;
+        gsap.fromTo(el, { y: -d }, {
+          y: d,
+          ease: 'none',
+          scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: true }
+        });
       });
     }
 
-    return { build: build };
+    document.querySelectorAll('.vid[data-yt]').forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        var id = link.getAttribute('data-yt');
+        if (!id || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+        e.preventDefault();
+
+        var frame = link.querySelector('.vid-frame');
+        if (!frame || link.dataset.playing) return;
+        link.dataset.playing = '1';
+
+        var iframe = document.createElement('iframe');
+        iframe.src = 'https://www.youtube-nocookie.com/embed/' + id +
+                     '?autoplay=1&rel=0&modestbranding=1';
+        iframe.title = 'YouTube video player';
+        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.loading = 'eager';
+        frame.replaceChildren(iframe);
+      });
+    });
   })();
 
   /* ---------------------------------------------------------- Resize
 
      One debounced handler for everything that measures, so a drag on a
-     window edge does not run three independent rebuilds per frame. */
+     window edge does not run independent rebuilds per frame. */
 
   (function () {
     var timer;
@@ -678,7 +602,6 @@
       clearTimeout(timer);
       timer = setTimeout(function () {
         if (heroSpiral) { heroSpiral.decide(); heroSpiral.refresh(); }
-        if (timelineLine) timelineLine.build();
         if (hasGsap) ScrollTrigger.refresh();
       }, 180);
     });
@@ -876,7 +799,6 @@
   /* Everything measures at load; late fonts and the portrait shift things
      under it. Rebuild once each has landed. */
   function settle() {
-    if (timelineLine) timelineLine.build();
     if (heroSpiral) heroSpiral.refresh();
     if (hasGsap) ScrollTrigger.refresh();
   }

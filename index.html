@@ -15,7 +15,7 @@
 </head>
 <body>
 
-<a class="skip" href="#timeline">Skip to the timeline</a>
+<a class="skip" href="#path">Skip to the story</a>
 
 <header class="site-head">
   <div class="head-inner">
@@ -30,8 +30,7 @@
 
     <nav class="nav" aria-label="Primary">
       <a href="#top">Work</a>
-      <a href="#timeline">Timeline</a>
-      <a href="#featured">Close up</a>
+      <a href="#path">The path</a>
       <a href="#contact">Contact</a>
     </nav>
 
@@ -47,17 +46,16 @@
 
         <span class="hero-glow" aria-hidden="true"></span>
 
-        <div class="hero-center">
-          <h1 class="hero-title" id="hero-heading">
-            <span class="line"><span>Jeffrey</span></span>
-            <span class="line"><span>Hamilton</span></span>
-          </h1>
-          <!-- The word swaps in place, s0animation style. The list lives in
-               data-skills; app.js reads it, and the text here is the first
-               entry so the line reads correctly before the script runs. -->
-          <p class="hero-skills" aria-label="What I build: web tools, desktop apps, browser games, on-device AI, motion graphics">
+        <div class="hero-center" data-intro>
+          <h1 class="hero-title" id="hero-heading">Jeffrey Hamilton</h1>
+          <!-- Staged by app.js: the name fades in first, then this line
+               glides up, then the word types itself out and cycles. The
+               list lives in data-skills; the word here is the first entry so
+               the line still reads with the script off (see .no-js path in
+               the CSS, which just shows it standing still). -->
+          <p class="hero-skills" aria-label="What I build: web tools, desktop apps, browser games, on-device AI, motion graphics, Minecraft mods">
             <span class="skills-lead">I build</span>
-            <span class="skills-rotator" data-skills='["WEB TOOLS","DESKTOP APPS","BROWSER GAMES","ON-DEVICE AI","MOTION GRAPHICS","MINECRAFT MODS"]'>WEB TOOLS</span>
+            <span class="skills-type" data-skills='["web tools","desktop apps","browser games","on-device AI","motion graphics","Minecraft mods"]'><span class="type-out">web tools</span><span class="type-caret" aria-hidden="true"></span></span>
           </p>
         </div>
 
@@ -390,222 +388,155 @@
     </ul>
   </section>
 
-  <!-- ── Timeline ─────────────────────────────────────────── -->
-  <section id="timeline" class="slab timeline on-dark" aria-labelledby="tl-heading">
+  <!-- ── The path: three eras ─────────────────────────────── -->
+  <section id="path" class="slab eras on-dark" aria-labelledby="eras-heading">
     <div class="slab-inner">
+
       <div class="wrap">
-
         <div class="section-head" data-reveal>
-          <h2 id="tl-heading">How I got here</h2>
-          <p class="section-note">2018 to now</p>
+          <h2 id="eras-heading">How I got here</h2>
+          <p class="section-note">Three turns, so far</p>
+        </div>
+      </div>
+
+      <!-- 01 ─ games, edits, 3D -->
+      <article class="era">
+        <div class="wrap era-grid">
+          <div class="era-copy" data-stagger="0.08">
+            <p class="era-index" data-reveal>01 &middot; where it started</p>
+            <h3 class="era-title" data-reveal>Making things move</h3>
+            <p class="era-text" data-reveal>
+              Before any of the apps it was games, edits and 3D. I taught myself Blender, cut
+              videos for YouTube, and built little games for the plain fun of getting something on
+              screen to move the way I meant it to.
+            </p>
+            <p class="era-text" data-reveal>
+              None of it was for anyone. It was just where I learned to finish a thing and put it
+              out.
+            </p>
+          </div>
+
+          <div class="era-media era-media-quad" data-parallax="-40" data-reveal>
+            <a class="vid" href="https://www.youtube.com/watch?v=7Kh8Nz7sL3g" data-yt="7Kh8Nz7sL3g" target="_blank" rel="noopener" aria-label="Play a game development video on YouTube">
+              <span class="vid-frame">
+                <img src="https://i.ytimg.com/vi/7Kh8Nz7sL3g/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/7Kh8Nz7sL3g/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
+                <span class="vid-play" aria-hidden="true"></span>
+              </span>
+              <span class="vid-cap"><span class="vid-title">A game I built</span><span class="vid-kind">Game dev</span></span>
+            </a>
+            <a class="vid" href="https://www.youtube.com/watch?v=wgRcht-aRic" data-yt="wgRcht-aRic" target="_blank" rel="noopener" aria-label="Play a YouTube edit on YouTube">
+              <span class="vid-frame">
+                <img src="https://i.ytimg.com/vi/wgRcht-aRic/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/wgRcht-aRic/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
+                <span class="vid-play" aria-hidden="true"></span>
+              </span>
+              <span class="vid-cap"><span class="vid-title">An edit</span><span class="vid-kind">YouTube</span></span>
+            </a>
+            <a class="vid" href="https://www.youtube.com/watch?v=O1i1TQkx9b8" data-yt="O1i1TQkx9b8" target="_blank" rel="noopener" aria-label="Play a Blender video on YouTube">
+              <span class="vid-frame">
+                <img src="https://i.ytimg.com/vi/O1i1TQkx9b8/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/O1i1TQkx9b8/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
+                <span class="vid-play" aria-hidden="true"></span>
+              </span>
+              <span class="vid-cap"><span class="vid-title">3D in Blender</span><span class="vid-kind">Blender</span></span>
+            </a>
+            <a class="vid" href="https://www.youtube.com/watch?v=rYwJTA4PRdY" data-yt="rYwJTA4PRdY" target="_blank" rel="noopener" aria-label="Play another Blender video on YouTube">
+              <span class="vid-frame">
+                <img src="https://i.ytimg.com/vi/rYwJTA4PRdY/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/rYwJTA4PRdY/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
+                <span class="vid-play" aria-hidden="true"></span>
+              </span>
+              <span class="vid-cap"><span class="vid-title">More Blender</span><span class="vid-kind">Blender</span></span>
+            </a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 02 ─ minecraft mods with AI -->
+      <article class="era era-flip">
+        <div class="wrap era-grid">
+          <div class="era-copy" data-stagger="0.08">
+            <p class="era-index" data-reveal>02 &middot; the switch</p>
+            <h3 class="era-title" data-reveal>Teaching the machine</h3>
+            <p class="era-text" data-reveal>
+              Then I started leaning on AI to build things faster than I could alone, and the first
+              real target was Minecraft mods &mdash; small tools for a game I already knew inside out.
+            </p>
+            <p class="era-text" data-reveal>
+              It was the first time code stopped being homework and started being the fastest way
+              to get an idea out of my head.
+            </p>
+          </div>
+
+          <div class="era-media era-media-solo" data-parallax="-56" data-reveal>
+            <a class="vid" href="https://www.youtube.com/watch?v=DubOQRZzKdw" data-yt="DubOQRZzKdw" target="_blank" rel="noopener" aria-label="Play a Minecraft modding video on YouTube">
+              <span class="vid-frame">
+                <img src="https://i.ytimg.com/vi/DubOQRZzKdw/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/DubOQRZzKdw/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
+                <span class="vid-play" aria-hidden="true"></span>
+              </span>
+              <span class="vid-cap"><span class="vid-title">Modding with AI</span><span class="vid-kind">Minecraft &middot; Fabric</span></span>
+            </a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 03 ─ vibe-coded apps -->
+      <article class="era">
+        <div class="wrap era-grid">
+          <div class="era-copy" data-stagger="0.08">
+            <p class="era-index" data-reveal>03 &middot; now</p>
+            <h3 class="era-title" data-reveal>Vibe-coded and shipped</h3>
+            <p class="era-text" data-reveal>
+              Now it is real apps, built fast and for fun, and actually put in front of people.
+              Everything in the spiral up top came out of this stretch. Three of them are the ones
+              I keep coming back to.
+            </p>
+          </div>
+
+          <div class="era-media era-media-solo" data-parallax="-56" data-reveal>
+            <a class="vid" href="https://www.youtube.com/watch?v=a01ObVZSNiI" data-yt="a01ObVZSNiI" target="_blank" rel="noopener" aria-label="Play a video about the apps on YouTube">
+              <span class="vid-frame">
+                <img src="https://i.ytimg.com/vi/a01ObVZSNiI/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/a01ObVZSNiI/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
+                <span class="vid-play" aria-hidden="true"></span>
+              </span>
+              <span class="vid-cap"><span class="vid-title">Vibe coding, and fun</span><span class="vid-kind">The apps</span></span>
+            </a>
+          </div>
         </div>
 
-        <div class="tl-rail">
-          <svg class="tl-line" aria-hidden="true" focusable="false" preserveAspectRatio="none">
-            <path fill="none" />
-          </svg>
-
-          <ol class="tl-stops" role="list">
-
-            <li class="tl-stop" data-side="left">
-              <span class="tl-node" aria-hidden="true"></span>
-              <div class="tl-card" data-reveal>
-                <p class="tl-when">2018 <span>to 2022</span></p>
-                <h3 class="tl-title">Eggs</h3>
-                <p class="tl-text">
-                  Four years of farm operations at the family egg business. It is not complicated
-                  work. You do it every morning whether or not you feel like it, and if you skip a
-                  day the problem is still there tomorrow, only bigger.
-                </p>
-                <p class="tl-text">That is most of what I learned about finishing things.</p>
-                <p class="tl-role">Farm Operations &middot; Hamilton Egg Business</p>
-              </div>
-            </li>
-
-            <li class="tl-stop" data-side="right">
-              <span class="tl-node" aria-hidden="true"></span>
-              <div class="tl-card" data-reveal>
-                <p class="tl-when">2021 <span>to now</span></p>
-                <h3 class="tl-title">Showing up</h3>
-                <p class="tl-text">
-                  Volunteering with my church since 2021. Same lesson as the eggs, better company.
-                </p>
-                <p class="tl-role">Volunteer &middot; The Church of Jesus Christ of Latter-day Saints</p>
-              </div>
-            </li>
-
-            <li class="tl-stop" data-side="left">
-              <span class="tl-node" aria-hidden="true"></span>
-              <div class="tl-card" data-reveal>
-                <p class="tl-when">2022 <span>to 2025</span></p>
-                <h3 class="tl-title">The second test</h3>
-                <p class="tl-text">
-                  I failed my first black belt test. Went back, trained, and passed the second one.
-                  Then I spent three years teaching there, which is where I found out that
-                  explaining a thing properly is harder than doing it.
-                </p>
-                <p class="tl-text">That is roughly how the rest of it has gone too.</p>
-                <p class="tl-role">
-                  Teaching &middot;
-                  <a href="https://oremkarate.com/" target="_blank" rel="noopener">Bobby Lawrence Karate</a>
-                </p>
-              </div>
-            </li>
-
-            <li class="tl-stop" data-side="right">
-              <span class="tl-node" aria-hidden="true"></span>
-              <div class="tl-card" data-reveal>
-                <p class="tl-when">Since then</p>
-                <h3 class="tl-title">Things I couldn't find</h3>
-                <p class="tl-text">
-                  Every project turning up there started the same way: I wanted something, went
-                  looking, and what I found wanted an account, a subscription, or my files on its
-                  server first. So I built the version I wanted instead.
-                </p>
-                <p class="tl-text">
-                  None of it came from a bootcamp or a fancy program. I just kept showing up and
-                  figured things out.
-                </p>
-              </div>
-            </li>
-
-            <li class="tl-stop" data-side="left">
-              <span class="tl-node" aria-hidden="true"></span>
-              <div class="tl-card" data-reveal>
-                <p class="tl-when">2026 <span>to now</span></p>
-                <h3 class="tl-title">Now</h3>
-                <p class="tl-text">
-                  Four things at once, which is about right.
-                </p>
-                <ul class="tl-list" role="list">
-                  <li><strong>Software Engineering</strong> &middot; Provo CAPS</li>
-                  <li><strong>Intern</strong> &middot; Doing Business Intelligently (DBI)</li>
-                  <li><strong>Property Manager</strong> &middot; Apartment 221, 642 N 200 E, Provo</li>
-                  <li><strong>Bagger, then Cashier</strong> &middot;
-                    <a href="https://www.daysmarket.com/" target="_blank" rel="noopener">Day's Market</a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-
-            <li class="tl-stop" data-side="right">
-              <span class="tl-node" aria-hidden="true"></span>
-              <div class="tl-card" data-reveal>
-                <p class="tl-when">2027 <span>expected</span></p>
-                <h3 class="tl-title">Timpview High School</h3>
-                <p class="tl-text">
-                  Diploma expected 2027, currently taking digital media. Black belt at Bobby
-                  Lawrence Karate. Nine course certificates along the way, each one a PDF.
-                </p>
-                <ul class="chips" role="list">
-                  <li><a href="assets/certificates/digital-media-2.pdf" target="_blank" rel="noopener">Digital Media 2</a></li>
-                  <li><a href="assets/certificates/digital-media-1.pdf" target="_blank" rel="noopener">Digital Media 1</a></li>
-                  <li><a href="assets/certificates/computer-programming-2-java.pdf" target="_blank" rel="noopener">Computer Programming 2</a></li>
-                  <li><a href="assets/certificates/computer-programming-1.pdf" target="_blank" rel="noopener">Computer Programming 1</a></li>
-                  <li><a href="assets/certificates/game-development-fundamentals.pdf" target="_blank" rel="noopener">Game Development</a></li>
-                  <li><a href="assets/certificates/robotics-1.pdf" target="_blank" rel="noopener">Robotics 1</a></li>
-                  <li><a href="assets/certificates/unmanned-aerial-systems.pdf" target="_blank" rel="noopener">Unmanned Aerial Systems</a></li>
-                  <li><a href="assets/certificates/architectural-design-2.pdf" target="_blank" rel="noopener">Architectural Design 2</a></li>
-                  <li><a href="assets/certificates/cad-architectural-design-1.pdf" target="_blank" rel="noopener">CAD Architectural Design I</a></li>
-                </ul>
-              </div>
-            </li>
-
-          </ol>
+        <div class="wrap era-apps" data-stagger="0.08">
+          <a class="app-card" href="https://jeffrey-hamilton-tools.vercel.app/" target="_blank" rel="noopener" data-reveal>
+            <span class="app-shot"><img src="assets/shots/tools.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Privacy-First Web Tools"></span>
+            <span class="app-body">
+              <span class="app-title">Privacy-First Web Tools</span>
+              <span class="app-desc">Sixteen tools that run in the tab, so your files never leave your machine.</span>
+              <span class="app-go">Open the toolbox <span aria-hidden="true">&#8594;</span></span>
+            </span>
+          </a>
+          <a class="app-card" href="https://jeffreyhamilton6399.github.io/buddy-desktop" target="_blank" rel="noopener" data-reveal>
+            <span class="app-shot"><img src="assets/shots/buddy.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Buddy"></span>
+            <span class="app-body">
+              <span class="app-title">Buddy</span>
+              <span class="app-desc">A desktop AI orb with the model, voice and speech bundled in. Works with the wifi off.</span>
+              <span class="app-go">Download Buddy <span aria-hidden="true">&#8594;</span></span>
+            </span>
+          </a>
+          <a class="app-card" href="https://jeffreyhamilton6399.github.io/vela/" target="_blank" rel="noopener" data-reveal>
+            <span class="app-shot"><img src="assets/shots/vela.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Vela"></span>
+            <span class="app-body">
+              <span class="app-title">Vela</span>
+              <span class="app-desc">A browser with the tracking taken out and a local assistant in the sidebar.</span>
+              <span class="app-go">Download Vela <span aria-hidden="true">&#8594;</span></span>
+            </span>
+          </a>
         </div>
+      </article>
 
+      <div class="wrap">
         <ul class="story-links" role="list" data-reveal>
           <li><a class="ulink" href="https://github.com/JeffreyHamilton6399" target="_blank" rel="noopener">GitHub</a></li>
           <li><a class="ulink" href="https://www.linkedin.com/in/jeffrey-s-hamilton/" target="_blank" rel="noopener">LinkedIn</a></li>
           <li><a class="ulink" href="https://www.youtube.com/@Jeffrey_Creates" target="_blank" rel="noopener">YouTube</a></li>
         </ul>
-
       </div>
-    </div>
-  </section>
 
-  <!-- ── Three up close ───────────────────────────────────── -->
-  <section id="featured" class="slab work" aria-labelledby="work-heading">
-    <div class="slab-inner">
-      <div class="wrap">
-        <div class="section-head" data-reveal>
-          <h2 id="work-heading">Three up close</h2>
-          <p class="section-note">The rest are in the spiral</p>
-        </div>
-
-        <article class="project">
-          <div class="project-body" data-stagger="0.07">
-            <p class="project-index" data-reveal>01</p>
-            <h3 class="project-title" data-reveal>Privacy-First Web Tools</h3>
-            <p class="project-desc" data-reveal>
-              Sixteen small tools I kept needing. Shrinking files, converting formats, cutting the
-              background out of a photo, stripping EXIF data, merging PDFs, pulling the vocals out
-              of a song. They all run inside the browser tab. Your files never get uploaded, because
-              there's nowhere for them to go.
-            </p>
-            <dl class="meta" data-reveal>
-              <div><dt>Built with</dt><dd>TypeScript, React, WebAssembly</dd></div>
-              <div><dt>Size</dt><dd>16 tools, all in the browser</dd></div>
-            </dl>
-            <a class="project-link" href="https://jeffrey-hamilton-tools.vercel.app/" target="_blank" rel="noopener" data-reveal>
-              Open the toolbox<span aria-hidden="true">&#8594;</span>
-            </a>
-          </div>
-          <figure class="project-shot" data-reveal>
-            <img src="assets/shots/tools.png" width="2880" height="1800" loading="lazy" decoding="async"
-                 alt="The Privacy-First Web Tools index, showing a grid of tool cards including ShrinkRay, ConvertIt, Cutout and DevToys.">
-          </figure>
-        </article>
-
-        <article class="project project-flip">
-          <div class="project-body" data-stagger="0.07">
-            <p class="project-index" data-reveal>02</p>
-            <h3 class="project-title" data-reveal>Buddy</h3>
-            <p class="project-desc" data-reveal>
-              A small orb that sits on top of your other windows. Say &ldquo;Hey Buddy&rdquo; and it starts
-              listening. Talk over it and it stops. The model, the voice and the speech recognition
-              are all bundled into the app, so there's no account to make and no key to paste in, and
-              it keeps working with the wifi off.
-            </p>
-            <dl class="meta" data-reveal>
-              <div><dt>Built with</dt><dd>Electron, llama.cpp, Kokoro TTS, Whisper</dd></div>
-              <div><dt>Runs on</dt><dd>macOS, Windows, Linux</dd></div>
-            </dl>
-            <a class="project-link" href="https://jeffreyhamilton6399.github.io/buddy-desktop" target="_blank" rel="noopener" data-reveal>
-              Download Buddy<span aria-hidden="true">&#8594;</span>
-            </a>
-          </div>
-          <figure class="project-shot" data-reveal>
-            <img src="assets/shots/buddy.png" width="2880" height="1800" loading="lazy" decoding="async"
-                 alt="Buddy's landing page: an AI that lives on your desktop, shown beside a chat window with the orb assistant.">
-          </figure>
-        </article>
-
-        <article class="project">
-          <div class="project-body" data-stagger="0.07">
-            <p class="project-index" data-reveal>03</p>
-            <h3 class="project-title" data-reveal>Vela</h3>
-            <p class="project-desc" data-reveal>
-              A browser with the tracking taken out. Ad and tracker blocking is on before you open
-              the first tab, there's a local AI assistant in the sidebar, and your history and
-              bookmarks sit in one file on your machine that you can open and read yourself. It
-              makes two kinds of request: the pages you ask for, and one check for a new version.
-            </p>
-            <dl class="meta" data-reveal>
-              <div><dt>Built with</dt><dd>Electron, TypeScript, Chromium</dd></div>
-              <div><dt>Sends</dt><dd>The pages you open, and one update check</dd></div>
-            </dl>
-            <a class="project-link" href="https://jeffreyhamilton6399.github.io/vela/" target="_blank" rel="noopener" data-reveal>
-              Download Vela<span aria-hidden="true">&#8594;</span>
-            </a>
-          </div>
-          <figure class="project-shot" data-reveal>
-            <img src="assets/shots/vela.png" width="2880" height="1800" loading="lazy" decoding="async"
-                 alt="Vela's landing page: a browser that collects nothing, with downloads for Windows, macOS and Linux, above a shot of the browser reporting 14 trackers blocked on a search page.">
-          </figure>
-        </article>
-
-      </div>
     </div>
   </section>
 
