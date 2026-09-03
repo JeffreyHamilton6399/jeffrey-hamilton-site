@@ -362,10 +362,8 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
    pull the element out of that and flatten it against the cards. */
 .hero.is-spiral .hero-center {
   position: relative;
-  /* Lifted off centre to meet the dropped axis in app.js, so the front of
-     the helix passes under the name rather than through it. */
-  transform: translateZ(0) translateY(-7vh);
-  max-width: min(94vw, 62rem);
+  transform: translateZ(0);
+  max-width: min(96vw, 68rem);
   pointer-events: none;
 }
 .hero.is-spiral .hero-role { max-width: 32rem; pointer-events: auto; }
@@ -377,7 +375,7 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   top: 50%;
   width: min(84vw, 66rem);
   aspect-ratio: 1;
-  transform: translate(-50%, -50%) translateY(-7vh) translateZ(-1px);
+  transform: translate(-50%, -50%) translateZ(-1px);
   border-radius: 50%;
   background: radial-gradient(circle,
     color-mix(in srgb, var(--paper) 88%, transparent) 28%,
@@ -450,7 +448,7 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   position: absolute;
   left: 50%;
   top: 50%;
-  width: clamp(11rem, 15vw, 14.5rem);
+  width: clamp(12.5rem, 17vw, 17rem);
   margin: 0;
   transform-style: preserve-3d;
   backface-visibility: hidden;
@@ -521,6 +519,45 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 
 /* Far round the back a card is small enough that the words are noise. */
 .spiral-card.is-far .card-body { display: none; }
+
+/* On the spiral a card is a poster, not a card: a tall crop with the title
+   set over the foot of the image. The white text strip that works in the
+   grid reads as a label stuck on the bottom once these are tilted in 3D,
+   and it doubles the height of something that is already the biggest thing
+   on the screen. The grid below keeps the strip. */
+.spiral-track .spiral-card > a { position: relative; border-radius: 4px; }
+.spiral-track .card-shot { aspect-ratio: 4 / 5; }
+
+.spiral-track .card-body {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column-reverse;   /* the small label sits above the title */
+  align-items: flex-start;
+  gap: .375rem;
+  padding: 3.5rem .875rem .875rem;
+  border-top: 0;
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--void) 90%, transparent),
+    color-mix(in srgb, var(--void) 55%, transparent) 45%,
+    transparent);
+}
+.spiral-track .card-title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(1rem, 1.5vw, 1.375rem);
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0;
+}
+.spiral-track .card-desc { display: none; }
+.spiral-track .card-tech {
+  margin: 0;
+  font-size: .5rem;
+  color: color-mix(in srgb, #fff 72%, transparent);
+}
 
 .spiral-card.is-focus > a {
   border-color: color-mix(in srgb, var(--iris) 60%, transparent);

@@ -215,9 +215,11 @@
      an exact multiple of 2π there, leaving nothing but the jump in x, which
      happens well off screen.
 
-     The name sits at depth zero in the same 3D rendering context, so cards
-     coming round the near side cover it and cards on the far side are
-     covered by it. That sorting is the picture, and it is why nothing in the
+     The axis runs through the name, which sits at depth zero in the same 3D
+     rendering context — so the cards orbit it, and the ones coming round the
+     near side cover it while the ones on the far side are covered by it. The
+     name is set wide enough that a card at the front can only ever take a
+     bite out of it, never the whole thing. That sorting is the picture, and it is why nothing in the
      subtree sets z-index or opacity — either one flattens the context.
 
      Three things move the position, and they simply add:
@@ -246,8 +248,8 @@
     var MIN_WIDTH = 900;
 
     var TURNS  = 3;     /* whole revolutions across the path — must be integer */
-    var TILT   = 18;    /* deg a card turns to face the middle                 */
-    var ROLL   = 5;     /* deg of in-plane roll, tied to height on the path    */
+    var TILT   = 30;    /* deg a card turns to face the middle                 */
+    var ROLL   = 7;     /* deg of in-plane roll, tied to height on the path    */
     var SEAM   = 0.08;  /* fraction of the path spent fading through the wrap  */
     var BACK   = 0.28;  /* how visible a card is at the very back              */
     var TURN   = 74;    /* seconds for one unattended pass of the whole path   */
@@ -255,7 +257,7 @@
     var GAIN   = 1.8;   /* how much of a drag carries into the spiral          */
     var DECAY  = 0.04;  /* of the fling speed left after one second            */
 
-    var SPAN = 0, RY = 0, RZ = 0, AXIS = 0;
+    var SPAN = 0, RY = 0, RZ = 0;
 
     var auto = 0, scrolled = 0, thrown = 0, vel = 0;
     var dragging = false, moved = 0, lastX = 0, lastT = 0;
@@ -271,17 +273,10 @@
          at the narrow end, where the card stops shrinking with the viewport
          and a pure viewport fraction would start stacking them. */
       var cw = cards[0].offsetWidth || 200;
-      SPAN = Math.max(w * 1.5, cw * 10);
-      RY   = Math.min(h * 0.26, 230);
-      RZ   = 520;                     /* paired with the 1700px perspective:
-                                         1.44x at the front, 0.77x at the back */
-      /* The nearest point of a helix is also its mid-height, so with the axis
-         through the middle of the screen the biggest card parks exactly on
-         the name every pass and blots it out. Dropping the axis puts that
-         point below the name: cards still cross it, but they cross it on the
-         way up and down, at middling depth and size, which is where the
-         sorting reads anyway. */
-      AXIS = Math.min(h * 0.13, 115);
+      SPAN = Math.max(w * 1.35, cw * 9);
+      RY   = Math.min(h * 0.34, 300);
+      RZ   = 440;                     /* paired with the 1700px perspective:
+                                         1.35x at the front, 0.79x at the back */
     }
 
     function wrap01(v) { v %= 1; return v < 0 ? v + 1 : v; }
@@ -299,7 +294,7 @@
         var ang = u * Math.PI * 2 * TURNS + Math.PI;
         var x   = (u - 0.5) * 2 * SPAN;
         var c   = Math.cos(ang);
-        var y   = Math.sin(ang) * RY + AXIS;
+        var y   = Math.sin(ang) * RY;
         var z   = c * RZ;
 
         /* Two fades multiplied. The first hides the jump in x at the wrap;
@@ -316,10 +311,10 @@
         s.setProperty('--y',  y.toFixed(2) + 'px');
         s.setProperty('--z',  z.toFixed(2) + 'px');
         s.setProperty('--ry', (x / SPAN * TILT).toFixed(2) + 'deg');
-        s.setProperty('--rz', (-(y - AXIS) / RY * ROLL).toFixed(2) + 'deg');
+        s.setProperty('--rz', (-y / RY * ROLL).toFixed(2) + 'deg');
         s.opacity = (seam * (BACK + (1 - BACK) * depth)).toFixed(3);
 
-        card.classList.toggle('is-far', c < -0.3);
+        card.classList.toggle('is-far', c < -0.55);
 
         /* Whichever card is nearest the front, and not off in the wings. */
         var score = c - Math.abs(x) / SPAN;
@@ -625,13 +620,18 @@
      ident restarted from zero so it never opens halfway through.
      ========================================================================== */
 
-  /* Warm the frames once the page itself is done. They are lazy (images) or
-     metadata-only (video) in the markup so first paint is not held up, but a
-     lazy loader inside an overflow:hidden stage often never judges them near
-     enough to fetch. One at a time, in document order, so they do not fight
-     each other for bandwidth. */
+  /* Warm every card image once the page itself is done. They are lazy
+     (images) or metadata-only (video) in the markup so first paint is not
+     held up — but a lazy loader never judges anything inside the spiral as
+     near enough to fetch. The stage is an overflow:hidden box full of
+     3D-transformed children, and the whole hero would sit there as a set of
+     blank rectangles waiting for a viewport intersection that never comes.
+
+     One at a time, in document order, so seventeen screenshots do not fight
+     each other for the connection. The featured shots further down are left
+     alone; those are in normal flow and lazy loading works on them. */
   window.addEventListener('load', function () {
-    var pending = [].slice.call(document.querySelectorAll('.cycle img, .cycle video'));
+    var pending = [].slice.call(document.querySelectorAll('.card-shot img, .card-shot video'));
 
     (function next() {
       var el = pending.shift();
