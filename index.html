@@ -32,9 +32,8 @@
       <a href="#top">Work</a>
       <a href="#timeline">Timeline</a>
       <a href="#featured">Close up</a>
+      <a href="#contact">Contact</a>
     </nav>
-
-    <a class="head-mail" href="mailto:jeffreyscotthamilton6399@gmail.com">jeffreyscotthamilton6399@gmail.com</a>
 
   </div>
 </header>
@@ -53,9 +52,12 @@
             <span class="line"><span>Jeffrey</span></span>
             <span class="line"><span>Hamilton</span></span>
           </h1>
-          <p class="hero-role">
-            I make software that runs on <em>your</em> computer, not on somebody's server.
-            Seventeen of them are turning around this.
+          <!-- The word swaps in place, s0animation style. The list lives in
+               data-skills; app.js reads it, and the text here is the first
+               entry so the line reads correctly before the script runs. -->
+          <p class="hero-skills" aria-label="What I build: web tools, desktop apps, browser games, on-device AI, motion graphics">
+            <span class="skills-lead">I build</span>
+            <span class="skills-rotator" data-skills='["WEB TOOLS","DESKTOP APPS","BROWSER GAMES","ON-DEVICE AI","MOTION GRAPHICS","MINECRAFT MODS"]'>WEB TOOLS</span>
           </p>
         </div>
 
@@ -66,8 +68,7 @@
            z-index, so anything that has to sit flatly on top of the whole
            scene has to live beside it. -->
       <div class="hero-cue" aria-hidden="true">
-        <span class="cue-pill">Explore <span class="cue-arrow">&#8595;</span></span>
-        <span class="cue-hint">Drag to spin</span>
+        <span class="cue-pill">Drag to spin &middot; Scroll to explore <span class="cue-arrow">&#8595;</span></span>
       </div>
 
       <!-- Fades in as the timeline arrives, so the spiral reads as sinking
@@ -636,7 +637,6 @@
 <footer class="site-foot">
   <div class="wrap foot-inner">
     <p>&copy; 2026 Jeffrey Hamilton</p>
-    <p>Built by hand in Provo, Utah</p>
   </div>
 </footer>
 

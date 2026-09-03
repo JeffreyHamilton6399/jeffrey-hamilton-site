@@ -143,7 +143,7 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 /* --------------------------------------------------------- Shared bits */
 
-.section-note, .card-tech, .tl-when, .cue-hint, .nav, .mark-where {
+.section-note, .card-tech, .tl-when, .nav, .mark-where {
   font-family: var(--mono);
   letter-spacing: .14em;
   text-transform: uppercase;
@@ -230,6 +230,9 @@ body.head-dark .site-head { color: var(--on-dark); }
   align-items: center;
   gap: 1.5rem;
 }
+/* The third column is empty now that the address is gone; it stays in the
+   grid so the nav keeps its true centre. */
+.head-inner::after { content: ""; }
 
 .mark {
   pointer-events: auto;
@@ -283,16 +286,6 @@ body.head-dark .mark-where .dot { background: var(--iris-lo); }
 .nav a.is-here { opacity: 1; background: var(--ink); color: var(--paper); }
 body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); }
 
-.head-mail {
-  pointer-events: auto;
-  justify-self: end;
-  font-size: .6875rem;
-  text-decoration: none;
-  opacity: .6;
-  white-space: nowrap;
-  transition: opacity .3s var(--ease);
-}
-.head-mail:hover { opacity: 1; }
 
 /* --------------------------------------------------------- The spiral
 
@@ -327,13 +320,49 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 .hero-title .line { line-height: 1.06; }
 .hero-title .line + .line { margin-top: -.17em; }
 
-.hero-role {
+/* The cycling skill line, s0animation style: a small lead-in and one big
+   word in the display face that swaps in place. */
+.hero-skills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: .35em .55em;
   margin: clamp(1.25rem, 3vw, 2rem) auto 0;
-  max-width: 34rem;
-  font-size: 1.0625rem;
-  color: var(--ink-soft);
 }
-.hero-role em { font-style: normal; color: var(--iris); }
+.skills-lead {
+  font-family: var(--mono);
+  font-size: clamp(.75rem, 1.4vw, .9375rem);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.skills-rotator {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;              /* the mask the words slide through */
+  vertical-align: bottom;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(1.75rem, 5vw, 4rem);
+  /* A hair over 1 so the mask has headroom for Anton's caps — at line-height
+     1 the overflow:hidden box sat exactly on the glyphs and shaved their
+     feet off. */
+  line-height: 1;
+  letter-spacing: -.01em;
+  text-transform: uppercase;
+  color: var(--iris);
+  white-space: nowrap;
+  /* Anton's ink sits low in the line box, so a mask cut to the line height
+     shaves the feet off. Real padding inside the overflow:hidden box gives
+     the glyphs somewhere to sit; the words slide by transform, which padding
+     does not touch, so the reveal still works. */
+  padding: .1em .04em .18em;
+  transition: width .5s var(--ease);   /* the box tracks the new word's width */
+}
+.skills-rotator .word { display: inline-block; line-height: 1; will-change: transform; }
+/* the outgoing word is taken out of flow so the incoming one sets the width */
+.skills-rotator .word.is-out { position: absolute; left: 0; top: 0; }
 
 .hero.is-spiral .hero-stage {
   height: 100vh;
@@ -366,7 +395,7 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   max-width: min(96vw, 68rem);
   pointer-events: none;
 }
-.hero.is-spiral .hero-role { max-width: 32rem; pointer-events: auto; }
+.hero.is-spiral .hero-skills { pointer-events: none; }
 
 .hero.is-spiral .hero-glow {
   display: block;
@@ -426,14 +455,6 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(3px); }
 }
-.cue-hint {
-  position: absolute;
-  right: var(--gutter);
-  font-size: .625rem;
-  font-weight: 500;
-  color: var(--ink-faint);
-}
-
 /* Same <ul> as .spiral-fallback — app.js moves it in and swaps the class. */
 .spiral-track {
   position: absolute;
@@ -448,7 +469,7 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   position: absolute;
   left: 50%;
   top: 50%;
-  width: clamp(12.5rem, 17vw, 17rem);
+  width: clamp(15rem, 22vw, 22rem);
   margin: 0;
   transform-style: preserve-3d;
   backface-visibility: hidden;
@@ -520,13 +541,12 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 /* Far round the back a card is small enough that the words are noise. */
 .spiral-card.is-far .card-body { display: none; }
 
-/* On the spiral a card is a poster, not a card: a tall crop with the title
-   set over the foot of the image. The white text strip that works in the
-   grid reads as a label stuck on the bottom once these are tilted in 3D,
-   and it doubles the height of something that is already the biggest thing
-   on the screen. The grid below keeps the strip. */
-.spiral-track .spiral-card > a { position: relative; border-radius: 4px; }
-.spiral-track .card-shot { aspect-ratio: 4 / 5; }
+/* On the spiral the card is just the screenshot at its own landscape shape,
+   with the title laid over the foot of it. The white strip that works in the
+   grid reads as a label stuck under the image once the card is tilted in 3D,
+   and it makes every card taller than the shot it is captioning. The grid
+   below keeps the strip. */
+.spiral-track .spiral-card > a { position: relative; border-radius: 5px; }
 
 .spiral-track .card-body {
   position: absolute;
@@ -534,18 +554,18 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   display: flex;
   flex-direction: column-reverse;   /* the small label sits above the title */
   align-items: flex-start;
-  gap: .375rem;
-  padding: 3.5rem .875rem .875rem;
+  gap: .25rem;
+  padding: 3rem .875rem .8125rem;
   border-top: 0;
   background: linear-gradient(to top,
-    color-mix(in srgb, var(--void) 90%, transparent),
-    color-mix(in srgb, var(--void) 55%, transparent) 45%,
+    color-mix(in srgb, var(--void) 88%, transparent),
+    color-mix(in srgb, var(--void) 50%, transparent) 48%,
     transparent);
 }
 .spiral-track .card-title {
   font-family: var(--display);
   font-weight: 400;
-  font-size: clamp(1rem, 1.5vw, 1.375rem);
+  font-size: clamp(1rem, 1.6vw, 1.5rem);
   line-height: 1;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -851,9 +871,9 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
   :root { --slab-lift: 1.25rem; }
 
   .head-inner { grid-template-columns: 1fr auto; }
-  /* Three columns of micro type do not fit. The address is one tap away in
-     the contact panel, so it is the one that goes. */
-  .head-mail, .mark-where { display: none; }
+  .head-inner::after { display: none; }
+  /* On a phone the location label drops; the face and the nav are enough. */
+  .mark-where { display: none; }
   .nav { justify-self: end; }
 
   .hero-stage { padding-top: 6.5rem; }

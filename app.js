@@ -229,6 +229,88 @@
        drag    the pointer, with a fling that decays after release
      ========================================================================== */
 
+  /* ---------------------------------------------------------- Skills rotator
+
+     The one big word under the name cycles through the list in its data
+     attribute, s0animation style: the word in view slides up out of the
+     mask while the next slides up into it, and the mask's width eases to the
+     new word so the layout never jumps. With the script off, or with reduced
+     motion, the first word just stands there. */
+
+  (function () {
+    var box = document.querySelector('.skills-rotator');
+    if (!box) return;
+
+    var words;
+    try { words = JSON.parse(box.getAttribute('data-skills') || '[]'); }
+    catch (e) { words = []; }
+    if (words.length < 2) return;
+
+    var DWELL = 2200;   /* how long a word holds before the next swap */
+    var SLIDE = 620;    /* the slide, matched to the transition below */
+
+    /* Replace the plain text with a measured span so the mask can size to it. */
+    box.textContent = '';
+    var current = wordEl(words[0]);
+    box.appendChild(current);
+    setWidth(current);
+
+    var i = 0, timer = setTimeout(swap, DWELL);
+
+    /* Keep the box sized to the live word across a font load or a resize. */
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { setWidth(current); });
+    }
+    window.addEventListener('resize', function () { setWidth(current); });
+
+    function wordEl(text) {
+      var el = document.createElement('span');
+      el.className = 'word';
+      el.textContent = text;
+      return el;
+    }
+
+    /* Width only — the height comes from the word's own line box plus the
+       mask's padding, so it never needs pinning and never clips. */
+    function setWidth(el) {
+      box.style.width = Math.ceil(el.getBoundingClientRect().width) + 'px';
+    }
+
+    function swap() {
+      i = (i + 1) % words.length;
+      var next = wordEl(words[i]);
+
+      if (reduced) {
+        box.replaceChildren(next);
+        setWidth(next);
+        current = next;
+        timer = setTimeout(swap, DWELL);
+        return;
+      }
+
+      /* incoming starts a line below, outgoing is lifted out of flow so the
+         box can resize to the incoming word while the two animate together */
+      next.style.transform = 'translateY(105%)';
+      box.appendChild(next);
+      current.classList.add('is-out');
+      setWidth(next);
+
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          current.style.transition = 'transform ' + SLIDE + 'ms ' + 'cubic-bezier(.16,1,.3,1)';
+          next.style.transition    = 'transform ' + SLIDE + 'ms ' + 'cubic-bezier(.16,1,.3,1)';
+          current.style.transform = 'translateY(-105%)';
+          next.style.transform = 'translateY(0)';
+        });
+      });
+
+      var out = current;
+      setTimeout(function () { out.remove(); }, SLIDE + 40);
+      current = next;
+      timer = setTimeout(swap, DWELL);
+    }
+  })();
+
   var heroSpiral = (function () {
     var hero = document.querySelector('.hero');
     if (!hero) return null;
@@ -515,9 +597,6 @@
     var nodes = [].slice.call(rail.querySelectorAll('.tl-node'));
     if (!svg || !path || nodes.length < 2) return null;
 
-    var LOOP_AT = [1, 3];     /* which joins turn a loop on the way down */
-    var LOOP_R  = 30;
-
     var length = 0;
 
     function build() {
@@ -531,18 +610,20 @@
         return [r.left - box.left + r.width / 2, r.top - box.top + r.height / 2];
       });
 
-      /* Start a little above the first node and finish a little below the
-         last, so the line reads as passing through rather than starting and
-         stopping at them. */
+      /* One smooth line that weaves between the nodes — no loops, no tricks.
+         The earlier version turned full 360 circles at two of the joins,
+         which read as a gimmick stuck onto the layout. This is a plain cubic
+         from each node to the next with the control handles pulled straight
+         down and up, so the curve leaves and meets every node vertically and
+         the whole thing flows as one hand-drawn stroke. Start a little above
+         the first node and finish below the last, so it reads as passing
+         through them rather than starting and stopping. */
       var d = 'M ' + pts[0][0] + ' ' + (pts[0][1] - 56) +
               ' L ' + pts[0][0] + ' ' + pts[0][1];
 
       for (var i = 0; i < pts.length - 1; i++) {
-        if (LOOP_AT.indexOf(i) >= 0) {
-          d += ' a ' + LOOP_R + ',' + LOOP_R + ' 0 1,1 0.4,0';
-        }
         var a = pts[i], b = pts[i + 1];
-        var bend = (b[1] - a[1]) * 0.45;
+        var bend = (b[1] - a[1]) * 0.5;
         d += ' C ' + a[0] + ' ' + (a[1] + bend) +
              ', ' + b[0] + ' ' + (b[1] - bend) +
              ', ' + b[0] + ' ' + b[1];
