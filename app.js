@@ -196,25 +196,26 @@
   })();
 
   /* ==========================================================================
-     The horizontal spiral loop
+     The cylinder
 
-     Every card winds around one virtual cylinder whose axis runs straight
-     across the screen, left to right, through the middle of the text — and
-     travels along that axis while it turns. So each card circles the text:
-     over the top, round behind it, under the bottom, back across the front.
-     Three things at once:
+     A drum of a fixed size sitting in the middle of the screen, with the
+     cards fixed to its surface and the whole thing turning. Each card keeps
+     its own station along the axis and never travels, so the shape on screen
+     is always the same cylinder rather than a stream of cards crossing the
+     frame from one corner to the other.
 
-       travel   s = (u − ½)·SPAN along the axis
-       spin     a = u·2π·TURNS around it, at radius R
-       depth    the outer ends push back in z and fade to nothing, so the
-                wrap happens off screen and unseen
+         x   = its station along the axis, fixed
+         ang = (base + i·TURNS/N)·2π       every card offset around the drum
+         y   = cos(ang)·R                  over the top, under the bottom
+         z   = sin(ang)·R                  behind the text, then in front
 
-         x = s
-         y = cos(a)·R          over the top, under the bottom
-         z = sin(a)·R          behind the text, then in front of it
+     Because nothing travels there is no seam to hide: rotation is periodic
+     on its own, so no exit fade and no wrap. TURNS spreads the stations
+     around the drum so neighbours sit most of a turn apart, and it reads as
+     a spiral wound round the cylinder rather than a row of cards.
 
      R is the same vertically and in depth, so the cross section is a circle
-     and the ring reads as genuinely round.
+     and the drum reads as genuinely round.
 
      TURNS must stay a whole number: at u = 0 and u = 1 the spin angle then
      differs by an exact multiple of 2π, so the only thing that jumps at the
@@ -270,6 +271,12 @@
     out.textContent = '';
     center.classList.add('intro-armed');
     doc.classList.add('booting');
+    doc.classList.add('head-wait');   /* outlives booting: see fly() */
+
+    /* Only now is the lockup allowed to hide, because only now is something
+       guaranteed to come along and open it again. */
+    var mark = face.closest ? face.closest('.mark') : null;
+    if (mark) mark.classList.add('is-tucked');
 
     var HOLD_NAME = 1500;    /* how long the name has the screen to itself */
     var FLIGHT    = 1150;    /* the trip up to the face                    */
@@ -279,13 +286,19 @@
       setTimeout(fly, HOLD_NAME);
     });
 
-    /* The name does not go straight up — it swings out on a curve and draws
-       the curve as it goes, then the line is pulled in after it. One
-       quadratic bezier does both jobs: the path element is the visible line,
-       and the same three points are evaluated by hand each frame to place
-       the name on it. (Following a path properly is what GSAP's
+    /* The name does not go straight up — it swings out on a curve, draws that
+       curve as it goes, and shrinks into the face; the line is then pulled in
+       after it. One quadratic bezier does both jobs: it is sampled into a
+       wobbling polyline for the visible stroke, and evaluated exactly to
+       place the name. (Following a path properly is what GSAP's
        MotionPathPlugin is for, and it is not among the three files vendored
-       here; the arithmetic for one quadratic is four lines.) */
+       here; the arithmetic for one quadratic is four lines.)
+
+       The stroke is deliberately not the clean curve. A plotted bezier is
+       the thing that reads as machine-drawn, so the samples are pushed off
+       the true curve by two sine waves of different frequency with random
+       phase each load, under an envelope that pins both ends down. That is
+       what makes it look drawn by hand rather than computed. */
     function fly() {
       var stage = document.querySelector('.hero-stage');
       var t = title.getBoundingClientRect();
@@ -315,7 +328,20 @@
       svg.setAttribute('class', 'boot-trail');
       svg.setAttribute('viewBox', '0 0 ' + box.width + ' ' + box.height);
       svg.setAttribute('aria-hidden', 'true');
-      path.setAttribute('d', 'M ' + x0 + ' ' + y0 + ' Q ' + cx + ' ' + cy + ' ' + x1 + ' ' + y1);
+      /* Sample the curve into a wobbling polyline. */
+      var ph1 = Math.random() * 6.28, ph2 = Math.random() * 6.28;
+      var amp = Math.min(len * 0.035, 16);
+      var d = '', STEPS = 64;
+      for (var k = 0; k <= STEPS; k++) {
+        var tt = k / STEPS, qq = 1 - tt;
+        var bx = qq * qq * x0 + 2 * qq * tt * cx + tt * tt * x1;
+        var by = qq * qq * y0 + 2 * qq * tt * cy + tt * tt * y1;
+        /* the envelope keeps the two ends exactly on the anchors */
+        var env = Math.sin(Math.PI * tt);
+        var off = (Math.sin(tt * 9.1 + ph1) * 0.6 + Math.sin(tt * 4.3 + ph2) * 0.4) * amp * env;
+        d += (k ? ' L ' : 'M ') + (bx + nx * off).toFixed(2) + ' ' + (by + ny * off).toFixed(2);
+      }
+      path.setAttribute('d', d);
       svg.appendChild(path);
       stage.insertBefore(svg, center);
 
@@ -330,7 +356,12 @@
       doc.classList.remove('booting');
       doc.classList.add('booted');
 
-      if (!hasGsap) { svg.remove(); title.style.opacity = '0'; setTimeout(land, FLIGHT); return; }
+      if (!hasGsap) {
+        svg.remove();
+        title.style.opacity = '0';
+        setTimeout(function () { arrive(); land(); }, FLIGHT);
+        return;
+      }
 
       var at = { p: 0 };
       gsap.to(at, {
@@ -351,14 +382,25 @@
           /* Pull the line in after it, from the tail forward. */
           gsap.to(path, {
             strokeDashoffset: -L,
-            duration: 0.55,
+            duration: 0.5,
             ease: 'power2.in',
             onComplete: function () { svg.remove(); }
           });
-          gsap.fromTo(face, { scale: 1 }, { scale: 1.14, duration: 0.16, yoyo: true, repeat: 1, ease: 'power2.out' });
+          arrive();
           land();
         }
       });
+    }
+
+    /* The handover: the header appears only now, so the face springing up is
+       read as the name turning into it rather than as a second thing that
+       was already there. Then the ring pings off it, and the lockup slides
+       out from behind. */
+    function arrive() {
+      doc.classList.remove('head-wait');          /* face springs from 0.28 */
+      if (!mark) return;
+      mark.classList.add('is-arriving');          /* ring pings */
+      setTimeout(function () { mark.classList.add('is-open'); }, 420);
     }
 
     function land() {
@@ -407,39 +449,34 @@
        the back would be too small to make sense of. */
     var MIN_WIDTH = 900;
 
-    var TURNS  = 3;     /* whole turns of the corkscrew over the path         */
-    var FACE   = 26;    /* deg a card turns as it comes round the cylinder    */
-    var ROLL   = 7;     /* deg of in-plane roll, for life                     */
-    var CENTRE = 0.10;  /* opacity dead centre — Approach 2's floor           */
-    var EXIT   = 0.14;  /* fraction of each end spent fading out and pushing back */
-    var EXITZ  = 620;   /* px it recedes on the way out                       */
-    var TURN   = 30;    /* seconds for one unattended pass of the whole path  */
-    var SCROLL = 0.28;  /* passes added by scrolling the hero away            */
-    var GAIN   = 1.0;   /* how much of a drag carries into the travel         */
+    var TURNS  = 4;     /* how many turns the stations wind round the drum    */
+    var FACE   = 22;    /* deg a card turns as it comes round the cylinder    */
+    var ROLL   = 6;     /* deg of in-plane roll, for life                     */
+    var CENTRE = 0.12;  /* how lit a card is at dead centre, behind the text  */
+    var BACK   = 0.34;  /* how lit a card is round the back of the drum       */
+    var TURN   = 34;    /* seconds for one unattended revolution              */
+    var SCROLL = 0.30;  /* revolutions added by scrolling the hero away       */
+    var GAIN   = 1.0;   /* how much of a drag carries into the spin           */
     var DECAY  = 0.04;  /* of the fling speed left after one second           */
 
-    var SPAN = 0, R = 0, EDGE = 1;
+    var LEN = 0, R = 0, EDGE = 1;
 
     var auto = 0, scrolled = 0, thrown = 0, vel = 0;
     var dragging = false, moved = 0, lastX = 0, lastT = 0;
     var ticking = false, active = false, pin = null;
     var lastBase = -1, lastFocus = -1;
 
-    /* SPAN has to run well past both edges, because that is where the loop
-       wraps and the wrap must happen out of sight; the last EXIT of each end
-       is spent faded to nothing anyway. R is the radius of the cylinder the
-       cards circle on — big enough that they clear the text in the middle,
-       and it is the same number vertically and in depth, so the cross
-       section is a circle and the ring reads as round rather than as an
-       ellipse pretending. */
+    /* LEN is the length of the drum, a little wider than the frame so it
+       reads as a cylinder carrying on past both edges rather than a row that
+       stops. R is its radius, the same number vertically and in depth. */
     function measure() {
       var w = window.innerWidth;
       var h = stage.offsetHeight || window.innerHeight;
       var cw = cards[0].offsetWidth || 220;
 
-      SPAN = Math.max(w * 2.4, (w / 2 + cw) * 3);
-      R    = Math.max(Math.min(w * 0.30, h * 0.36), cw * 0.85);
-      EDGE = w * 0.40;                /* x at which a card is fully lit */
+      LEN  = w * 1.2;
+      R    = Math.max(Math.min(w * 0.26, h * 0.34), cw * 0.6);
+      EDGE = w * 0.34;                /* x at which a card is fully lit */
     }
 
     function wrap01(v) { v %= 1; return v < 0 ? v + 1 : v; }
@@ -452,30 +489,25 @@
       var focus = 0, best = -Infinity;
 
       for (var i = 0; i < N; i++) {
-        var u = wrap01(base + i / N);
-        var t = u - 0.5;                       /* −½ … +½ along the axis */
+        /* Its station on the drum: fixed, evenly spread along the axis. */
+        var slot = N > 1 ? (i / (N - 1)) - 0.5 : 0;
+        var x = slot * LEN;
 
-        /* Travel straight across, plus the circle the card rides around the
-           axis: cos takes it over the top and under the bottom, sin swings
-           it behind the text and back in front. */
-        var ang = u * Math.PI * 2 * TURNS;
+        /* And its place around the drum, which is the only thing that moves. */
+        var ang = (base + (i * TURNS) / N) * Math.PI * 2;
         var ca  = Math.cos(ang);
         var sa  = Math.sin(ang);
 
-        var x = t * SPAN;
         var y = ca * R;
+        var z = sa * R;
 
-        /* The ends of the path are the exit: recede and fade so the wrap is
-           never seen. 1 through the middle, easing to 0 at both tips. */
-        var edge = (0.5 - Math.abs(t)) / EXIT;
-        var exit = edge >= 1 ? 1 : edge <= 0 ? 0 : edge * edge * (3 - 2 * edge);
-
-        var z = sa * R - (1 - exit) * EXITZ;
-
-        /* Approach 2: opacity straight off the screen x coordinate. Dimmest
-           dead centre, behind the name; full only out past the edges. */
-        var n   = Math.min(Math.abs(x) / EDGE, 1);
-        var lit = CENTRE + (1 - CENTRE) * (n * n * (3 - 2 * n));
+        /* Two dimmers multiplied. Depth is the one that moves: a card lights
+           up as it swings to the front and settles back as it goes round.
+           The x one is fixed per station, and is what keeps whatever sits
+           behind the text permanently faint. */
+        var depth = BACK + (1 - BACK) * ((sa + 1) / 2);
+        var n     = Math.min(Math.abs(x) / EDGE, 1);
+        var lit   = CENTRE + (1 - CENTRE) * (n * n * (3 - 2 * n));
 
         var card = cards[i];
         var st = card.style;
@@ -484,12 +516,12 @@
         st.setProperty('--z',  z.toFixed(2) + 'px');
         st.setProperty('--ry', (ca * FACE).toFixed(2) + 'deg');
         st.setProperty('--rz', (sa * ROLL).toFixed(2) + 'deg');
-        st.opacity = (lit * exit).toFixed(3);
+        st.opacity = (lit * depth).toFixed(3);
 
-        /* Round the back of the cylinder there is no room for the caption. */
+        /* Round the back of the drum there is no room for the caption. */
         card.classList.toggle('is-far', sa < -0.4);
 
-        var score = lit * exit;
+        var score = lit * depth;
         if (score > best) { best = score; focus = i; }
       }
 

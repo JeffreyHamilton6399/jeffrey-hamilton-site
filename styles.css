@@ -236,25 +236,62 @@ body.head-dark .site-head { color: var(--on-dark); }
 .head-inner::after { content: ""; }
 
 .mark {
+  position: relative;
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
   gap: .625rem;
   justify-self: start;
   text-decoration: none;
+  --face: 2rem;
 }
+/* The ring that pings out of the face the moment the name lands in it. */
+.mark::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: var(--face);
+  height: var(--face);
+  margin-top: calc(var(--face) / -2);
+  border-radius: 50%;
+  border: 2px solid var(--iris);
+  opacity: 0;
+  pointer-events: none;
+}
+.mark.is-arriving::before { animation: markPing .85s var(--ease-out) forwards; }
+@keyframes markPing {
+  0%   { opacity: .9; transform: scale(.7); }
+  100% { opacity: 0;  transform: scale(1.75); }
+}
+
 .mark-face {
   display: block;
-  width: 2rem;
-  height: 2rem;
+  width: var(--face);
+  height: var(--face);
   border-radius: 50%;
   overflow: hidden;
   flex: none;
   border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  /* Springs up as the name arrives — the text becoming the picture. */
+  transition: transform .5s cubic-bezier(.2, 1.5, .4, 1);
 }
+html.head-wait .mark-face { transform: scale(.28); }
+
+/* The lockup is tucked behind the face and slides out once it has landed.
+   is-tucked is set by app.js and only when the boot is actually going to
+   run — without it the lockup is simply visible, which is what has to
+   happen with the script off or reduced motion on, where nothing ever
+   arrives to add is-open. */
+.mark-text { overflow: hidden; }
+.mark-text > * { transition: transform .55s var(--ease-out), opacity .55s var(--ease-out); }
+.mark.is-tucked .mark-text > * { transform: translateX(-14px); opacity: 0; }
+.mark.is-tucked.is-open .mark-name  { transform: none; opacity: 1; transition-delay: .04s; }
+.mark.is-tucked.is-open .mark-where { transform: none; opacity: 1; transition-delay: .16s; }
 .mark-face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 26%; }
 
 .mark-text { display: grid; gap: .125rem; }
+/* (overflow and the slide live in the block above) */
 .mark-name {
   font-family: var(--display);
   font-weight: 400;
@@ -331,10 +368,11 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 }
 .boot-trail path {
   fill: none;
-  stroke: var(--iris);
-  stroke-width: 2.5;
+  stroke: var(--void);
+  stroke-width: 2.25;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--iris) 55%, transparent));
+  stroke-linejoin: round;
+  opacity: .8;
 }
 
 /* ---- the loading screen ------------------------------------------------
@@ -358,10 +396,13 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 html.booting .boot { opacity: 1; transition: none; }
 
 /* Same on both counts: gone instantly while the name has the screen to
-   itself, then eased back in once it leaves. */
+   itself. head-wait outlives booting so the header is still absent while the
+   name is in flight — it only appears when the name lands in the face. */
 html.booting .site-head,
 html.booting .hero-cue { opacity: 0; pointer-events: none; transition: none; }
-.site-head, .hero-cue { transition: opacity .9s var(--ease-out); }
+html.head-wait .site-head { opacity: 0; pointer-events: none; }
+.site-head { transition: opacity .45s var(--ease-out); }
+.hero-cue { transition: opacity .9s var(--ease-out); }
 
 /* Extruded, not tilted. The depth comes from a stack of offset copies
    marching down-right into a mid-tone, with one soft cast shadow under the
@@ -389,51 +430,35 @@ html.booting .hero-cue { opacity: 0; pointer-events: none; transition: none; }
     18px 20px 26px color-mix(in srgb, var(--void) 26%, transparent);
 }
 
-/* The "I build ___" line: a small mono lead-in and one big typed word with a
-   blinking caret. */
+/* The changing line, set the way the reference sets its headline: one huge
+   run of the condensed display face in plain ink. No lead-in, no accent
+   colour — the word is the whole statement. */
 .hero-skills {
   display: flex;
-  flex-wrap: wrap;
   align-items: baseline;
   justify-content: center;
-  gap: .35em .55em;
-  margin: clamp(1.25rem, 3vw, 2rem) auto 0;
-}
-.skills-lead {
-  font-family: var(--mono);
-  font-size: clamp(.75rem, 1.4vw, .9375rem);
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
+  margin: 0 auto;
 }
 .skills-type {
   display: inline-flex;
   align-items: baseline;
   font-family: var(--display);
   font-weight: 400;
-  font-size: clamp(1.75rem, 5vw, 4rem);
+  font-size: clamp(2rem, 8.5vw, 7rem);
   line-height: 1;
-  letter-spacing: -.01em;
+  letter-spacing: -.02em;
   text-transform: uppercase;
-  color: var(--iris);
+  color: var(--void);
   white-space: nowrap;
 }
-.type-out {
-  display: inline-block;
-  text-shadow:
-    1px 1px 0 color-mix(in srgb, var(--iris) 55%, var(--extrude)),
-    2px 2px 0 color-mix(in srgb, var(--iris) 45%, var(--extrude)),
-    3px 3px 0 color-mix(in srgb, var(--iris) 35%, var(--extrude)),
-    4px 4px 0 color-mix(in srgb, var(--iris) 25%, var(--extrude)),
-    8px 9px 14px color-mix(in srgb, var(--void) 20%, transparent);
-}
+.type-out { display: inline-block; }
 .type-caret {
   display: inline-block;
   width: .07em;
-  height: .92em;
+  height: .82em;
   margin-left: .06em;
-  background: var(--iris);
-  transform: translateY(.04em);
+  background: var(--void);
+  transform: translateY(.02em);
   animation: caret 1.05s steps(1) infinite;
 }
 @keyframes caret { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
@@ -974,8 +999,8 @@ html.motion [data-intro].intro-armed:not(.intro-line) .type-caret { opacity: 0; 
 
   .head-inner { grid-template-columns: 1fr auto; }
   .head-inner::after { display: none; }
-  /* On a phone the location label drops; the face and the nav are enough. */
-  .mark-where { display: none; }
+  /* The location stays on a phone too — it is the thing that slides out of
+     the face at the end of the boot, so dropping it loses the beat. */
   .nav { justify-self: end; }
 
   .hero-stage { padding-top: 6.5rem; }
@@ -989,7 +1014,7 @@ html.motion [data-intro].intro-armed:not(.intro-line) .type-caret { opacity: 0; 
      rather than drop one — every section is still reachable. */
   .nav { gap: .125rem; font-size: .5625rem; }
   .nav a { padding: .25rem .375rem; }
-  .mark-face { width: 1.75rem; height: 1.75rem; }
+  .mark { --face: 1.75rem; }   /* the ring reads the same custom property */
 }
 
 /* --------------------------------------------------------- Reduced motion */
