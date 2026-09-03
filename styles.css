@@ -416,25 +416,26 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 
 /* --------------------------------------------------------- The spiral
 
-   Cards wind around a horizontal axis that runs across the screen. Three
-   full turns over the path, so two neighbours are most of a turn apart and
-   the row reads as winding rather than as a queue. Cards coming round the
-   near side pass in front of the name; cards on the far side pass behind
-   it. That sorting is the whole picture, which is why nothing in this
-   subtree may set opacity — see .hero-veil.
+   Cards wound along a coil standing in the middle of the screen: small and
+   deep at the centre, full size and close at the rim, three full turns
+   between the two — so two neighbours are most of a turn apart and the set
+   reads as winding rather than as a ring. The changing line sits below it on
+   its own flat layer.
 
-   Without app.js, or on a screen too narrow for the travel, none of this
-   applies and the same list is a plain grid. */
+   Depth sorting is the whole picture, which is why nothing in the 3D subtree
+   may set opacity or z-index — either one flattens it. That is what .hero-veil
+   is for.
+
+   Without app.js, or on a screen too narrow for it, none of this applies and
+   the same list is a plain grid. */
 
 .hero-stage {
   position: relative;
   padding: clamp(7rem, 18vw, 10rem) var(--gutter) clamp(2rem, 6vw, 4rem);
 }
 .hero-center { position: relative; z-index: 10; text-align: center; max-width: 36rem; margin-inline: auto; }
-/* .hero-inner is no longer just the cards — it holds the text too, so it
-   stays in the flow even when the cylinder is not running. */
 .hero-inner { display: block; }
-.hero-shield, .hero-veil, .hero-cue { display: none; }
+.hero-veil, .hero-cue { display: none; }
 
 /* The dot the name packs itself into, and rides to the face on. Positioned
    per frame by app.js from the drawn path, so it always sits exactly on the
@@ -544,7 +545,6 @@ html.head-wait .site-head { opacity: 0; pointer-events: none; }
 .skills-type {
   position: relative;
   display: inline-block;
-  perspective: 900px;               /* the depth the extrusion is seen with */
   font-family: var(--display);
   font-weight: 400;
   font-size: clamp(2rem, 8.5vw, 7rem);
@@ -557,34 +557,22 @@ html.head-wait .site-head { opacity: 0; pointer-events: none; }
   transition: width .75s cubic-bezier(.6, 0, .2, 1);
 }
 
-/* The word is built in real depth, not painted with offset shadows. app.js
-   stacks a run of copies of the same word, each one pushed further back on
-   z, and the block is turned slightly so you look along the side of the
-   letters — which is what a stack of text-shadows can never do, because a
-   shadow has no side to see. */
+/* Flat, not extruded — the interest is in how it arrives. Each letter turns
+   up as an outline and then fills in, left to right, so mid-change part of
+   the word is still hollow and the rest has gone solid. */
 .type-out {
   display: inline-block;
+  white-space: nowrap;
   will-change: transform, opacity;
 }
-.type-3d {
+.ch {
   display: inline-block;
-  position: relative;
-  transform-style: preserve-3d;
-  /* Turned just enough to show the sides. Any more and the far end of a
-     long word starts to fall away from the reader. */
-  transform: rotateY(-15deg) rotateX(7deg);
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--void);
+  transition: color .42s var(--ease-out), -webkit-text-stroke-color .42s var(--ease-out);
 }
-.type-3d .face {
-  display: block;
-  white-space: nowrap;
-}
-/* Every copy after the first is taken out of flow and stacked behind it, so
-   the first one alone sets the width the box has to ease to. */
-.type-3d .face + .face {
-  position: absolute;
-  left: 0;
-  top: 0;
-}
+.ch.is-fill { color: var(--void); }
+.ch.is-space { -webkit-text-stroke: 0; }
 /* The outgoing word is lifted out of flow so the incoming one sets the
    width while the two melt through each other. */
 .type-out.is-out { position: absolute; left: 0; top: 0; }
@@ -631,56 +619,32 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .hero.is-spiral .hero-stage.is-dragging { cursor: grabbing; }
 
 .hero.is-spiral .hero-inner {
-  display: grid;
-  place-items: center;              /* centres the text on the axis */
+  display: block;
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
   will-change: transform;
+  z-index: 1;
 }
 
-/* Dead centre of the drum, at depth zero, so the near half of the cylinder
-   passes in front of the words and the far half behind them. */
+/* The line sits under the spiral on its own flat layer. It is outside the
+   3D context on purpose: a z-index inside one flattens it, and the words no
+   longer need to be sorted against the cards now that they are not among
+   them. */
 .hero.is-spiral .hero-skills {
-  position: relative;
-  transform: translateZ(0);
-  pointer-events: none;
-}
-
-/* ---- the layer sandwich ---------------------------------------------
-   1  the spiral, its own 3D context, cards sorting only against each other
-   9  the shield, a blurred ellipse the cards dive behind
-   10 the text, flat and level, never covered
-   11 the cue, 12 the veil that dims the whole thing on the way out       */
-
-.hero.is-spiral .hero-inner { z-index: 1; }
-
-.hero.is-spiral .hero-shield {
-  display: block;
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(96vw, 72rem);
-  aspect-ratio: 1.7;
-  /* A hair behind the text, so it backs the words without hiding the cards
-     that come round the near side in front of them. */
-  transform: translate(-50%, -50%) translateZ(-2px);
+  z-index: 20;
+  left: 0; right: 0;
+  bottom: clamp(4.5rem, 11vh, 8rem);
+  margin: 0;
+  padding-inline: var(--gutter);
   pointer-events: none;
-  /* Blur what passes behind, and wash it toward the page colour, both faded
-     out at the rim by the same mask so the shield has no visible edge. */
-  backdrop-filter: blur(7px) saturate(.85);
-  -webkit-backdrop-filter: blur(7px) saturate(.85);
-  background: radial-gradient(closest-side,
-    color-mix(in srgb, var(--paper) 78%, transparent) 30%,
-    color-mix(in srgb, var(--paper) 30%, transparent) 60%,
-    transparent 78%);
-  -webkit-mask-image: radial-gradient(closest-side, #000 42%, transparent 76%);
-  mask-image: radial-gradient(closest-side, #000 42%, transparent 76%);
 }
+.hero.is-spiral .skills-type { font-size: clamp(2rem, 7vw, 5.5rem); }
 
 .hero.is-spiral .hero-center {
   position: absolute;
-  z-index: 10;
+  z-index: 30;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
@@ -688,16 +652,10 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   max-width: none;
   pointer-events: none;
 }
-.hero.is-spiral .hero-title {
-  /* A little lift off the shield, for the moments a bright card slides
-     under the middle. */
-  text-shadow: 0 2px 24px color-mix(in srgb, var(--paper) 85%, transparent);
-}
-.hero.is-spiral .hero-skills { pointer-events: none; }
 
 /* Flat colour over the top rather than a fade on the stage: opacity on an
    ancestor of a preserve-3d subtree flattens it, and the cards would stop
-   sorting around the name. */
+   sorting. */
 .hero-veil {
   position: absolute;
   inset: 0;
@@ -762,7 +720,8 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
     translate(-50%, -50%)
     translate3d(var(--x, 0px), var(--y, 0px), var(--z, 0px))
     rotateY(var(--ry, 0deg))
-    rotate(var(--rz, 0deg));
+    rotate(var(--rz, 0deg))
+    scale(var(--sc, 1));
   will-change: transform;
 }
 
@@ -777,7 +736,8 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   box-shadow: 0 18px 44px color-mix(in srgb, var(--void) 16%, transparent);
   transition: border-color .5s var(--ease), box-shadow .5s var(--ease);
 }
-.spiral-track .spiral-card > a { -webkit-user-drag: none; }
+.spiral-track .spiral-card { pointer-events: none; }
+.spiral-track .spiral-card > a { pointer-events: auto; -webkit-user-drag: none; }
 
 .card-shot {
   display: block;
@@ -943,12 +903,43 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   place-items: center;
 }
 
-/* the dial, square so a viewBox unit is the same length on both axes */
+/* The whole watch: strap top to bottom, case in the middle. The viewBox is
+   1000 wide by 1400 tall and the element keeps that ratio, so one unit is
+   still the same length on both axes — which is what lets anything measured
+   off the geometry be placed straight into element coordinates. */
 .path-svg {
   position: absolute;
-  width: min(72vh, 46vw);
-  aspect-ratio: 1;
+  height: min(94vh, 46rem);
+  aspect-ratio: 1000 / 1400;
   overflow: visible;
+}
+.watch-strap,
+.watch-stitch,
+.watch-crown,
+.watch-case {
+  /* each part is walked on with a dashoffset and lit gold while it draws;
+     the transition is what lets it cool back down once it lands */
+  transition: stroke .55s var(--ease-out);
+}
+.watch-strap {
+  fill: color-mix(in srgb, var(--on-dark) 4%, transparent);
+  stroke: var(--rule-dark);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+.watch-stitching { opacity: 0; }
+.watch-stitch {
+  fill: none;
+  stroke: color-mix(in srgb, var(--on-dark) 9%, transparent);
+  stroke-width: 2;
+  stroke-dasharray: 9 11;
+  stroke-linecap: round;
+}
+.watch-crown { fill: none; stroke: var(--rule-dark); stroke-width: 3; stroke-linejoin: round; }
+.watch-case {
+  fill: var(--void);
+  stroke: var(--haze);
+  stroke-width: 3;
 }
 .path-line {
   stroke: var(--iris-lo);
@@ -956,7 +947,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   stroke-linecap: round;
   opacity: .55;
 }
-.path-bezel { fill: none; stroke: var(--rule-dark); stroke-width: 1.5; }
 .path-tick  { stroke: var(--on-dark-faint); stroke-width: 1.5; }
 .path-tick.is-major { stroke: var(--haze); stroke-width: 2.5; }
 .path-hand {
@@ -966,6 +956,34 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   opacity: .85;
 }
 .path-hub { fill: var(--glow); }
+
+/* What the face says before the hand starts moving. */
+.path-intro {
+  position: absolute;
+  left: 0; top: 0;
+  width: min(18rem, 40vw);
+  display: grid;
+  gap: .375rem;
+  justify-items: center;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.pi-kicker {
+  font-family: var(--mono);
+  font-size: .625rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--haze);
+}
+.pi-title {
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--on-dark);
+}
+.pi-note { font-size: .8125rem; color: var(--on-dark-soft); }
 
 /* the years around the bezel */
 .path-dial { position: absolute; inset: 0; list-style: none; margin: 0; padding: 0; }
@@ -1017,7 +1035,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .is-live-era {
   position: absolute;
   top: 50%;
-  width: min(30vw, 26rem);
+  width: min(28vw, 24rem);
   transform: translateY(-50%);
   opacity: 0;
   pointer-events: none;

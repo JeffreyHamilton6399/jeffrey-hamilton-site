@@ -63,26 +63,23 @@
   <section class="hero" aria-labelledby="hero-heading">
     <div class="hero-stage">
 
-      <!-- The cylinder, and everything that lives inside it. One 3D
-           rendering context: the cards, the shield behind the text, and the
-           text itself at depth zero — so a card on the near side of the drum
-           passes in front of the words and one on the far side passes behind
-           them. That is what puts the text inside the cylinder rather than
-           on a sheet over it, and it is why nothing in here sets z-index:
-           within a 3D context the browser sorts by depth, and a z-index
-           pulls the element out of that and flattens it. -->
-      <div class="hero-inner">
-        <span class="hero-shield" aria-hidden="true"></span>
-        <p class="hero-skills" aria-label="What I build: web applications, desktop software, developer tools, on-device AI, interface design, real-time 3D, motion graphics">
-          <span class="skills-type" aria-hidden="true" data-skills='["WEB APPLICATIONS","DESKTOP SOFTWARE","DEVELOPER TOOLS","ON-DEVICE AI","INTERFACE DESIGN","REAL-TIME 3D","MOTION GRAPHICS"]'><span class="type-out">WEB APPLICATIONS</span></span>
-        </p>
-      </div>
+      <!-- The spiral, and nothing else. It is its own 3D rendering context,
+           so the cards sort against each other by depth alone — which is why
+           nothing in here sets a z-index: that would pull the element out of
+           the 3D context and flatten it. The text is deliberately outside,
+           on a flat layer under the spiral. -->
+      <div class="hero-inner"></div>
 
-      <!-- Layer 8: the loading screen. Covers the cylinder while the name is
+      <!-- The line, below the spiral rather than inside it. -->
+      <p class="hero-skills" aria-label="What I build: web applications, desktop software, developer tools, on-device AI, interface design, real-time 3D, motion graphics">
+        <span class="skills-type" aria-hidden="true" data-skills='["WEB APPLICATIONS","DESKTOP SOFTWARE","DEVELOPER TOOLS","ON-DEVICE AI","INTERFACE DESIGN","REAL-TIME 3D","MOTION GRAPHICS"]'><span class="type-out">WEB APPLICATIONS</span></span>
+      </p>
+
+      <!-- Layer 8: the loading screen. Covers the spiral while the name is
            on its own, then fades out from under it. -->
       <span class="boot" aria-hidden="true"></span>
 
-      <!-- Layer 10: the boot name. Outside the cylinder because it has to
+      <!-- Layer 10: the boot name. Outside the spiral because it has to
            sit over the loading sheet, and because it leaves — it dips, packs
            itself into the travelling dot, and is gone. -->
       <div class="hero-center" data-intro>
@@ -427,16 +424,31 @@
     <div class="path-orbit" aria-hidden="true">
       <div class="path-orbit-in">
         <svg class="path-feed" aria-hidden="true"><path/></svg>
-        <svg class="path-svg" viewBox="0 0 1000 1000">
-          <circle class="path-bezel" cx="500" cy="500" r="470"/>
+        <svg class="path-svg" viewBox="0 0 1000 1400">
+          <!-- strap first: the case is filled and sits over the middle of it -->
+          <path class="watch-strap" d="M 418 6 L 418 250 L 398 470 L 602 470 L 582 250 L 582 6 Z"/>
+          <path class="watch-strap" d="M 418 1394 L 418 1150 L 398 930 L 602 930 L 582 1150 L 582 1394 Z"/>
+          <g class="watch-stitching">
+            <path class="watch-stitch" d="M 440 40 L 440 250 L 424 452"/>
+            <path class="watch-stitch" d="M 560 40 L 560 250 L 576 452"/>
+            <path class="watch-stitch" d="M 440 1360 L 440 1150 L 424 948"/>
+            <path class="watch-stitch" d="M 560 1360 L 560 1150 L 576 948"/>
+          </g>
+          <path class="watch-crown" d="M 790 680 L 828 680 L 828 720 L 790 720"/>
+          <circle class="watch-case" cx="500" cy="700" r="292"/>
           <g class="path-ticks"></g>
           <path class="path-line" fill="none"/>
-          <line class="path-hand" x1="500" y1="500" x2="500" y2="120"/>
-          <circle class="path-hub" cx="500" cy="500" r="7"/>
+          <line class="path-hand" x1="500" y1="700" x2="500" y2="450"/>
+          <circle class="path-hub" cx="500" cy="700" r="6"/>
         </svg>
         <ol class="path-dial">
           <li>2018</li><li>2020</li><li>2022</li><li>2024</li><li>Now</li>
         </ol>
+        <div class="path-intro">
+          <span class="pi-kicker">How I got here</span>
+          <span class="pi-title">2018 &rarr; now</span>
+          <span class="pi-note">Three turns, so far</span>
+        </div>
         <span class="path-mark"></span>
         <ul class="path-burst">
           <li>Provo CAPS</li>

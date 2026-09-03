@@ -196,41 +196,50 @@
   })();
 
   /* ==========================================================================
-     The cylinder
+     The spiral
 
-     A drum of a fixed radius lying across the middle of the screen. The
-     cards are on its surface and they do two things at once: they travel
-     along the axis, left to right, and they turn around it. So the shape
-     never changes — it is always the same tube — while the contents flow
-     through it.
+     A spiral standing in the middle of the screen with the cards wound
+     along it. One parameter does all of it:
 
-         u   = the card's place along the tube, 0…1, wrapping
-         x   = (u − ½)·LEN                 left to right along the axis
-         ang = (u·TURNS + i/N)·2π          and round the tube as it goes
-         y   = cos(ang)·R                  over the top, under the bottom
-         z   = sin(ang)·R                  behind the text, then in front
+         u   = the card's place along the spiral, 0…1, wrapping
+         th  = u·TURNS·2π             how far round it has come
+         r   = R_IN → R_OUT           and how far out that has carried it
+         x   = cos(th)·r
+         y   = sin(th)·r·FLAT − LIFT  squashed, and lifted clear of the line
+         z   = (u − ½)·DEPTH          far at the centre, near at the rim
+         sc  = SMALL → 1              and small at the centre, full at the rim
 
-     The text sits at depth zero on that axis, so it is inside the tube: the
-     near half of the cylinder passes in front of the words and the far half
-     behind them.
+     Radius, depth and size all grow together with u, so a card starts tiny
+     and deep at the middle, winds outward, and arrives full size and close
+     at the edge — which is what makes it read as a spiral coming toward you
+     rather than a flat one drawn on glass. FLAT squashes the circle into an
+     ellipse so the whole coil looks tipped away.
+
+     The size is scaled by hand rather than left to the perspective. Depth
+     alone would need an enormous DEPTH to shrink the middle enough to stop
+     the innermost cards piling on each other, and that same DEPTH would blow
+     the outermost ones far past the edges of the frame. Scaling directly
+     separates the two.
+
+     r rises as u^SPREAD with SPREAD below 1, so it climbs fastest where the
+     cards are closest together. Spacing them evenly in u would otherwise
+     crowd every early card into the middle, where there is the least room.
 
      TURNS is a whole number, which is what makes the wrap invisible: at u=0
-     and u=1 the angle differs by an exact multiple of 2π, so only x jumps —
-     and the fade at both ends means the card is already gone by then.
+     and u=1 the angle differs by an exact multiple of 2π, so only the radius
+     and the depth jump — and both ends are faded out by then.
 
-     R is the same vertically and in depth, so the cross section is a circle
-     and the tube reads as genuinely round.
+     LIFT carries the coil up clear of the line, and the vanishing point goes
+     with it: perspective-origin is moved onto the coil's own centre. Lifting
+     the cards while leaving the vanishing point at the middle of the stage
+     is the trap here — the projection would then multiply the lift by
+     however near a card had come, and the front of the coil would climb out
+     of the top of the frame while the back of it barely moved. With the
+     origin on the coil, the lift is exact and the coil is seen head-on.
 
-     TURNS must stay a whole number: at u = 0 and u = 1 the spin angle then
-     differs by an exact multiple of 2π, so the only thing that jumps at the
-     seam is s — and the card is already invisible out there.
-
-     Legibility is Approach 2, the constant slow fade: opacity is tied
-     straight to the screen x coordinate. Dead centre the cards run at
-     CENTRE (about a tenth), and they glow up to full only as they drift out
-     past the edges — so whatever is passing behind the name is always the
-     dimmest thing on screen. Flip CENTRE toward 1 and steepen EDGE to get
-     the snappier high-energy version instead.
+     The line lives below the spiral on its own flat layer, so nothing has to
+     be dimmed to keep the words readable: opacity here is only depth, far
+     cards sitting back and near ones coming up full.
 
      Three things move it, and they simply add:
 
@@ -243,7 +252,7 @@
 
      The open, in four beats:
 
-       1. a loading screen — a sheet of page colour over the cylinder, with
+       1. a loading screen — a sheet of page colour over the spiral, with
           nothing on it but the name, which resolves out of a blur
        2. the name dips, then breaks into three glowing points, each of which
           rides its own hand-drawn line to one of the three things in the
@@ -253,7 +262,7 @@
           point and the lockup slides out from behind it; the middle nav
           button lights and the other two open out of it left and right; the
           middle icon shimmers and the other two run in from the right
-       4. the word in the middle of the cylinder fades up and starts its
+       4. the word below the spiral fades up and starts its
           cycle
 
      Every target is measured at flight time, so nothing is hard-coded and it
@@ -318,13 +327,28 @@
       });
     }
 
-    /* The name does not collapse into a point — it fades out while the three
-       points come up in its place, all of them at the centre, and they set
-       off from there. */
+    /* The name gathers into a single point at the centre — it shrinks away
+       while the point comes up in its place — and that one point holds for a
+       beat before the other two split out of it and all three leave. Without
+       the beat there is nothing to split from and it reads as three separate
+       things that happened to start together. */
+    var SPLIT = 300;
+
     function morph() {
       if (!hasGsap) { fly(); return; }
-      gsap.to(title, { scale: 0.94, opacity: 0, duration: MORPH / 1000, ease: 'power1.out' });
-      setTimeout(fly, MORPH * 0.55);
+
+      var stage = document.querySelector('.hero-stage');
+      var t = title.getBoundingClientRect();
+      var box = stage && stage.getBoundingClientRect();
+
+      gsap.to(title, { scale: 0.06, opacity: 0, duration: MORPH / 1000, ease: 'power2.in' });
+
+      if (dot && box) {
+        dot.style.transform = 'translate(' + (t.left + t.width / 2 - box.left) + 'px,' +
+                                             (t.top + t.height / 2 - box.top) + 'px)';
+        gsap.fromTo(dot, { opacity: 0 }, { opacity: 1, duration: MORPH / 1000, ease: 'power2.out' });
+      }
+      setTimeout(fly, MORPH + SPLIT);
     }
 
     var flown = false;
@@ -368,7 +392,7 @@
       svg.setAttribute('aria-hidden', 'true');
       stage.insertBefore(svg, center);
 
-      /* The sheet goes now — the cylinder is revealed while the points are
+      /* The sheet goes now — the spiral is revealed while the points are
          still travelling over it, which is the whole effect. */
       doc.classList.remove('booting');
       doc.classList.add('booted');
@@ -542,35 +566,42 @@
        never snaps. Overlapping the two through a blur is what gives it the
        fluid read rather than a cut or a slide. */
 
-    var HOLD = 2100, MELT = 780;
-    var DEPTH = 16, STEP_Z = 2.6;   /* how many copies, and how far apart */
+    var HOLD = 2200, MELT = 620, FILL = 46;   /* FILL: gap between letters */
     var wi = 0;
 
-    /* One word, built in depth: a run of copies of the same text stacked
-       back along z, the front one in ink and the rest walking toward the
-       extrude tone so the side of the letter reads as a lit face rather
-       than a smear. */
+    /* One word, letter by letter. Each letter arrives as an outline and then
+       fills in, running left to right — the look the reference has mid
+       change, where part of the word is still hollow and the rest has already
+       gone solid. Spaces are kept as their own spans so the rhythm of the
+       stagger matches the rhythm of the word. */
     function build(text) {
       var wrap = document.createElement('span');
       wrap.className = 'type-out';
-      var solid = document.createElement('span');
-      solid.className = 'type-3d';
 
-      for (var i = DEPTH - 1; i >= 0; i--) {
-        var face = document.createElement('span');
-        face.className = 'face';
-        face.textContent = text;
-        face.style.transform = 'translateZ(' + (-i * STEP_Z) + 'px)';
-        /* i = 0 is the face you read; everything behind it is the wall */
-        face.style.color = i === 0
-          ? 'var(--void)'
-          : 'color-mix(in srgb, var(--extrude) ' + Math.round(55 + (i / DEPTH) * 45) + '%, var(--void))';
-        solid.appendChild(face);
+      for (var i = 0; i < text.length; i++) {
+        var ch = document.createElement('span');
+        ch.className = 'ch';
+        if (text[i] === ' ') {
+          ch.className = 'ch is-space';
+          ch.innerHTML = '&nbsp;';
+        } else {
+          ch.textContent = text[i];
+        }
+        wrap.appendChild(ch);
       }
-      /* the first child in flow is the one that sizes the box */
-      solid.insertBefore(solid.lastChild, solid.firstChild);
-      wrap.appendChild(solid);
       return wrap;
+    }
+
+    /* Run the fill across the letters. Direction is the order they resolve
+       in; on the way out they hollow again the same way. */
+    function sweep(wrap, on) {
+      var chars = wrap.querySelectorAll('.ch');
+      for (var i = 0; i < chars.length; i++) {
+        (function (el, k) {
+          setTimeout(function () { el.classList.toggle('is-fill', on); }, k * FILL);
+        })(chars[i], i);
+      }
+      return chars.length * FILL;
     }
 
     function measureWidth(el) {
@@ -578,61 +609,57 @@
     }
 
     function cycle() {
-      /* swap the flat markup word for the built one */
-      var solid = build(out.textContent);
-      out.replaceWith(solid);
-      out = solid;
+      /* swap the flat markup word for the built one, then fill it in */
+      var built = build(out.textContent);
+      out.replaceWith(built);
+      out = built;
       skills.style.width = measureWidth(out) + 'px';
-      setTimeout(step, HOLD);
+      var span = sweep(out, true);
+      setTimeout(step, HOLD + span);
     }
 
     function step() {
       wi = (wi + 1) % list.length;
 
+      var prev = out;
+      /* hollow the old one out again on its way off */
+      sweep(prev, false);
+
       var next = build(list[wi]);
       next.style.opacity = '0';
-      next.style.filter = 'blur(18px)';
-      next.style.transform = 'scale(.86) translateY(14px)';
-
-      var prev = out;
       prev.classList.add('is-out');
       skills.appendChild(next);
       out = next;
 
-      /* the box follows the incoming word */
+      /* the box eases to the incoming word's width */
       skills.style.width = measureWidth(next) + 'px';
 
       if (!hasGsap) {
         prev.remove();
-        next.style.cssText = '';
+        next.style.opacity = '1';
+        sweep(next, true);
         setTimeout(step, HOLD);
         return;
       }
 
       gsap.to(prev, {
         opacity: 0,
-        filter: 'blur(20px)',
-        scale: 1.14,
-        y: -18,
+        y: -14,
         duration: MELT / 1000,
         ease: 'power2.in',
         onComplete: function () { prev.remove(); }
       });
-      gsap.to(next, {
-        opacity: 1,
-        filter: 'blur(0px)',
-        scale: 1,
-        y: 0,
-        duration: MELT / 1000,
-        ease: 'power3.out',
-        onComplete: function () {
-          /* Drop the filter entirely rather than leaving it at zero: any
-             filter at all keeps the element flattened, and the extrusion
-             inside would stay collapsed. */
-          gsap.set(next, { clearProps: 'filter' });
-          setTimeout(step, HOLD);
-        }
-      });
+      gsap.fromTo(next,
+        { opacity: 0, y: 16 },
+        {
+          opacity: 1, y: 0,
+          duration: MELT / 1000,
+          ease: 'power3.out',
+          onComplete: function () {
+            var span = sweep(next, true);
+            setTimeout(step, HOLD + span);
+          }
+        });
     }
   })();
 
@@ -643,6 +670,7 @@
     var stage = hero.querySelector('.hero-stage');
     var inner = hero.querySelector('.hero-inner');
     var veil  = hero.querySelector('.hero-veil');
+    var skills = hero.querySelector('.hero-skills');
     var list  = hero.querySelector('.spiral-fallback');
     if (!stage || !inner || !list) return null;
 
@@ -654,37 +682,71 @@
        the back would be too small to make sense of. */
     var MIN_WIDTH = 900;
 
-    var TURNS  = 3;     /* whole turns a card makes crossing the tube        */
-    var FACE   = 22;    /* deg a card turns as it comes round the cylinder    */
-    var ROLL   = 6;     /* deg of in-plane roll, for life                     */
-    var CENTRE = 0.12;  /* how lit a card is at dead centre, behind the text  */
-    var BACK   = 0.34;  /* how lit a card is round the back of the drum       */
-    var EDGEF  = 0.10;  /* fraction of each end spent fading in and out       */
-    var TURN   = 40;    /* seconds for one unattended pass end to end         */
+    var TURNS  = 3;     /* whole turns a card makes winding out              */
+    var FLAT   = 0.42;  /* how far the circle is squashed into an ellipse     */
+    var SPREAD = 0.62;  /* below 1: radius climbs fastest near the middle     */
+    var SMALL  = 0.30;  /* how big a card is at the dead centre of the coil   */
+    var FACE   = 20;    /* deg a card turns to face the middle of the coil    */
+    var ROLL   = 7;     /* deg of in-plane roll, following the tangent        */
+    var DEEP   = 0.30;  /* how lit a card is at the deep end of the coil      */
+    var EDGEF  = 0.14;  /* fraction of each end spent fading in and out       */
+    var TURN   = 34;    /* seconds for one unattended pass, middle to rim     */
     var SCROLL = 0.30;  /* revolutions added by scrolling the hero away       */
     var GAIN   = 1.0;   /* how much of a drag carries into the spin           */
     var DECAY  = 0.04;  /* of the fling speed left after one second           */
 
-    var LEN = 0, R = 0, EDGE = 1;
+    var R_IN = 0, R_OUT = 0, DEPTH = 0, LIFT = 0;
 
     var auto = 0, scrolled = 0, thrown = 0, vel = 0;
     var dragging = false, moved = 0, lastX = 0, lastT = 0;
     var ticking = false, active = false, pin = null;
     var lastBase = -1, lastFocus = -1;
 
-    /* LEN is the length of the drum, a little wider than the frame so it
-       reads as a cylinder carrying on past both edges rather than a row that
-       stops. R is its radius, the same number vertically and in depth. */
+    /* The coil takes the band above the line and centres itself in it.
+
+       Everything here is worked in screen pixels, because that is where the
+       constraint is. A card at the front of the coil is magnified by the
+       perspective, so the room it needs is its height once projected, not
+       the height it has in the flow — which is what `near` is. Fixing DEPTH
+       off the stage rather than off R_OUT is what keeps that solvable in one
+       pass: the magnification is known before the radius is chosen. */
     function measure() {
       var w = window.innerWidth;
       var h = stage.offsetHeight || window.innerHeight;
       var cw = cards[0].offsetWidth || 220;
 
-      /* Long enough that the ends sit well outside the frame, so the wrap
-         happens off screen; the fade at each end covers what is left. */
-      LEN  = Math.max(w * 1.9, (w + cw) * 1.3);
-      R    = Math.max(Math.min(w * 0.26, h * 0.34), cw * 0.6);
-      EDGE = w * 0.34;                /* x at which a card is fully lit */
+      /* The band the coil gets: under the header, over the line. Both edges
+         are measured rather than assumed, so the coil follows them at any
+         size instead of drifting under one or the other. */
+      var sTop = stage.getBoundingClientRect().top;
+      var head = document.querySelector('.site-head');
+      var top  = (head ? head.offsetHeight : 0) + h * 0.02;
+      var foot = skills
+        ? (skills.getBoundingClientRect().top - sTop) - h * 0.035
+        : h * 0.86;
+
+      var band = Math.max(foot - top, h * 0.4);
+      var cy = top + band / 2;        /* the coil's centre, from the stage top */
+      LIFT = h / 2 - cy;              /* and how far up the whole thing slides */
+
+      var PERSP = 1700;
+      DEPTH = Math.min(h * 0.55, PERSP * 0.5);
+      var near = PERSP / Math.max(PERSP - DEPTH / 2, 1);
+
+      /* the card that constrains everything is the outermost one: full size,
+         nearest the eye, and therefore the biggest thing on the screen */
+      var halfCard = cw * 0.66 * near * 0.5;
+      var vRoom = Math.max(band / 2 - halfCard, cw * 0.25);
+      var hRoom = w / 2 - cw * near * 0.5;
+
+      R_IN  = cw * 0.16;
+      R_OUT = Math.max(
+        Math.min(vRoom / (FLAT * near), hRoom / near, w * 0.38),
+        cw * 0.7);
+
+      /* look straight down the middle of the coil, not the middle of the
+         stage — see the note at the top */
+      stage.style.perspectiveOrigin = '50% ' + cy.toFixed(1) + 'px';
     }
 
     function wrap01(v) { v %= 1; return v < 0 ? v + 1 : v; }
@@ -697,41 +759,42 @@
       var focus = 0, best = -Infinity;
 
       for (var i = 0; i < N; i++) {
-        /* Where it is along the tube, and — from the same number — where it
-           is around it. Travel and spin off one parameter is what makes it a
-           helix rather than a ring that happens to slide. */
+        /* Where it is along the spiral. How far round it has come, how far
+           out that has carried it and how close it has come all fall out of
+           the one number, which is what makes it a coil rather than a ring
+           that happens to grow. */
         var u = wrap01(base + i / N);
-        var x = (u - 0.5) * LEN;
 
-        var ang = (u * TURNS + i / N) * Math.PI * 2;
+        var ang = u * TURNS * Math.PI * 2;
         var ca  = Math.cos(ang);
         var sa  = Math.sin(ang);
 
-        var y = ca * R;
-        var z = sa * R;
+        var r = R_IN + (R_OUT - R_IN) * Math.pow(u, SPREAD);
+        var x = ca * r;
+        var y = sa * r * FLAT - LIFT;
+        var z = (u - 0.5) * DEPTH;
 
-        /* Three dimmers multiplied: depth as it swings round, distance from
-           centre so nothing bright ever sits behind the text, and the ends
-           of the tube so the wrap is never seen. */
+        /* Two dimmers multiplied: depth, so the middle of the coil sits
+           back, and the ends, so the wrap is never seen. */
         var edge = Math.min(u, 1 - u) / EDGEF;
         var ends = edge >= 1 ? 1 : edge * edge * (3 - 2 * edge);
-        var depth = BACK + (1 - BACK) * ((sa + 1) / 2);
-        var n     = Math.min(Math.abs(x) / EDGE, 1);
-        var lit   = CENTRE + (1 - CENTRE) * (n * n * (3 - 2 * n));
+        var depth = DEEP + (1 - DEEP) * u;
 
         var card = cards[i];
         var st = card.style;
         st.setProperty('--x',  x.toFixed(2) + 'px');
         st.setProperty('--y',  y.toFixed(2) + 'px');
         st.setProperty('--z',  z.toFixed(2) + 'px');
-        st.setProperty('--ry', (ca * FACE).toFixed(2) + 'deg');
-        st.setProperty('--rz', (sa * ROLL).toFixed(2) + 'deg');
-        st.opacity = (lit * depth * ends).toFixed(3);
+        /* turned to face the middle of the coil, and rolled along it */
+        st.setProperty('--ry', (-ca * FACE).toFixed(2) + 'deg');
+        st.setProperty('--rz', (ca * ROLL).toFixed(2) + 'deg');
+        st.setProperty('--sc', (SMALL + (1 - SMALL) * u).toFixed(3));
+        st.opacity = (depth * ends).toFixed(3);
 
-        /* Round the back of the tube there is no room for the caption. */
-        card.classList.toggle('is-far', sa < -0.4);
+        /* Deep in the middle a card is too small for its caption. */
+        card.classList.toggle('is-far', u < 0.3);
 
-        var score = lit * depth * ends;
+        var score = depth * ends;
         if (score > best) { best = score; focus = i; }
       }
 
@@ -798,6 +861,24 @@
       /* A stale velocity from a drag that stopped before the finger lifted
          would launch the spiral off a still pointer. */
       if (e.timeStamp - lastT > 120) vel = 0;
+
+      if (moved <= 8) open(e);
+    }
+
+    /* Opening a card has to be done by hand, for two reasons that each break
+       the ordinary click on their own. The stage captures the pointer so it
+       can keep following a drag that leaves it, and a captured pointer sends
+       its click to the capture element — the stage — rather than to whatever
+       is underneath. And the cards never stop moving, so even without the
+       capture the press and the release land on different elements often
+       enough that no click is generated at all. Both go away if a release
+       inside the drag threshold follows the link under it itself. */
+    function open(e) {
+      var el = document.elementFromPoint(e.clientX, e.clientY);
+      var a = el && el.closest && el.closest('.spiral-card a[href]');
+      if (!a) return;
+      if (a.target === '_blank') window.open(a.href, '_blank', 'noopener');
+      else window.location.href = a.href;
     }
 
     /* A drag that ends on a card must not also open it. */
@@ -878,6 +959,8 @@
         pin = null;
       }
       gsap.set([inner, veil].filter(Boolean), { clearProps: 'all' });
+      stage.style.removeProperty('perspective-origin');
+      if (skills) skills.style.cssText = '';
 
       hero.classList.remove('is-spiral');
       list.classList.remove('spiral-track');
@@ -885,7 +968,7 @@
       hero.appendChild(list);
 
       cards.forEach(function (card) {
-        ['--x', '--y', '--z', '--ry', '--rz'].forEach(function (p) { card.style.removeProperty(p); });
+        ['--x', '--y', '--z', '--ry', '--rz', '--sc'].forEach(function (p) { card.style.removeProperty(p); });
         card.style.opacity = '';
         card.classList.remove('is-focus', 'is-far');
       });
@@ -974,23 +1057,26 @@
   /* ==========================================================================
      The watch
 
-     The progression is a watch face. A spiral is wound inside the dial and
-     drawn from the rim inward as you scroll, so travelling it is travelling
-     the years: the oldest work is out at the edge, now is at the centre, and
-     the hand sweeps round with it. The line that feeds it is drawn down out
-     of the Timeline button in the header, because that is the control this
-     section belongs to.
+     The progression is a wristwatch. A line comes down out of the Timeline
+     button — the control this section belongs to — and the watch draws
+     itself from it: strap, stitching, crown, then the case closing and the
+     dial filling in. Nothing is there before you scroll to it.
 
-     The eras ride the sides of the dial rather than stacking below it. Each
+     Once the face is up it says what you are looking at, and that note
+     clears as the hand starts to move. Then a spiral wound inside the dial
+     is drawn from the rim inward, so travelling it is travelling the years:
+     the oldest work is out at the edge, now is at the centre.
+
+     The eras ride the sides of the case rather than stacking below it. Each
      one slides in, holds while the hand crosses its stretch of the spiral,
      and clears for the next — so the whole progression is one scene instead
      of a column of sections.
 
-     The dial viewBox is square on purpose. One unit is then the same length
-     on both axes, so a point taken off the path with getPointAtLength maps
-     into element coordinates with a single scale factor, and the marker,
-     the hand and the year labels all land exactly on the geometry rather
-     than near it.
+     The viewBox is 1000 x 1400 and the element holds that ratio, so one unit
+     is still the same length on both axes. A point taken off the path with
+     getPointAtLength therefore maps into element coordinates with a single
+     scale factor, and the marker, the hand and the year labels land exactly
+     on the geometry rather than near it.
 
      It only runs where there is room and a ticker to drive it. Everywhere
      else the eras stay in the flow as ordinary sections, which is the whole
@@ -1007,45 +1093,74 @@
     var line  = orbit.querySelector('.path-line');
     var ticks = orbit.querySelector('.path-ticks');
     var hand  = orbit.querySelector('.path-hand');
+    var hub   = orbit.querySelector('.path-hub');
     var mark  = orbit.querySelector('.path-mark');
     var feed  = orbit.querySelector('.path-feed');
     var feedPath = feed && feed.querySelector('path');
+    var intro = orbit.querySelector('.path-intro');
     var years = [].slice.call(orbit.querySelectorAll('.path-dial li'));
     var burst = [].slice.call(orbit.querySelectorAll('.path-burst li'));
     var eras  = [].slice.call(document.querySelectorAll('.era-scenes .era'));
+    var parts = [].slice.call(orbit.querySelectorAll('.watch-strap, .watch-crown, .watch-case'));
+    var stitching = orbit.querySelector('.watch-stitching');
     if (!svg || !line || !eras.length) return;
 
     orbit.classList.add('is-live');
 
+    /* The case, in viewBox units. Everything else is measured off these. */
+    var CX = 500, CY = 700, R_CASE = 292;
+
     /* ---- the dial ------------------------------------------------------- */
-    var TICKS = 60, R_BEZEL = 470;
+    var TICKS = 60;
     var tickMarkup = '';
     for (var t = 0; t < TICKS; t++) {
       var a = (t / TICKS) * Math.PI * 2 - Math.PI / 2;
       var major = t % 5 === 0;
-      var r1 = R_BEZEL - (major ? 26 : 14);
+      var r1 = R_CASE - (major ? 26 : 14);
       tickMarkup += '<line class="path-tick' + (major ? ' is-major' : '') + '" ' +
-        'x1="' + (500 + Math.cos(a) * r1).toFixed(1) + '" y1="' + (500 + Math.sin(a) * r1).toFixed(1) + '" ' +
-        'x2="' + (500 + Math.cos(a) * R_BEZEL).toFixed(1) + '" y2="' + (500 + Math.sin(a) * R_BEZEL).toFixed(1) + '"/>';
+        'x1="' + (CX + Math.cos(a) * r1).toFixed(1) + '" y1="' + (CY + Math.sin(a) * r1).toFixed(1) + '" ' +
+        'x2="' + (CX + Math.cos(a) * R_CASE).toFixed(1) + '" y2="' + (CY + Math.sin(a) * R_CASE).toFixed(1) + '"/>';
     }
     ticks.innerHTML = tickMarkup;
+    ticks.style.opacity = '0';
 
     /* ---- the spiral, rim to centre -------------------------------------- */
-    var TURNS = 3.1, R_OUT = 415, R_IN = 24, STEPS = 720;
+    var TURNS = 3.1, R_OUT = R_CASE - 55, R_IN = 20, STEPS = 720;
     var d = '';
     for (var i = 0; i <= STEPS; i++) {
       var q = i / STEPS;
       var ang = q * TURNS * Math.PI * 2 - Math.PI / 2;
       var r = R_OUT + (R_IN - R_OUT) * q;
       d += (i ? ' L ' : 'M ') +
-           (500 + Math.cos(ang) * r).toFixed(2) + ' ' +
-           (500 + Math.sin(ang) * r).toFixed(2);
+           (CX + Math.cos(ang) * r).toFixed(2) + ' ' +
+           (CY + Math.sin(ang) * r).toFixed(2);
     }
     line.setAttribute('d', d);
 
     var L = line.getTotalLength();
     line.style.strokeDasharray = L;
     line.style.strokeDashoffset = L;
+
+    /* ---- the watch draws itself ----------------------------------------
+       Strap, crown and case are all strokes, so each one can be walked on
+       with a dashoffset. They are drawn in that order as the section opens,
+       which is what makes it build rather than appear.
+
+       The stitching is left out of that: its dashes are its dasharray, and
+       walking a path on needs the dasharray for the walk. It fades up once
+       the strap it belongs to is closed instead. */
+    var built = parts.map(function (el) {
+      var len = el.getTotalLength ? el.getTotalLength() : 0;
+      if (!len) return null;
+      el.style.strokeDasharray = len;
+      el.style.strokeDashoffset = len;
+      /* the case is the only filled part; hold its fill back until it closes */
+      if (el.classList.contains('watch-case')) el.style.fillOpacity = '0';
+      return { el: el, len: len };
+    }).filter(Boolean);
+
+    if (hand) hand.style.opacity = '0';
+    if (hub) hub.style.opacity = '0';
 
     /* ---- the eras take the sides ---------------------------------------- */
     eras.forEach(function (era, i) {
@@ -1054,9 +1169,10 @@
       inner.appendChild(era);
     });
 
-    /* Each era owns a stretch of the sweep. */
-    var LEAD = 0.10, TAIL = 0.16;
-    var span = (1 - LEAD - TAIL) / eras.length;
+    /* The opening builds the watch and shows the face; then each era owns a
+       stretch of the sweep; then it bursts. */
+    var BUILD = 0.16, INTRO_OUT = 0.36, TAIL = 0.14;
+    var span = (1 - INTRO_OUT - TAIL) / eras.length;
 
     var unit = 1, ox = 0, oy = 0;
 
@@ -1068,27 +1184,29 @@
       ox = sb.left - ob.left;
       oy = sb.top - ob.top;
 
-      /* year labels sit just outside the bezel */
       years.forEach(function (el, i) {
         var a = (i / years.length) * Math.PI * 2 - Math.PI / 2;
-        var r = (R_BEZEL + 52) * unit;
-        el.style.left = (ox + 500 * unit + Math.cos(a) * r) + 'px';
-        el.style.top  = (oy + 500 * unit + Math.sin(a) * r) + 'px';
+        var r = (R_CASE - 54) * unit;
+        el.style.left = (ox + CX * unit + Math.cos(a) * r) + 'px';
+        el.style.top  = (oy + CY * unit + Math.sin(a) * r) + 'px';
       });
+
+      if (intro) {
+        intro.style.left = (ox + CX * unit) + 'px';
+        intro.style.top  = (oy + CY * unit) + 'px';
+      }
 
       burst.forEach(function (el, i) {
         var a = (i / burst.length) * Math.PI * 2 - Math.PI / 2;
-        var rad = Math.min(sb.width * 0.30, 250);
+        var rad = Math.min(R_CASE * unit * 0.74, 230);
         el.dataset.bx = (Math.cos(a) * rad).toFixed(1);
-        el.dataset.by = (Math.sin(a) * rad * 0.85).toFixed(1);
+        el.dataset.by = (Math.sin(a) * rad).toFixed(1);
       });
 
       drawFeed();
     }
 
-    /* The line down out of the Timeline button. Both ends are measured from
-       the viewport while the scene is pinned, which is the only moment it is
-       ever drawn. */
+    /* The line down out of the Timeline button, into the top of the strap. */
     function drawFeed() {
       if (!feedPath) return;
       var btn = document.querySelector('.nav a[href="#path"]');
@@ -1097,12 +1215,12 @@
       var b = btn.getBoundingClientRect();
       var sx = b.left + b.width / 2 - ob.left;
       var sy = b.bottom - ob.top;
-      var ex = ox + 500 * unit;
-      var ey = oy + (500 - R_BEZEL) * unit;
+      var ex = ox + CX * unit;
+      var ey = oy + 6 * unit;
       feedPath.setAttribute('d',
         'M ' + sx + ' ' + sy +
-        ' C ' + sx + ' ' + (sy + (ey - sy) * 0.55) +
-        ', ' + ex + ' ' + (sy + (ey - sy) * 0.45) +
+        ' C ' + sx + ' ' + (sy + (ey - sy) * 0.6) +
+        ', ' + ex + ' ' + (sy + (ey - sy) * 0.4) +
         ', ' + ex + ' ' + ey);
       var fl = feedPath.getTotalLength();
       feedPath.style.strokeDasharray = fl;
@@ -1119,7 +1237,7 @@
     ScrollTrigger.create({
       trigger: orbit,
       start: 'top top',
-      end: '+=420%',
+      end: '+=460%',
       pin: true,
       pinSpacing: true,
       scrub: 0.6,
@@ -1128,37 +1246,67 @@
       onUpdate: function (self) {
         var p = self.progress;
 
-        /* the feed draws first, out of the button */
+        /* 1. the feed comes down out of the button */
         if (feedPath) {
           var fl = feedPath.getTotalLength();
-          var fp = Math.min(1, p / LEAD);
+          var fp = Math.min(1, p / (BUILD * 0.42));
           feedPath.style.strokeDashoffset = fl * (1 - fp);
-          feedPath.style.opacity = String(0.8 * (1 - Math.max(0, (p - 0.34) / 0.16)));
+          feedPath.style.opacity = String(0.85 * (1 - Math.min(1, Math.max(0, (p - BUILD) / 0.10))));
         }
 
-        /* then the spiral is drawn from the rim inward */
-        var sp = Math.min(1, Math.max(0, (p - LEAD) / (1 - LEAD)));
+        /* 2. and the watch draws itself, part after part */
+        var bp = Math.min(1, Math.max(0, (p - BUILD * 0.30) / (BUILD * 0.70)));
+        built.forEach(function (part, i) {
+          var slice = 1 / built.length;
+          var k = Math.min(1, Math.max(0, (bp - i * slice * 0.72) / slice));
+          part.el.style.strokeDashoffset = part.len * (1 - k);
+          if (part.el.classList.contains('watch-case')) part.el.style.fillOpacity = String(k);
+          /* lit while it is being drawn, and cooling to its own colour once
+             it lands -- the shimmer is the line arriving, not a loop */
+          var hot = k > 0.001 && k < 0.999;
+          if (hot !== part.hot) {
+            part.hot = hot;
+            if (hot) part.el.style.stroke = 'var(--glow)';
+            else part.el.style.removeProperty('stroke');
+          }
+        });
+        if (stitching) {
+          stitching.style.opacity =
+            String(Math.min(1, Math.max(0, (p - BUILD * 0.55) / (BUILD * 0.4))));
+        }
+        ticks.style.opacity = String(Math.min(1, Math.max(0, (p - BUILD * 0.86) / (BUILD * 0.5))));
+        if (hand) hand.style.opacity = String(Math.min(1, Math.max(0, (p - BUILD) / 0.06)) * 0.85);
+        if (hub) hub.style.opacity = String(Math.min(1, Math.max(0, (p - BUILD) / 0.06)));
+
+        /* 3. the face says what this is, then clears */
+        if (intro) {
+          var iin = Math.min(1, Math.max(0, (p - BUILD * 0.75) / 0.06));
+          var iout = Math.min(1, Math.max(0, (p - (INTRO_OUT - 0.07)) / 0.07));
+          intro.style.opacity = (iin * (1 - iout)).toFixed(3);
+          intro.style.transform = 'translate(-50%,-50%) scale(' + (1 - iout * 0.12) + ')';
+        }
+
+        /* 4. then the spiral is drawn from the rim inward */
+        var sp = Math.min(1, Math.max(0, (p - INTRO_OUT) / (1 - INTRO_OUT)));
         line.style.strokeDashoffset = L * (1 - sp);
 
-        /* the hand sweeps with it, and the marker rides the leading end */
         var q = pointAt(sp);
-        var hx = (q.x - ox) / unit, hy = (q.y - oy) / unit;
-        hand.setAttribute('x2', hx);
-        hand.setAttribute('y2', hy);
+        if (hand) {
+          hand.setAttribute('x2', (q.x - ox) / unit);
+          hand.setAttribute('y2', (q.y - oy) / unit);
+        }
         mark.style.transform = 'translate(' + q.x + 'px,' + q.y + 'px)';
         mark.style.opacity = sp > 0.01 && sp < 0.995 ? '1' : '0';
 
-        /* the burst at the centre */
         var b = Math.min(1, Math.max(0, (p - (1 - TAIL * 0.72)) / (TAIL * 0.72)));
 
-        /* the years light as the hand passes them */
         years.forEach(function (el, i) {
           el.classList.toggle('is-now', sp >= i / years.length - 0.04);
         });
 
-        /* and each era holds the side while the hand crosses its stretch */
+        /* 5. each era holds a side while the hand crosses its stretch */
         eras.forEach(function (era, i) {
-          var a0 = LEAD + i * span;
+          var a0 = INTRO_OUT + i * span;
           var local = (p - a0) / span;
           var vis;
           if (local < 0 || local > 1) vis = 0;
@@ -1172,6 +1320,7 @@
             'translateY(-50%) translateX(' + (dir * (1 - vis) * 70).toFixed(1) + 'px)';
         });
 
+        /* 6. and the middle goes off */
         burst.forEach(function (el, i) {
           var k = Math.min(1, Math.max(0, (b - (i / burst.length) * 0.18) / 0.82));
           var e = 1 - Math.pow(1 - k, 3);
