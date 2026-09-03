@@ -382,10 +382,13 @@
       svg.setAttribute('aria-hidden', 'true');
       stage.insertBefore(svg, center);
 
-      /* The sheet goes now — the spiral is revealed while the points are
-         still travelling over it, which is the whole effect. */
+      /* booting comes off so the header can be there to be arrived at — the
+         legs land on it, and the class was holding it at zero. The sheet is
+         held separately and stays until they have all landed: the spiral and
+         the line underneath are the reward for the trip, and showing them
+         while it is still happening gives the ending away. */
       doc.classList.remove('booting');
-      doc.classList.add('booted');
+      doc.classList.add('sheet-held');
 
       /* Every point is made and lit at the centre first, so they are visibly
          one thing coming apart rather than three that were always separate. */
@@ -441,9 +444,16 @@
           var bx = qq * qq * x0 + 2 * qq * tt * cx2 + tt * tt * x1;
           var by = qq * qq * y0 + 2 * qq * tt * cy2 + tt * tt * y1;
 
-          /* the spiral wound onto it, tightening to zero at the target */
+          /* The spiral wound onto it, opening from nothing at the centre and
+             tightening back to nothing at the target. Both ends have to be
+             pinned to zero: with the radius at full width from the first
+             step, each leg began R0 away from the centre in whatever
+             direction its random phase pointed — so the three lines looked
+             like they started in three scattered places rather than all
+             coming out of the one dot. */
           var a = ph0 + tt * TURNSP * Math.PI * 2 * leg.spin;
-          var rad = R0 * Math.pow(1 - tt, 1.5);
+          var open = Math.min(tt / 0.14, 1);
+          var rad = R0 * Math.pow(1 - tt, 1.5) * (open * open * (3 - 2 * open));
           bx += Math.cos(a) * rad;
           by += Math.sin(a) * rad * 0.72;
 
@@ -539,13 +549,21 @@
     }
 
     var landed = false;
+    /* Everything has arrived. The sheet goes, and the line comes up out of
+       the spiral it uncovers rather than over the top of it. */
+    var SHEET = 380;
+
     function land() {
       if (landed) return;
       landed = true;
       center.classList.add('name-gone');
-      line.classList.remove('is-held');
-      line.classList.add('is-lit');
-      setTimeout(cycle, 420);
+      doc.classList.remove('sheet-held');
+      doc.classList.add('booted');
+      setTimeout(function () {
+        line.classList.remove('is-held');
+        line.classList.add('is-lit');
+        setTimeout(cycle, 420);
+      }, SHEET);
     }
 
     /* ---- the liquid word ------------------------------------------------
@@ -816,7 +834,12 @@
       lastT = e.timeStamp;
       vel = 0;
       stage.classList.add('is-dragging');
-      if (stage.setPointerCapture) stage.setPointerCapture(e.pointerId);
+      /* A pointer that has already been released — a synthetic event, or one
+         the browser retired between the press and here — throws rather than
+         being ignored, and it would take the rest of the handler with it. */
+      if (stage.setPointerCapture) {
+        try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+      }
     }
 
     function onMove(e) {
@@ -836,7 +859,9 @@
       if (!dragging) return;
       dragging = false;
       stage.classList.remove('is-dragging');
-      if (stage.releasePointerCapture) stage.releasePointerCapture(e.pointerId);
+      if (stage.releasePointerCapture) {
+        try { stage.releasePointerCapture(e.pointerId); } catch (err) {}
+      }
       /* A stale velocity from a drag that stopped before the finger lifted
          would launch the spiral off a still pointer. */
       if (e.timeStamp - lastT > 120) vel = 0;
@@ -908,6 +933,14 @@
           pinSpacing: false,
           scrub: 0.6,
           invalidateOnRefresh: true,
+          /* Pins change the height of the document, so anything measured
+             before one is applied is measured against a page that is about
+             to move. Higher priority refreshes first, and the pins are
+             numbered down the page so each one settles before whatever is
+             below it is measured. Without this the veil over the timeline
+             was keyed to where contact sat before two pins pushed it down,
+             and washed the panel out while it was still being read. */
+          refreshPriority: 3,
           onUpdate: function (self) { scrolled = self.progress * SCROLL; }
         }
       });
@@ -1057,15 +1090,24 @@
 
      Twelve o'clock is the year it started and the moment it arrives at, both
      — so that marker carries two labels and cross-fades from 2018 to Now as
-     the hand closes the circle. That is when the last turn opens: the work
-     of today out of the middle of the face, what I am doing now on one side,
-     and the certificates coming down the other on a vertical coil. Then the
-     pin lets go and the page carries on.
+     the hand closes the circle. That is when the last turn opens: what I am
+     doing now on one side, the three projects I keep coming back to on the
+     other, and the school certificates winding around the watch itself.
+     Then the pin lets go and the page carries on.
+
+     The certificates run the hero's helix stood on its end — travelling down
+     the axis of the strap while turning about it, so a chip passes in front
+     of the case and then behind it. That only reads if they share one 3D
+     context with the dial, which is why the perspective sits on the wrapper
+     and why the fade is applied to each chip rather than to the list: any
+     opacity between the two would flatten the subtree and every certificate
+     would composite in front of the watch, or behind it, as one sheet.
 
      The viewBox is 1000 x 1400 and the element holds that ratio, so one unit
      is the same length on both axes and anything measured off the geometry
      maps into element coordinates with a single scale factor. The year
-     labels and the burst land exactly on the dial rather than near it.
+     labels and the certificates land exactly on the dial rather than near
+     it.
 
      It only runs where there is room and a ticker to drive it. Everywhere
      else the eras stay in the flow as ordinary sections, which is the whole
@@ -1089,12 +1131,19 @@
     var intro = orbit.querySelector('.path-intro');
     var dial  = orbit.querySelector('.path-dial');
     var years = [].slice.call(orbit.querySelectorAll('.path-dial li'));
-    var burst = [].slice.call(orbit.querySelectorAll('.path-burst li'));
     var eras  = [].slice.call(document.querySelectorAll('.era-scenes .era'));
+    var picks = document.querySelector('.path-picks');
+    var pile  = document.querySelector('.pile');
+    var pileCards = pile ? [].slice.call(pile.querySelectorAll('.pcard')) : [];
     var origin = orbit.querySelector('.path-dial .is-origin');
     var now   = document.querySelector('.path-now');
     var certs = document.querySelector('.path-certs');
     var certItems = certs ? [].slice.call(certs.children) : [];
+
+    /* the coil's turn: what the scroll set, what the ticker has added
+       since, and how lit it is — declared here because a trigger can fire
+       its first update while it is still being created */
+    var certBase = 0, certDrift = 0, certLit = 0, spinning = false;
     var parts = [].slice.call(orbit.querySelectorAll('.watch-strap, .watch-crown, .watch-case'));
     var stitching = orbit.querySelector('.watch-stitching');
     if (!svg || !sweep || !eras.length) return;
@@ -1146,7 +1195,22 @@
 
     if (hand) hand.style.opacity = '0';
     if (hub) hub.style.opacity = '0';
-    if (intro) intro.style.opacity = '0';
+
+    /* The note in the middle of the face is written by both triggers — it
+       fades up as the watch is built and out again as the hand sets off —
+       and they run in the same update. Whichever wrote last would win, and
+       the build trigger sits at progress 1 for the whole of the sweep, so it
+       kept putting the note back on top of the hand. Each one owns its own
+       end of the fade instead, and the note is painted from both. */
+    var introIn = 0, introOut = 0;
+
+    function paintIntro() {
+      if (!intro) return;
+      var v = introIn * (1 - introOut);
+      intro.style.opacity = v.toFixed(3);
+      intro.style.transform = 'translate(-50%,-50%) scale(' + (1 - introOut * 0.12) + ')';
+    }
+    paintIntro();
 
     /* ---- the eras take the sides ----------------------------------------
        The side is the half of the dial the hand is in over that era's
@@ -1157,10 +1221,84 @@
       era.classList.add(i < eras.length / 2 ? 'side-right' : 'side-left');
       inner.appendChild(era);
     });
-    var scenes = document.querySelector('.era-scenes');
     if (now) inner.appendChild(now);
-    if (certs && scenes) inner.appendChild(certs);
-    else certs = null;
+    if (picks) inner.appendChild(picks);
+    if (certs) inner.appendChild(certs);
+    if (pile) { inner.appendChild(pile); stackPile(); }
+
+    /* ---- the pile -------------------------------------------------------
+       One heap of photographs, top card live. Pull it off and let go and it
+       drops to the bottom, so the pile cycles rather than emptying — which
+       is the only behaviour that makes sense for something with no order to
+       preserve and no end to reach.
+
+       The order is the array, and the array is the z-index. Nothing reads
+       the DOM back to work out what is on top. */
+    function stackPile() {
+      pileCards.forEach(function (el, i) {
+        el.style.zIndex = String(pileCards.length - i);
+        el.classList.toggle('is-top', i === 0);
+        el.style.setProperty('--spin', (i === 0 ? 0 : (i % 2 ? 1 : -1) * (2 + i * 0.9)).toFixed(1) + 'deg');
+        if (i !== 0) {
+          el.style.setProperty('--dx', ((i % 2 ? 1 : -1) * i * 2).toFixed(1) + 'px');
+          el.style.setProperty('--dy', (i * 2.5).toFixed(1) + 'px');
+        } else {
+          el.style.setProperty('--dx', '0px');
+          el.style.setProperty('--dy', '0px');
+        }
+      });
+    }
+
+    function toBottom() {
+      pileCards.push(pileCards.shift());
+      stackPile();
+    }
+
+    if (pile) {
+      var grab = null, gx = 0, gy = 0, went = 0;
+
+      pile.addEventListener('pointerdown', function (e) {
+        var top = pileCards[0];
+        if (!top || e.button > 0) return;
+        grab = top;
+        gx = e.clientX; gy = e.clientY; went = 0;
+        top.classList.remove('is-settling');
+        pile.classList.add('is-dragging');
+        if (pile.setPointerCapture) {
+          try { pile.setPointerCapture(e.pointerId); } catch (err) {}
+        }
+      });
+
+      pile.addEventListener('pointermove', function (e) {
+        if (!grab) return;
+        var dx = e.clientX - gx, dy = e.clientY - gy;
+        went = Math.max(went, Math.abs(dx) + Math.abs(dy));
+        if (went < 4) return;
+        e.preventDefault();
+        grab.style.setProperty('--dx', dx.toFixed(1) + 'px');
+        grab.style.setProperty('--dy', dy.toFixed(1) + 'px');
+        grab.style.setProperty('--spin', (dx * 0.03).toFixed(2) + 'deg');
+      });
+
+      function release(e) {
+        if (!grab) return;
+        var card = grab;
+        grab = null;
+        pile.classList.remove('is-dragging');
+        if (pile.releasePointerCapture) {
+          try { pile.releasePointerCapture(e.pointerId); } catch (err) {}
+        }
+        /* A real pull sends it to the back; a nudge just settles again. The
+           transition is added for the trip home and taken off afterwards, so
+           the next grab is not fighting an easing. */
+        card.classList.add('is-settling');
+        if (went > 40) toBottom(); else stackPile();
+        setTimeout(function () { card.classList.remove('is-settling'); }, 460);
+      }
+      pile.addEventListener('pointerup', release);
+      pile.addEventListener('pointercancel', release);
+      pile.addEventListener('dragstart', function (e) { e.preventDefault(); });
+    }
 
     /* The drawing is decorative and says so element by element. The eras,
        the Now card and the certificates are the real content and have just
@@ -1214,74 +1352,48 @@
        are placed first, their real edges are measured, and the ring is only
        ever as wide as the gap they leave. If the gap is not worth having,
        the certificates stay in the flow below and the ring gets the room. */
-    /* Where the chips land, as fractions of the ellipse.
-
-       Spacing them evenly round it does not work, and cannot: any number of
-       points evenly spaced on a circle is symmetric about the vertical, so
-       they come in pairs at exactly the same height — and two chips at the
-       same height, each wider than the case is deep, run through each other
-       in the middle. These are placed by hand instead, no two at the same
-       height, which reads as thrown out rather than arranged anyway. */
-    var SCATTER = [
-      [-0.92, -0.52], [ 0.78, -1.00], [-1.00,  0.14],
-      [ 0.95,  0.52], [-0.40,  1.00], [ 0.60,  0.56]
-    ];
-
-    function widest(list) {
-      var w = 0;
-      for (var i = 0; i < list.length; i++) w = Math.max(w, list[i].offsetWidth);
-      return w;
-    }
+    /* The helix the certificates ride: down the axis of the strap while
+       turning about it. Radius is held near the case so the column stays
+       between the two side panels, and the travel is a little longer than
+       the case is tall so the ends are off the face when they wrap. */
+    var CERT_TURNS = 2;     /* whole turns, so the wrap is invisible      */
+    var certLen = 0, certR = 0;
 
     function layoutNow() {
-      var ob = orbit.getBoundingClientRect();
-      var mid = ox + CX * unit;
-      var halfChip = widest(burst) / 2;
+      var sb = svg.getBoundingClientRect();
+      certR = Math.max(R_CASE * unit * 0.92, 90);
+      certLen = Math.max(sb.height * 0.72, R_CASE * unit * 3);
+    }
 
-      var leftEdge = now ? now.offsetLeft + now.offsetWidth + 20 : 0;
-      var rightEdge = ob.width;
+    function wrap01(v) { v %= 1; return v < 0 ? v + 1 : v; }
 
-      if (certItems.length) {
-        var chip = widest(certItems);
-        var amp = Math.min(ob.width * 0.06, 70);
-        var half = chip / 2 + amp;
-        var cx = ob.width - half - Math.min(ob.width * 0.03, 40);
+    /* Where each certificate is, for a given turn of the coil. Travel and
+       spin come off the one parameter, which is what makes it a helix rather
+       than a ring that happens to slide. */
+    function windCerts(base, lit) {
+      var N = certItems.length;
+      if (!N) return;
+      for (var i = 0; i < N; i++) {
+        var u = wrap01(base + i / N);
+        var y = (u - 0.5) * certLen;
+        var a = (u * CERT_TURNS + i / N) * Math.PI * 2;
+        var ca = Math.cos(a), sa = Math.sin(a);
 
-        /* only worth a column of its own if it leaves the ring somewhere
-           to be; otherwise leave the certificates where they were written */
-        if (cx - half - 20 - mid > R_CASE * unit * 0.75) {
-          if (certs.parentElement !== inner) inner.appendChild(certs);
-          certs.classList.remove('is-flowed');
-          var fall = Math.min(ob.height * 0.82, 640);
-          certItems.forEach(function (el, i) {
-            var q = certItems.length > 1 ? i / (certItems.length - 1) : 0.5;
-            el.style.left = (cx + Math.sin(q * Math.PI * 2.4) * amp) + 'px';
-            el.style.top  = (ob.height / 2 - fall / 2 + q * fall) + 'px';
-          });
-          rightEdge = cx - half - 20;
-        } else {
-          certs.classList.add('is-flowed');
-          if (certs.parentElement === inner) scenes.parentElement.appendChild(certs);
-          certs.style.opacity = '';
-          certs.style.pointerEvents = '';
-          certItems.forEach(function (el) {
-            el.style.left = ''; el.style.top = ''; el.style.transform = ''; el.style.opacity = '';
-          });
-        }
+        var el = certItems[i];
+        el.style.setProperty('--x', (ca * certR).toFixed(1) + 'px');
+        el.style.setProperty('--y', y.toFixed(1) + 'px');
+        el.style.setProperty('--z', (sa * certR).toFixed(1) + 'px');
+        /* turned to face the axis, so it lies on the surface of the coil */
+        el.style.setProperty('--rx', (-Math.cos(a) * 8).toFixed(1) + 'deg');
+
+        /* dimmer round the back, and both ends of the travel faded so the
+           wrap is never seen */
+        var edge = Math.min(u, 1 - u) / 0.16;
+        var ends = edge >= 1 ? 1 : edge * edge * (3 - 2 * edge);
+        var depth = 0.34 + 0.66 * ((sa + 1) / 2);
+        el.style.opacity = (lit * depth * ends).toFixed(3);
+        el.style.pointerEvents = lit * depth * ends > 0.5 ? 'auto' : 'none';
       }
-
-      var rx = Math.min(R_CASE * unit * 1.5,
-                        mid - leftEdge - halfChip,
-                        rightEdge - mid - halfChip,
-                        380);
-      rx = Math.max(rx, R_CASE * unit * 0.45);
-      var ry = Math.min(R_CASE * unit * 1.28, 275);
-
-      burst.forEach(function (el, i) {
-        var q = SCATTER[i % SCATTER.length];
-        el.dataset.bx = (q[0] * rx).toFixed(1);
-        el.dataset.by = (q[1] * ry).toFixed(1);
-      });
     }
 
     /* The line down out of the Timeline button, into the top of the strap. */
@@ -1354,7 +1466,8 @@
         if (dial) dial.style.opacity = String(ramp(p, 0.76, 0.94));
         if (hand) hand.style.opacity = String(ramp(p, 0.84, 0.98) * 0.9);
         if (hub) hub.style.opacity = String(ramp(p, 0.84, 0.98));
-        if (intro) intro.style.opacity = String(ramp(p, 0.88, 1));
+        introIn = ramp(p, 0.88, 1);
+        paintIntro();
       }
     });
 
@@ -1367,16 +1480,14 @@
       pinSpacing: true,
       scrub: 0.6,
       invalidateOnRefresh: true,
+      refreshPriority: 2,
       onRefresh: measure,
       onUpdate: function (self) {
         var p = self.progress;
 
         /* the note in the middle of the face clears as the hand sets off */
-        if (intro) {
-          var out = ramp(p, 0, OPEN);
-          intro.style.opacity = (1 - out).toFixed(3);
-          intro.style.transform = 'translate(-50%,-50%) scale(' + (1 - out * 0.12) + ')';
-        }
+        introOut = ramp(p, 0, OPEN);
+        paintIntro();
 
         /* one revolution, twelve back round to twelve */
         var deg = p * 360;
@@ -1412,6 +1523,15 @@
           era.style.opacity = vis.toFixed(3);
           era.style.transform =
             'translateY(-50%) translateX(' + (dir * (1 - vis) * 70).toFixed(1) + 'px)';
+
+          /* the photographs belong to one year, so they come and go with it,
+             on the opposite side of the case to the panel */
+          if (pile && era === eras[eras.length - 1]) {
+            pile.style.opacity = vis.toFixed(3);
+            pile.style.transform =
+              'translateY(-50%) translateX(' + ((1 - vis) * 70).toFixed(1) + 'px)';
+            pile.style.pointerEvents = vis > 0.9 ? 'auto' : 'none';
+          }
         });
 
         /* twelve is both ends of the line, so the marker changes what it
@@ -1419,52 +1539,58 @@
         if (origin) origin.classList.toggle('is-arrived', p > NOW - 0.04);
         if (dial) dial.classList.toggle('is-arrived', p > NOW - 0.02);
 
-        /* and the last turn opens: today out of the middle of the face, what
-           I am doing now on one side, the certificates down the other */
-        burst.forEach(function (el, i) {
-          var k = clamp01((b - (i / burst.length) * 0.18) / 0.82);
-          var e = 1 - Math.pow(1 - k, 3);
-          el.style.opacity = e.toFixed(3);
-          el.style.transform =
-            'translate(calc(-50% + ' + (el.dataset.bx * e) + 'px),' +
-                     'calc(-50% + ' + (el.dataset.by * e) + 'px)) ' +
-            'scale(' + (0.4 + e * 0.6) + ')';
-        });
-
+        /* and the last turn opens: what I am doing now on one side, the
+           three I keep coming back to on the other, and the certificates
+           winding round the watch between them */
         if (now) {
-          var nv = ramp(p, NOW + 0.02, NOW + 0.10);
+          var nv = ramp(p, NOW + 0.01, NOW + 0.07);
           now.style.opacity = nv.toFixed(3);
           now.style.transform = 'translateY(-50%) translateX(' + (-(1 - nv) * 60).toFixed(1) + 'px)';
           now.style.pointerEvents = nv > 0.9 ? 'auto' : 'none';
         }
 
-        if (certs && !certs.classList.contains('is-flowed')) {
-          certs.style.opacity = String(ramp(p, NOW + 0.04, NOW + 0.12));
-          certs.style.pointerEvents = p > NOW + 0.12 ? 'auto' : 'none';
-          certItems.forEach(function (el, i) {
-            var k = clamp01((ramp(p, NOW + 0.04, 1) - (i / certItems.length) * 0.5) / 0.5);
-            var e = 1 - Math.pow(1 - k, 3);
-            el.style.opacity = e.toFixed(3);
-            el.style.transform = 'translate(-50%,-50%) translateX(' + ((1 - e) * 44).toFixed(1) + 'px)';
-          });
+        if (picks) {
+          var pv = ramp(p, NOW + 0.03, NOW + 0.09);
+          picks.style.opacity = pv.toFixed(3);
+          picks.style.transform = 'translateY(-50%) translateX(' + ((1 - pv) * 60).toFixed(1) + 'px)';
+          picks.style.pointerEvents = pv > 0.9 ? 'auto' : 'none';
         }
+
+        /* The coil turns with the scroll and keeps turning on its own, so
+           it is alive while you read it. drift is added by the ticker. */
+        certLit = ramp(p, NOW + 0.02, NOW + 0.10);
+        certBase = (p - NOW) * 0.9;
+        windCerts(certBase + certDrift, certLit);
       }
     });
 
-    /* ---- 3. the wash the contact panel arrives behind --------------------- */
-    var veil = document.querySelector('.path-veil');
-    var contact = document.querySelector('#contact');
-    if (veil && contact) {
-      gsap.fromTo(veil, { opacity: 0 }, {
-        opacity: 0.88,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: contact,
-          start: 'top bottom',
-          end: 'top 24%',
-          scrub: 0.5,
-          invalidateOnRefresh: true
-        }
+    /* The coil keeps turning after the scroll stops. Only while it is worth
+       looking at — there is no reason to run a ticker for something faded
+       out — and only ever adding to what the scroll already set. */
+    function spin(time, deltaMs) {
+      if (certLit < 0.01) { stopSpin(); return; }
+      certDrift += Math.min(deltaMs, 50) / 1000 / 26;
+      windCerts(certBase + certDrift, certLit);
+    }
+    function startSpin() { if (!spinning) { spinning = true; gsap.ticker.add(spin); } }
+    function stopSpin()  { if (spinning) { spinning = false; gsap.ticker.remove(spin); } }
+
+    ScrollTrigger.create({
+      trigger: orbit,
+      start: 'top top',
+      end: '+=520%',
+      onToggle: function (self) { self.isActive ? startSpin() : stopSpin(); }
+    });
+
+    /* A certificate opens on release rather than on click, for the same
+       reason a project card does: the chip is moving, so the press and the
+       release often land on different elements and no click is generated at
+       all. Following the link under the release is the whole fix. */
+    if (certs) {
+      certs.addEventListener('pointerup', function (e) {
+        var el = document.elementFromPoint(e.clientX, e.clientY);
+        var a = el && el.closest && el.closest('.path-certs a[href]');
+        if (a) window.open(a.href, '_blank', 'noopener');
       });
     }
 
@@ -1472,6 +1598,43 @@
     window.addEventListener('resize', function () {
       clearTimeout(rt);
       rt = setTimeout(measure, 180);
+    });
+  })();
+
+  /* ---------------------------------------------------------- Panel veils
+
+     A slab carrying a veil gets washed in flat colour as the next section
+     climbs over it — the same handoff the hero makes, and flat colour for
+     the same reason: opacity on an ancestor would flatten the 3D or the
+     pinned scene underneath it. The colour is per panel so no two of these
+     read as the same move played twice.
+
+     It is keyed to the panel's own bottom edge travelling up the screen,
+     not to the next section arriving. Those are the same thing for a tall
+     pinned panel and nothing like it for a short one: the next section's top
+     crosses the bottom of the viewport while a short panel is still coming
+     into view, so a wash keyed that way was full before the panel had been
+     read. Its own bottom edge is exactly the moment something is climbing
+     over it, at any height, pinned or not. */
+
+  (function () {
+    if (reduced || !hasGsap) return;
+
+    document.querySelectorAll('.panel-veil').forEach(function (veil) {
+      var panel = veil.closest('section');
+      if (!panel) return;
+
+      gsap.fromTo(veil, { opacity: 0 }, {
+        opacity: 0.88,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: panel,
+          start: 'bottom bottom',
+          end: 'bottom 35%',
+          scrub: 0.5,
+          invalidateOnRefresh: true
+        }
+      });
     });
   })();
 

@@ -456,20 +456,13 @@
           <span class="pi-note">Three turns, so far</span>
         </div>
         <span class="path-mark"></span>
-        <ul class="path-burst" aria-hidden="true">
-          <li>Web applications</li>
-          <li>Desktop software</li>
-          <li>Developer tools</li>
-          <li>On-device AI</li>
-          <li>Seventeen shipped</li>
-        </ul>
       </div>
     </div>
 
-    <!-- Flat colour over the whole panel as the contact slab climbs over it,
-         the way .hero-veil covers the hero. Different colour, so the two
-         handoffs do not read as the same move twice. -->
-    <span class="path-veil" aria-hidden="true"></span>
+    <!-- Flat colour over the whole panel as the next slab climbs over it,
+         the way .hero-veil covers the hero. A different colour each time, so
+         no two handoffs read as the same move played twice. -->
+    <span class="panel-veil" data-veil="violet" aria-hidden="true"></span>
 
     <div class="slab-inner">
 
@@ -594,6 +587,45 @@
             </ul>
           </div>
 
+          <!-- Not a build log. app.js stacks these into one pile beside the
+               dial when the watch is running; here they are just the photos
+               that go with the year. -->
+          <ul class="pile" role="list" aria-label="Photographs from the same stretch">
+
+            <li class="pcard" style="--rot: -5.5deg">
+    <img src="assets/friends/01.jpg" alt="Martial arts team, medals and all" width="900" height="1200"
+                   loading="lazy" decoding="async">
+            </li>
+            <li class="pcard" style="--rot: 3.0deg">
+    <img src="assets/friends/14.jpg" alt="Two of us mid-flip over a gate" width="900" height="1200"
+                   loading="lazy" decoding="async">
+            </li>
+            <li class="pcard" style="--rot: -3.0deg">
+    <img src="assets/friends/11.jpg" alt="An evening at the arcade" width="900" height="1200"
+                   loading="lazy" decoding="async">
+            </li>
+            <li class="pcard" style="--rot: 4.5deg">
+    <img src="assets/friends/05.jpg" alt="The usual crowd out to eat" width="900" height="1200"
+                   loading="lazy" decoding="async">
+            </li>
+            <li class="pcard" style="--rot: -4.5deg">
+    <img src="assets/friends/09.jpg" alt="Piled into a hot tub" width="900" height="1200"
+                   loading="lazy" decoding="async">
+            </li>
+            <li class="pcard" style="--rot: 2.5deg">
+    <img src="assets/friends/12.jpg" alt="Cinema trip" width="900" height="1200"
+                   loading="lazy" decoding="async">
+            </li>
+            <li class="pcard" style="--rot: -2.0deg">
+    <img src="assets/friends/03.jpg" alt="Paddleboarding" width="900" height="1200"
+                   loading="lazy" decoding="async">
+            </li>
+            <li class="pcard" style="--rot: 5.0deg">
+    <img src="assets/friends/13.jpg" alt="In costume for a school production" width="900" height="1200"
+                   loading="lazy" decoding="async">
+            </li>
+          </ul>
+
           <div class="era-media era-media-solo" data-parallax="-56" data-reveal>
             <a class="vid" href="https://www.youtube.com/watch?v=a01ObVZSNiI" data-yt="a01ObVZSNiI" target="_blank" rel="noopener" aria-label="Play a video about the apps on YouTube">
               <span class="vid-frame">
@@ -605,8 +637,19 @@
           </div>
         </div>
 
-        <div class="wrap era-apps" data-stagger="0.08">
-          <a class="app-card" href="https://jeffrey-hamilton-tools.vercel.app/" target="_blank" rel="noopener" data-reveal>
+      </article>
+      </div>
+
+      <!-- Now. app.js lifts both of these onto the dial when the watch is
+           running and the hand comes back round to the top; without it they
+           read as the last block of the section, which is what they are. -->
+      <!-- The three I keep coming back to. They used to sit at the foot of
+           the last era, where the dial never showed them; they belong at Now,
+           which is the moment the page is claiming they are current. -->
+      <div class="path-picks">
+        <p class="pp-kicker">The three I keep coming back to</p>
+        <div class="pp-grid">
+          <a class="app-card pick" href="https://jeffrey-hamilton-tools.vercel.app/" target="_blank" rel="noopener" data-reveal>
             <span class="app-shot"><img src="assets/shots/tools.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Privacy-First Web Tools"></span>
             <span class="app-body">
               <span class="app-title">Privacy-First Web Tools</span>
@@ -614,7 +657,7 @@
               <span class="app-go">Open the toolbox <span aria-hidden="true">&#8594;</span></span>
             </span>
           </a>
-          <a class="app-card" href="https://jeffreyhamilton6399.github.io/buddy-desktop" target="_blank" rel="noopener" data-reveal>
+          <a class="app-card pick" href="https://jeffreyhamilton6399.github.io/buddy-desktop" target="_blank" rel="noopener" data-reveal>
             <span class="app-shot"><img src="assets/shots/buddy.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Buddy"></span>
             <span class="app-body">
               <span class="app-title">Buddy</span>
@@ -622,7 +665,7 @@
               <span class="app-go">Download Buddy <span aria-hidden="true">&#8594;</span></span>
             </span>
           </a>
-          <a class="app-card" href="https://jeffreyhamilton6399.github.io/vela/" target="_blank" rel="noopener" data-reveal>
+          <a class="app-card pick" href="https://jeffreyhamilton6399.github.io/vela/" target="_blank" rel="noopener" data-reveal>
             <span class="app-shot"><img src="assets/shots/vela.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Vela"></span>
             <span class="app-body">
               <span class="app-title">Vela</span>
@@ -631,12 +674,8 @@
             </span>
           </a>
         </div>
-      </article>
       </div>
 
-      <!-- Now. app.js lifts both of these onto the dial when the watch is
-           running and the hand comes back round to the top; without it they
-           read as the last block of the section, which is what they are. -->
       <div class="path-now">
         <p class="pn-kicker">Now</p>
         <h3 class="pn-title">Where the hand is</h3>
@@ -662,6 +701,47 @@
     </div>
   </section>
 
+
+  <!-- ── Who ──────────────────────────────────────────────── -->
+  <!-- This was two acts crossing over, personal then professional. The
+       personal half went to live beside the year it belongs to, on the dial,
+       so what is left is the one statement — and one statement does not need
+       a pinned scene to arrive in. -->
+  <section id="who" class="slab who" aria-labelledby="who-heading">
+    <span class="panel-veil" data-veil="dusk" aria-hidden="true"></span>
+
+    <div class="slab-inner">
+      <div class="wrap">
+        <h2 id="who-heading" class="vh">On and off the clock</h2>
+
+        <div class="reel">
+          <article class="act" data-act="on">
+            <p class="act-kicker">On the clock</p>
+            <h3 class="act-title">What I work in</h3>
+            <p class="act-note">
+              Looking for software engineering work &mdash; or anything that has me writing
+              code all day.
+            </p>
+            <ul class="act-tools" role="list">
+          <li class="tchip">TypeScript</li>
+          <li class="tchip">Next.js</li>
+          <li class="tchip">React</li>
+          <li class="tchip">Electron</li>
+          <li class="tchip">Java &middot; Fabric</li>
+          <li class="tchip">WebAssembly</li>
+          <li class="tchip">llama.cpp</li>
+          <li class="tchip">Yjs &middot; WebRTC</li>
+          <li class="tchip">Prisma</li>
+          <li class="tchip">Canvas</li>
+          <li class="tchip">Blender</li>
+          <li class="tchip">Revit</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ── Contact ──────────────────────────────────────────── -->
   <section id="contact" class="slab contact on-dark" aria-labelledby="contact-heading">
     <div class="slab-inner">
@@ -671,7 +751,6 @@
           <span class="line"><span>together?</span></span>
         </h2>
         <p class="contact-note" data-reveal>
-          I'm looking for software engineering work, or anything that has me writing code all day.
           I'm always up for a good project. Email is the fastest way to reach me.
         </p>
         <a class="contact-mail" href="mailto:jeffreyscotthamilton6399@gmail.com" data-reveal>
