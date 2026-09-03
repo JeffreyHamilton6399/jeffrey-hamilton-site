@@ -257,16 +257,21 @@ body.head-dark .site-head { color: var(--on-dark); }
 .soc svg { width: 1rem; height: 1rem; fill: currentColor; display: block; }
 .soc:hover { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); transform: translateY(-1px); }
 
-/* The two outer icons run in from the right after the middle one is hit. */
-/* The open selectors carry .is-held too. :not() lends its argument's
-   weight, so .is-held .soc:not(:nth-child(2)) outweighs a plain
-   .is-open .soc and the icons would never come back. */
-.head-social.is-held .soc:not(:nth-child(2)) { opacity: 0; transform: translateX(26px); }
-.head-social.is-held .soc:nth-child(2) { opacity: 0; }
-.head-social.is-held.is-lit .soc:nth-child(2) { opacity: .62; }
+/* The line lands on the furthest icon; the other two come out from behind it
+   and travel left, so the row builds inward from the edge. They start
+   stacked underneath it, which is why the offsets are positive.
+
+   The open selectors carry .is-held too: :not() lends its argument's weight,
+   so .is-held .soc:not(:nth-child(3)) outweighs a plain .is-open .soc and
+   the icons would never come back. */
+.head-social.is-held .soc:not(:nth-child(3)) { opacity: 0; }
+.head-social.is-held .soc:nth-child(1) { transform: translateX(74px); }
+.head-social.is-held .soc:nth-child(2) { transform: translateX(37px); }
+.head-social.is-held .soc:nth-child(3) { opacity: 0; }
+.head-social.is-held.is-lit .soc:nth-child(3) { opacity: .62; }
 .head-social.is-held.is-open .soc { opacity: .62; transform: none; }
-.head-social.is-held.is-open .soc:nth-child(1) { transition-delay: .10s; }
-.head-social.is-held.is-open .soc:nth-child(3) { transition-delay: .02s; }
+.head-social.is-held.is-open .soc:nth-child(2) { transition-delay: .04s; }
+.head-social.is-held.is-open .soc:nth-child(1) { transition-delay: .13s; }
 /* The gold lands on the one the line hit, then runs through the rest as
    they arrive — the same shimmer on the middle cluster and the right one,
    so the three landings read as one event. */
@@ -278,9 +283,9 @@ body.head-dark .site-head { color: var(--on-dark); }
   100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; }
 }
 
-.head-social.is-held.is-lit .soc:nth-child(2) { animation: shimmerGold 1s var(--ease-out); }
-.head-social.is-held.is-open .soc:nth-child(1) { animation: shimmerGold .9s .10s var(--ease-out); }
-.head-social.is-held.is-open .soc:nth-child(3) { animation: shimmerGold .9s .02s var(--ease-out); }
+.head-social.is-held.is-lit .soc:nth-child(3) { animation: shimmerGold 1s var(--ease-out); }
+.head-social.is-held.is-open .soc:nth-child(2) { animation: shimmerGold .9s .04s var(--ease-out); }
+.head-social.is-held.is-open .soc:nth-child(1) { animation: shimmerGold .9s .13s var(--ease-out); }
 
 .nav.is-held.is-lit a:nth-child(2) { animation: shimmerGold 1s var(--ease-out); }
 .nav.is-held.is-open a:nth-child(1) { animation: shimmerGold .9s .06s var(--ease-out); }
@@ -911,12 +916,18 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 
 .eras { padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 7rem); }
 
-/* ---- the overture -------------------------------------------------------
-   A spiral wound from the outside in: the oldest work is out at the rim and
-   the scroll walks inward, so arriving at the middle is arriving at now —
-   at which point it bursts into everything that is going on today. Off by
-   default; app.js turns it on only where there is room and a ticker to
-   drive it. */
+/* ---- the watch ----------------------------------------------------------
+   The progression is a watch face. The spiral is wound inside the dial and
+   is drawn from the rim inward as you scroll, so travelling it is
+   travelling the years — oldest at the edge, now at the centre — and the
+   hand sweeps round with it. The line that feeds it comes down out of the
+   Timeline button in the header, because that is the control that means
+   this.
+
+   The eras are not stacked below any more; they ride the sides of the dial,
+   sliding in, holding, and clearing for the next. Off by default: app.js
+   turns it on only where there is room and a ticker to drive it, and
+   everywhere else the same three eras stay in the flow underneath. */
 .path-orbit { display: none; }
 .path-orbit.is-live {
   display: block;
@@ -932,11 +943,10 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   place-items: center;
 }
 
-/* Square, so one viewBox unit is the same length on both axes and anything
-   placed from the path lands where the path drew it. */
+/* the dial, square so a viewBox unit is the same length on both axes */
 .path-svg {
   position: absolute;
-  width: min(86vh, 86vw);
+  width: min(72vh, 46vw);
   aspect-ratio: 1;
   overflow: visible;
 }
@@ -944,7 +954,50 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   stroke: var(--iris-lo);
   stroke-width: 2;
   stroke-linecap: round;
-  opacity: .5;
+  opacity: .55;
+}
+.path-bezel { fill: none; stroke: var(--rule-dark); stroke-width: 1.5; }
+.path-tick  { stroke: var(--on-dark-faint); stroke-width: 1.5; }
+.path-tick.is-major { stroke: var(--haze); stroke-width: 2.5; }
+.path-hand {
+  stroke: var(--glow);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: .85;
+}
+.path-hub { fill: var(--glow); }
+
+/* the years around the bezel */
+.path-dial { position: absolute; inset: 0; list-style: none; margin: 0; padding: 0; }
+.path-dial li {
+  position: absolute;
+  left: 0; top: 0;
+  transform: translate(-50%, -50%);
+  font-family: var(--mono);
+  font-size: .625rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--on-dark-faint);
+  white-space: nowrap;
+  transition: color .4s var(--ease);
+}
+.path-dial li.is-now { color: var(--glow); }
+
+/* the line down from the Timeline button */
+.path-feed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.path-feed path {
+  fill: none;
+  stroke: var(--glow);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: .8;
 }
 
 .path-mark {
@@ -959,36 +1012,29 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   opacity: 0;
 }
 
-/* The three stations, dropped onto the spiral by app.js. */
-.path-stops { position: absolute; inset: 0; list-style: none; margin: 0; padding: 0; }
-.path-stops li {
+/* ---- the eras, riding the sides of the dial --------------------------- */
+.path-orbit.is-live ~ .slab-inner .era-scenes { position: relative; }
+.is-live-era {
   position: absolute;
-  left: 0; top: 0;
-  width: max-content;
-  max-width: 15rem;
-  transform: translate(-50%, -50%);
-  text-align: center;
+  top: 50%;
+  width: min(30vw, 26rem);
+  transform: translateY(-50%);
   opacity: 0;
+  pointer-events: none;
 }
-.ps-year {
-  display: block;
-  font-family: var(--mono);
-  font-size: .625rem;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  color: var(--haze);
-  margin-bottom: .25rem;
-}
-.ps-title {
-  display: block;
-  font-family: var(--display);
-  font-size: clamp(1rem, 2vw, 1.5rem);
-  line-height: 1;
-  text-transform: uppercase;
-  color: var(--on-dark);
-}
+.is-live-era.side-left  { left: clamp(1rem, 4vw, 4rem); }
+.is-live-era.side-right { right: clamp(1rem, 4vw, 4rem); }
+.is-live-era .era-grid { display: block; padding: 0; }
+.is-live-era .era-media { margin-top: 1.25rem; }
+.is-live-era .era-media-quad { grid-template-columns: 1fr 1fr; gap: .625rem; }
+.is-live-era .era-text { font-size: .9375rem; }
+.is-live-era .era-title { font-size: clamp(1.25rem, 2.4vw, 2rem); }
+.is-live-era .vid-cap { margin-top: .375rem; }
+.is-live-era .vid-title { font-size: .75rem; }
+.is-live-era .era-apps { display: none; }
+.is-live-era .era-now { margin-top: 1rem; padding-top: .875rem; }
 
-/* What it explodes into. */
+/* what it explodes into at the centre */
 .path-burst {
   position: absolute;
   left: 50%; top: 50%;

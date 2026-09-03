@@ -426,13 +426,18 @@
          runs. -->
     <div class="path-orbit" aria-hidden="true">
       <div class="path-orbit-in">
-        <svg class="path-svg" viewBox="0 0 1000 1000"><path class="path-line" fill="none"/></svg>
-        <span class="path-mark"></span>
-        <ol class="path-stops">
-          <li><span class="ps-year">2018</span><span class="ps-title">Making things move</span></li>
-          <li><span class="ps-year">2022</span><span class="ps-title">Teaching the machine</span></li>
-          <li><span class="ps-year">Now</span><span class="ps-title">Vibe-coded and shipped</span></li>
+        <svg class="path-feed" aria-hidden="true"><path/></svg>
+        <svg class="path-svg" viewBox="0 0 1000 1000">
+          <circle class="path-bezel" cx="500" cy="500" r="470"/>
+          <g class="path-ticks"></g>
+          <path class="path-line" fill="none"/>
+          <line class="path-hand" x1="500" y1="500" x2="500" y2="120"/>
+          <circle class="path-hub" cx="500" cy="500" r="7"/>
+        </svg>
+        <ol class="path-dial">
+          <li>2018</li><li>2020</li><li>2022</li><li>2024</li><li>Now</li>
         </ol>
+        <span class="path-mark"></span>
         <ul class="path-burst">
           <li>Provo CAPS</li>
           <li>DBI internship</li>
@@ -453,6 +458,7 @@
         </div>
       </div>
 
+      <div class="era-scenes">
       <!-- 01 ─ games, edits, 3D -->
       <article class="era">
         <div class="wrap era-grid">
@@ -586,6 +592,7 @@
           </a>
         </div>
       </article>
+      </div>
 
     </div>
   </section>

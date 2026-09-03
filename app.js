@@ -318,11 +318,13 @@
       });
     }
 
-    /* The name breaks apart into three points of light, one for each thing
-       in the header. */
+    /* The name does not collapse into a point — it fades out while the three
+       points come up in its place, all of them at the centre, and they set
+       off from there. */
     function morph() {
       if (!hasGsap) { fly(); return; }
-      gsap.to(title, { scale: 0.05, opacity: 0, duration: MORPH / 1000, ease: 'power2.in', onComplete: fly });
+      gsap.to(title, { scale: 0.94, opacity: 0, duration: MORPH / 1000, ease: 'power1.out' });
+      setTimeout(fly, MORPH * 0.55);
     }
 
     var flown = false;
@@ -371,10 +373,22 @@
       doc.classList.remove('booting');
       doc.classList.add('booted');
 
-      var done = 0;
-      legs.forEach(function (leg, i) { run(leg, i); });
+      /* Every point is made and lit at the centre first, so they are visibly
+         one thing coming apart rather than three that were always separate. */
+      var pips = legs.map(function (leg, i) {
+        var pip = i === 0 ? dot : (dot ? dot.cloneNode(true) : null);
+        if (pip && i > 0) stage.insertBefore(pip, center);
+        if (pip) {
+          pip.style.transform = 'translate(' + x0 + 'px,' + y0 + 'px)';
+          pip.style.opacity = '1';
+        }
+        return pip;
+      });
 
-      function run(leg, i) {
+      var done = 0;
+      legs.forEach(function (leg, i) { run(leg, i, pips[i]); });
+
+      function run(leg, i, pip) {
         var m = leg.el.getBoundingClientRect();
         var x1 = m.left + m.width / 2 - box.left;
         var y1 = m.top + m.height / 2 - box.top;
@@ -432,12 +446,6 @@
         path.style.strokeDasharray  = L;
         path.style.strokeDashoffset = L;
 
-        /* One travelling point per line. The first reuses the dot already in
-           the markup; the others are clones of it. */
-        var pip = i === 0 ? dot : (dot ? dot.cloneNode(true) : null);
-        if (pip && i > 0) stage.insertBefore(pip, center);
-        if (pip) pip.style.opacity = '1';
-
         if (!hasGsap) { finish(); return; }
 
         var at = { p: 0 };
@@ -483,10 +491,12 @@
       return kids[Math.floor(kids.length / 2)] || kids[0] || null;
     }
 
+    /* The furthest one. The other two come out from behind it and travel
+       left, so the row builds inward from the edge. */
     function socialTarget() {
       if (!social) return null;
       var kids = social.children;
-      return kids[1] || kids[0] || null;
+      return kids[kids.length - 1] || null;
     }
 
     /* The handover on the left: the header appears only now, so the face
@@ -962,52 +972,74 @@
   })();
 
   /* ==========================================================================
-     The overture: a spiral wound from the outside in
+     The watch
 
-     The oldest work sits out at the rim and the newest at the centre, so
-     scrolling the section is travelling inward along the years. A marker
-     rides the line, each station lights as it is passed, and reaching the
-     middle is reaching now — which is where it bursts into everything that
-     is going on today.
+     The progression is a watch face. A spiral is wound inside the dial and
+     drawn from the rim inward as you scroll, so travelling it is travelling
+     the years: the oldest work is out at the edge, now is at the centre, and
+     the hand sweeps round with it. The line that feeds it is drawn down out
+     of the Timeline button in the header, because that is the control this
+     section belongs to.
 
-     The spiral is an Archimedean one drawn in a 1000-unit square viewBox.
-     The box is kept square on purpose: one unit is then the same length on
-     both axes, so a point taken off the path with getPointAtLength can be
-     mapped straight into element coordinates with a single scale factor,
-     and the stations land exactly on the line they are supposed to sit on.
+     The eras ride the sides of the dial rather than stacking below it. Each
+     one slides in, holds while the hand crosses its stretch of the spiral,
+     and clears for the next — so the whole progression is one scene instead
+     of a column of sections.
+
+     The dial viewBox is square on purpose. One unit is then the same length
+     on both axes, so a point taken off the path with getPointAtLength maps
+     into element coordinates with a single scale factor, and the marker,
+     the hand and the year labels all land exactly on the geometry rather
+     than near it.
 
      It only runs where there is room and a ticker to drive it. Everywhere
-     else the same three eras are written out underneath as ordinary
-     sections, which is the whole content — nothing here is load-bearing.
+     else the eras stay in the flow as ordinary sections, which is the whole
+     content — nothing here is load-bearing.
      ========================================================================== */
 
   (function () {
     var orbit = document.querySelector('.path-orbit');
-    var section = document.querySelector('#path');
-    if (!orbit || !section || reduced || !hasGsap) return;
-    if (window.innerWidth < 900) return;
+    if (!orbit || reduced || !hasGsap) return;
+    if (window.innerWidth < 1000) return;
 
+    var inner = orbit.querySelector('.path-orbit-in');
     var svg   = orbit.querySelector('.path-svg');
     var line  = orbit.querySelector('.path-line');
+    var ticks = orbit.querySelector('.path-ticks');
+    var hand  = orbit.querySelector('.path-hand');
     var mark  = orbit.querySelector('.path-mark');
-    var stops = [].slice.call(orbit.querySelectorAll('.path-stops li'));
+    var feed  = orbit.querySelector('.path-feed');
+    var feedPath = feed && feed.querySelector('path');
+    var years = [].slice.call(orbit.querySelectorAll('.path-dial li'));
     var burst = [].slice.call(orbit.querySelectorAll('.path-burst li'));
-    if (!svg || !line) return;
+    var eras  = [].slice.call(document.querySelectorAll('.era-scenes .era'));
+    if (!svg || !line || !eras.length) return;
 
     orbit.classList.add('is-live');
 
-    /* ---- draw the spiral ------------------------------------------------
-       r falls from the rim to nearly nothing over TURNS, and the path is
-       emitted outside-in so drawing it with a dashoffset walks inward. */
-    var TURNS = 3.1, R_OUT = 460, R_IN = 26, STEPS = 720;
+    /* ---- the dial ------------------------------------------------------- */
+    var TICKS = 60, R_BEZEL = 470;
+    var tickMarkup = '';
+    for (var t = 0; t < TICKS; t++) {
+      var a = (t / TICKS) * Math.PI * 2 - Math.PI / 2;
+      var major = t % 5 === 0;
+      var r1 = R_BEZEL - (major ? 26 : 14);
+      tickMarkup += '<line class="path-tick' + (major ? ' is-major' : '') + '" ' +
+        'x1="' + (500 + Math.cos(a) * r1).toFixed(1) + '" y1="' + (500 + Math.sin(a) * r1).toFixed(1) + '" ' +
+        'x2="' + (500 + Math.cos(a) * R_BEZEL).toFixed(1) + '" y2="' + (500 + Math.sin(a) * R_BEZEL).toFixed(1) + '"/>';
+    }
+    ticks.innerHTML = tickMarkup;
+
+    /* ---- the spiral, rim to centre -------------------------------------- */
+    var TURNS = 3.1, R_OUT = 415, R_IN = 24, STEPS = 720;
     var d = '';
     for (var i = 0; i <= STEPS; i++) {
-      var t = i / STEPS;
-      var a = t * TURNS * Math.PI * 2 - Math.PI / 2;
-      var r = R_OUT + (R_IN - R_OUT) * t;
+      var q = i / STEPS;
+      var ang = q * TURNS * Math.PI * 2 - Math.PI / 2;
+      var r = R_OUT + (R_IN - R_OUT) * q;
       d += (i ? ' L ' : 'M ') +
-           (500 + Math.cos(a) * r).toFixed(2) + ' ' +
-           (500 + Math.sin(a) * r).toFixed(2);
+           (500 + Math.cos(ang) * r).toFixed(2) + ' ' +
+           (500 + Math.sin(ang) * r).toFixed(2);
     }
     line.setAttribute('d', d);
 
@@ -1015,11 +1047,17 @@
     line.style.strokeDasharray = L;
     line.style.strokeDashoffset = L;
 
-    /* Where the three stations sit along the spiral, oldest first. */
-    var AT = [0.10, 0.44, 0.76];
+    /* ---- the eras take the sides ---------------------------------------- */
+    eras.forEach(function (era, i) {
+      era.classList.add('is-live-era');
+      era.classList.add(i % 2 === 0 ? 'side-left' : 'side-right');
+      inner.appendChild(era);
+    });
 
-    /* One viewBox unit in element pixels, and the offset of the square
-       inside the orbit box. */
+    /* Each era owns a stretch of the sweep. */
+    var LEAD = 0.10, TAIL = 0.16;
+    var span = (1 - LEAD - TAIL) / eras.length;
+
     var unit = 1, ox = 0, oy = 0;
 
     function measure() {
@@ -1029,7 +1067,46 @@
       unit = sb.width / 1000;
       ox = sb.left - ob.left;
       oy = sb.top - ob.top;
-      place();
+
+      /* year labels sit just outside the bezel */
+      years.forEach(function (el, i) {
+        var a = (i / years.length) * Math.PI * 2 - Math.PI / 2;
+        var r = (R_BEZEL + 52) * unit;
+        el.style.left = (ox + 500 * unit + Math.cos(a) * r) + 'px';
+        el.style.top  = (oy + 500 * unit + Math.sin(a) * r) + 'px';
+      });
+
+      burst.forEach(function (el, i) {
+        var a = (i / burst.length) * Math.PI * 2 - Math.PI / 2;
+        var rad = Math.min(sb.width * 0.30, 250);
+        el.dataset.bx = (Math.cos(a) * rad).toFixed(1);
+        el.dataset.by = (Math.sin(a) * rad * 0.85).toFixed(1);
+      });
+
+      drawFeed();
+    }
+
+    /* The line down out of the Timeline button. Both ends are measured from
+       the viewport while the scene is pinned, which is the only moment it is
+       ever drawn. */
+    function drawFeed() {
+      if (!feedPath) return;
+      var btn = document.querySelector('.nav a[href="#path"]');
+      var ob = orbit.getBoundingClientRect();
+      if (!btn) { feedPath.removeAttribute('d'); return; }
+      var b = btn.getBoundingClientRect();
+      var sx = b.left + b.width / 2 - ob.left;
+      var sy = b.bottom - ob.top;
+      var ex = ox + 500 * unit;
+      var ey = oy + (500 - R_BEZEL) * unit;
+      feedPath.setAttribute('d',
+        'M ' + sx + ' ' + sy +
+        ' C ' + sx + ' ' + (sy + (ey - sy) * 0.55) +
+        ', ' + ex + ' ' + (sy + (ey - sy) * 0.45) +
+        ', ' + ex + ' ' + ey);
+      var fl = feedPath.getTotalLength();
+      feedPath.style.strokeDasharray = fl;
+      feedPath.style.strokeDashoffset = fl;
     }
 
     function pointAt(p) {
@@ -1037,29 +1114,12 @@
       return { x: ox + q.x * unit, y: oy + q.y * unit };
     }
 
-    function place() {
-      stops.forEach(function (el, i) {
-        var q = pointAt(AT[i]);
-        el.style.left = q.x + 'px';
-        el.style.top  = q.y + 'px';
-      });
-      /* the burst fans out on a ring from the centre */
-      burst.forEach(function (el, i) {
-        var a = (i / burst.length) * Math.PI * 2 - Math.PI / 2;
-        var rad = Math.min(svg.getBoundingClientRect().width * 0.40, 330);
-        el.dataset.bx = (Math.cos(a) * rad).toFixed(1);
-        el.dataset.by = (Math.sin(a) * rad * 0.78).toFixed(1);
-      });
-    }
-
     measure();
-
-    var lastBurst = false;
 
     ScrollTrigger.create({
       trigger: orbit,
       start: 'top top',
-      end: '+=220%',
+      end: '+=420%',
       pin: true,
       pinSpacing: true,
       scrub: 0.6,
@@ -1068,28 +1128,50 @@
       onUpdate: function (self) {
         var p = self.progress;
 
-        /* the line draws inward */
-        line.style.strokeDashoffset = L * (1 - p);
+        /* the feed draws first, out of the button */
+        if (feedPath) {
+          var fl = feedPath.getTotalLength();
+          var fp = Math.min(1, p / LEAD);
+          feedPath.style.strokeDashoffset = fl * (1 - fp);
+          feedPath.style.opacity = String(0.8 * (1 - Math.max(0, (p - 0.34) / 0.16)));
+        }
 
-        /* the marker rides its leading end */
-        var q = pointAt(p);
+        /* then the spiral is drawn from the rim inward */
+        var sp = Math.min(1, Math.max(0, (p - LEAD) / (1 - LEAD)));
+        line.style.strokeDashoffset = L * (1 - sp);
+
+        /* the hand sweeps with it, and the marker rides the leading end */
+        var q = pointAt(sp);
+        var hx = (q.x - ox) / unit, hy = (q.y - oy) / unit;
+        hand.setAttribute('x2', hx);
+        hand.setAttribute('y2', hy);
         mark.style.transform = 'translate(' + q.x + 'px,' + q.y + 'px)';
-        mark.style.opacity = p > 0.01 && p < 0.995 ? '1' : '0';
+        mark.style.opacity = sp > 0.01 && sp < 0.995 ? '1' : '0';
 
-        /* and at the middle it goes off */
-        var b = Math.min(1, Math.max(0, (p - 0.86) / 0.14));
+        /* the burst at the centre */
+        var b = Math.min(1, Math.max(0, (p - (1 - TAIL * 0.72)) / (TAIL * 0.72)));
 
-        /* each station lights as the marker reaches it, dims behind it, and
-           clears out entirely for the burst so the two never sit on top of
-           each other */
-        stops.forEach(function (el, i) {
-          var at = AT[i];
-          var on = Math.min(1, Math.max(0, (p - (at - 0.10)) / 0.10));
-          var off = Math.min(1, Math.max(0, (p - (at + 0.16)) / 0.14));
-          el.style.opacity = (on * (1 - off * 0.72) * (1 - b)).toFixed(3);
-          el.style.transform = 'translate(-50%,-50%) scale(' + (0.86 + on * 0.14) + ')';
+        /* the years light as the hand passes them */
+        years.forEach(function (el, i) {
+          el.classList.toggle('is-now', sp >= i / years.length - 0.04);
         });
-        if (b > 0 !== lastBurst) lastBurst = b > 0;
+
+        /* and each era holds the side while the hand crosses its stretch */
+        eras.forEach(function (era, i) {
+          var a0 = LEAD + i * span;
+          var local = (p - a0) / span;
+          var vis;
+          if (local < 0 || local > 1) vis = 0;
+          else if (local < 0.16) vis = local / 0.16;
+          else if (local > 0.84) vis = (1 - local) / 0.16;
+          else vis = 1;
+          vis = Math.max(0, Math.min(1, vis)) * (1 - b);
+          var dir = i % 2 === 0 ? -1 : 1;
+          era.style.opacity = vis.toFixed(3);
+          era.style.transform =
+            'translateY(-50%) translateX(' + (dir * (1 - vis) * 70).toFixed(1) + 'px)';
+        });
+
         burst.forEach(function (el, i) {
           var k = Math.min(1, Math.max(0, (b - (i / burst.length) * 0.18) / 0.82));
           var e = 1 - Math.pow(1 - k, 3);
@@ -1102,10 +1184,10 @@
       }
     });
 
-    var t;
+    var rt;
     window.addEventListener('resize', function () {
-      clearTimeout(t);
-      t = setTimeout(measure, 180);
+      clearTimeout(rt);
+      rt = setTimeout(measure, 180);
     });
   })();
 
