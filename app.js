@@ -196,27 +196,35 @@
   })();
 
   /* ==========================================================================
-     The hoop
+     The 45° spiral loop
 
-     The spiral from the reference, turned onto its side and opened out into a
-     frame. Every card rides one ellipse — a hoop — and the hoop is tilted
-     back around its own horizontal axis, so its top edge leans away from you
-     and its bottom edge swings toward you. Because each card sits out on the
-     rim, the middle of the hoop is always clear: that hole is where the name
-     sits, dead straight and level, framed by the cards turning around it.
+     Every card winds around one virtual cylinder whose axis runs diagonally
+     across the screen at 45°, and travels along that axis while it turns —
+     so each card corkscrews up-and-right, exits the corner, and comes back
+     in at the opposite corner. Three things at once, as spec'd:
 
-         ang = (base + i/N)·2π          even spacing, the whole hoop spins
-         x   = cos(ang)·RX              left … right
-         y   = sin(ang)·RY·cos(tilt)    the lean foreshortens the vertical
-         z   = sin(ang)·RY·sin(tilt)    and turns the rest into depth
+       travel   s = (u − ½)·SPAN along the axis d = (√½, −√½)
+       spin     a = u·2π·TURNS around the axis, offset by the radius R
+                along the in-plane perpendicular p = (√½, √½) and by R in z
+       depth    the outer ends of the path push back in z and fade to
+                nothing, so the wrap happens off screen and unseen
 
-     Nothing crosses the centre, so unlike the earlier through-the-name
-     version the name never has to fight a card for the middle. The cards
-     still sort by depth in the one 3D context, which is why nothing in the
-     subtree sets z-index (it would flatten the context); the frame reads as
-     near cards at the bottom passing in front, far cards at the top behind.
+         x = s·dx + cos(a)·R·px
+         y = s·dy + cos(a)·R·py
+         z = sin(a)·R − exit push-back
 
-     Three things spin it, and they simply add:
+     TURNS must stay a whole number: at u = 0 and u = 1 the spin angle then
+     differs by an exact multiple of 2π, so the only thing that jumps at the
+     seam is s — and the card is already invisible out there.
+
+     Legibility is Approach 2, the constant slow fade: opacity is tied
+     straight to the screen x coordinate. Dead centre the cards run at
+     CENTRE (about a tenth), and they glow up to full only as they drift out
+     past the edges — so whatever is passing behind the name is always the
+     dimmest thing on screen. Flip CENTRE toward 1 and steepen EDGE to get
+     the snappier high-energy version instead.
+
+     Three things move it, and they simply add:
 
        auto    a constant drift, so it turns on its own
        scroll  a scrubbed offset while the hero is pinned
@@ -304,44 +312,44 @@
        the back would be too small to make sense of. */
     var MIN_WIDTH = 900;
 
-    var TILT   = 40;    /* deg the whole hoop leans back toward the viewer     */
-    var FACE   = 14;    /* deg each card turns to face the middle              */
-    var BACK   = 0.32;  /* how visible a card is at the far top of the hoop    */
-    var TURN   = 46;    /* seconds for one unattended revolution               */
-    var SCROLL = 0.30;  /* revolutions added by scrolling the hero away        */
-    var GAIN   = 1.1;   /* how much of a drag carries into the spin            */
-    var DECAY  = 0.04;  /* of the fling speed left after one second            */
+    var TURNS  = 3;     /* whole turns of the corkscrew over the path         */
+    var FACE   = 26;    /* deg a card turns as it comes round the cylinder    */
+    var ROLL   = 7;     /* deg of in-plane roll, for life                     */
+    var CENTRE = 0.10;  /* opacity dead centre — Approach 2's floor           */
+    var EXIT   = 0.14;  /* fraction of each end spent fading out and pushing back */
+    var EXITZ  = 620;   /* px it recedes on the way out                       */
+    var TURN   = 30;    /* seconds for one unattended pass of the whole path  */
+    var SCROLL = 0.28;  /* passes added by scrolling the hero away            */
+    var GAIN   = 1.0;   /* how much of a drag carries into the travel         */
+    var DECAY  = 0.04;  /* of the fling speed left after one second           */
 
-    var RX = 0, RY = 0, RZ = 0;
-    var SIN = Math.sin(TILT * Math.PI / 180);
-    var COS = Math.cos(TILT * Math.PI / 180);
+    /* The axis: 45 degrees, up and to the right. p is its in-plane
+       perpendicular, which is where the corkscrew's sideways swing goes. */
+    var DIAG = Math.SQRT1_2;
+    var DX = DIAG, DY = -DIAG;
+    var PX = DIAG, PY =  DIAG;
+
+    var SPAN = 0, R = 0, EDGE = 1;
 
     var auto = 0, scrolled = 0, thrown = 0, vel = 0;
     var dragging = false, moved = 0, lastX = 0, lastT = 0;
     var ticking = false, active = false, pin = null;
     var lastBase = -1, lastFocus = -1;
 
-    /* The cards ride a single ellipse — a hoop — tilted back around its own
-       horizontal axis so the top edge leans away and the bottom swings
-       toward you. Because every card sits out at the rim, the middle of the
-       hoop is always empty: that hole is the frame the name lives in. The
-       radii are set wide and tall enough that the rim clears the title on
-       every side, with a card-based floor so it never collapses on a small
-       window. */
+    /* SPAN has to run well past the corners, because that is where the loop
+       wraps and the wrap must happen out of sight. A card leaves the frame
+       once its distance along the 45 degree axis passes roughly the screen's
+       half-height over cos45; SPAN/2 is set comfortably beyond that, and the
+       last EXIT of each end is spent faded out anyway. */
     function measure() {
       var w = window.innerWidth;
       var h = stage.offsetHeight || window.innerHeight;
       var cw = cards[0].offsetWidth || 220;
-      var ch = cw * 0.62;
 
-      /* The hoop has to be bigger than the title it frames, on both axes. On
-         screen the vertical rim sits at RY*cos(tilt); that plus a card's half
-         height has to clear the name's half height, and RX plus a card's half
-         width has to clear the name's half width — hence the generous
-         fractions and the card-based floors. */
-      RX = Math.max(w * 0.36, cw * 1.5);
-      RY = Math.max(h * 0.40, ch * 2.2) / COS;
-      RZ = RY * SIN;                  /* depth comes out of the lean, not a knob */
+      var offscreen = (h / 2 + cw * 0.4) / DIAG;
+      SPAN = Math.max(offscreen * 2.6, w * 1.6);
+      R    = Math.max(Math.min(w, h) * 0.30, cw * 0.9);
+      EDGE = w * 0.40;                /* x at which a card is fully lit */
     }
 
     function wrap01(v) { v %= 1; return v < 0 ? v + 1 : v; }
@@ -354,29 +362,44 @@
       var focus = 0, best = -Infinity;
 
       for (var i = 0; i < N; i++) {
-        /* Even spacing around the hoop; the whole thing rotates with base. */
-        var ang = (base + i / N) * Math.PI * 2;
-        var ex  = Math.cos(ang);      /* -1 left … +1 right */
-        var ey  = Math.sin(ang);      /* -1 top  … +1 bottom (before the lean) */
+        var u = wrap01(base + i / N);
+        var t = u - 0.5;                       /* −½ … +½ along the axis */
 
-        var x = ex * RX;
-        var y = ey * RY * COS;        /* the lean foreshortens the vertical */
-        var z = ey * RZ;              /* and turns it into depth: bottom near */
+        /* Travel along the 45° axis, plus the corkscrew's swing around it. */
+        var ang = u * Math.PI * 2 * TURNS;
+        var ca  = Math.cos(ang);
+        var sa  = Math.sin(ang);
+        var s0  = t * SPAN;
 
-        var depth = (ey + 1) / 2;     /* 0 at the far top, 1 at the near bottom */
+        var x = s0 * DX + ca * R * PX;
+        var y = s0 * DY + ca * R * PY;
+
+        /* The ends of the path are the exit: recede and fade so the wrap is
+           never seen. 1 through the middle, easing to 0 at both tips. */
+        var edge = (0.5 - Math.abs(t)) / EXIT;
+        var exit = edge >= 1 ? 1 : edge <= 0 ? 0 : edge * edge * (3 - 2 * edge);
+
+        var z = sa * R - (1 - exit) * EXITZ;
+
+        /* Approach 2: opacity straight off the screen x coordinate. Dimmest
+           dead centre, behind the name; full only out past the edges. */
+        var n   = Math.min(Math.abs(x) / EDGE, 1);
+        var lit = CENTRE + (1 - CENTRE) * (n * n * (3 - 2 * n));
 
         var card = cards[i];
-        var s = card.style;
-        s.setProperty('--x',  x.toFixed(2) + 'px');
-        s.setProperty('--y',  y.toFixed(2) + 'px');
-        s.setProperty('--z',  z.toFixed(2) + 'px');
-        s.setProperty('--ry', (-ex * FACE).toFixed(2) + 'deg');
-        s.setProperty('--rz', (ex * 4).toFixed(2) + 'deg');
-        s.opacity = (BACK + (1 - BACK) * depth).toFixed(3);
+        var st = card.style;
+        st.setProperty('--x',  x.toFixed(2) + 'px');
+        st.setProperty('--y',  y.toFixed(2) + 'px');
+        st.setProperty('--z',  z.toFixed(2) + 'px');
+        st.setProperty('--ry', (ca * FACE).toFixed(2) + 'deg');
+        st.setProperty('--rz', (sa * ROLL).toFixed(2) + 'deg');
+        st.opacity = (lit * exit).toFixed(3);
 
-        card.classList.toggle('is-far', ey < -0.35);
+        /* Round the back of the cylinder there is no room for the caption. */
+        card.classList.toggle('is-far', sa < -0.4);
 
-        if (depth > best) { best = depth; focus = i; }
+        var score = lit * exit;
+        if (score > best) { best = score; focus = i; }
       }
 
       if (focus !== lastFocus) {

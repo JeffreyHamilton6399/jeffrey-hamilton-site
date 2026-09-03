@@ -42,37 +42,35 @@
   <!-- ── The spiral ───────────────────────────────────────── -->
   <section class="hero" aria-labelledby="hero-heading">
     <div class="hero-stage">
-      <div class="hero-inner">
 
-        <span class="hero-glow" aria-hidden="true"></span>
+      <!-- Layer 1: the spiral. Its own 3D rendering context, holding nothing
+           but the cards, so they sort against each other by depth and
+           against nothing else. -->
+      <div class="hero-inner"></div>
 
-        <div class="hero-center" data-intro>
-          <h1 class="hero-title" id="hero-heading">Jeffrey Hamilton</h1>
-          <!-- Staged by app.js: the name fades in first, then this line
-               glides up, then the word types itself out and cycles. The
-               list lives in data-skills; the word here is the first entry so
-               the line still reads with the script off (see .no-js path in
-               the CSS, which just shows it standing still). -->
-          <p class="hero-skills" aria-label="What I build: web tools, desktop apps, browser games, on-device AI, motion graphics, Minecraft mods">
-            <span class="skills-lead">I build</span>
-            <span class="skills-type" data-skills='["web tools","desktop apps","browser games","on-device AI","motion graphics","Minecraft mods"]'><span class="type-out">web tools</span><span class="type-caret" aria-hidden="true"></span></span>
-          </p>
-        </div>
+      <!-- Layer 9: the shield. A soft blurred ellipse over the dead centre
+           that the cards dive behind, so the name never has to compete with
+           whatever is passing through. -->
+      <span class="hero-shield" aria-hidden="true"></span>
 
+      <!-- Layer 10: the text, straight and level, always on top. Staged by
+           app.js — the name fades in first, then this line glides up, then
+           the word types itself out and cycles. The word in the markup is
+           the first entry, so with the script off the line still reads. -->
+      <div class="hero-center" data-intro>
+        <h1 class="hero-title" id="hero-heading">Jeffrey Hamilton</h1>
+        <p class="hero-skills" aria-label="What I build: web tools, desktop apps, browser games, on-device AI, motion graphics, Minecraft mods">
+          <span class="skills-lead">I build</span>
+          <span class="skills-type" data-skills='["web tools","desktop apps","browser games","on-device AI","motion graphics","Minecraft mods"]'><span class="type-out">web tools</span><span class="type-caret" aria-hidden="true"></span></span>
+        </p>
       </div>
 
-      <!-- Both of these stay outside .hero-inner. That subtree is one 3D
-           rendering context, where things sort by depth rather than by
-           z-index, so anything that has to sit flatly on top of the whole
-           scene has to live beside it. -->
       <div class="hero-cue" aria-hidden="true">
         <span class="cue-pill">Drag to spin &middot; Scroll to explore <span class="cue-arrow">&#8595;</span></span>
       </div>
 
-      <!-- Fades in as the timeline arrives, so the spiral reads as sinking
-           behind it. A veil rather than a fade on the stage: opacity on an
-           ancestor of a preserve-3d subtree flattens it, and the cards would
-           stop sorting in front of and behind the name. -->
+      <!-- Fades in as the path arrives, so the spiral reads as sinking
+           behind it. -->
       <span class="hero-veil" aria-hidden="true"></span>
     </div>
 
