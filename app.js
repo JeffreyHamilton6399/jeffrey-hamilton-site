@@ -95,13 +95,13 @@
 
   /* ---------------------------------------------------------- Panel handoff
 
-     Each section is an opaque slab with a rounded top edge that rides up
-     over the one before it. This is the other half: as a panel's bottom
-     comes up the screen, its contents settle back and dim, so the next
-     panel reads as arriving over something rather than following it. The
-     transform is on .slab-inner and never on the section, so the panel's
-     own background — and the seam between the two — stays exactly where it
-     is while the content behind recedes. */
+     Each section after the hero is an opaque slab with a rounded top edge
+     that rides up over the one before it. This is the other half: as a
+     panel's bottom comes up the screen its contents settle back and dim, so
+     the next panel reads as arriving over something rather than following
+     it. The transform is on .slab-inner and never on the section, so the
+     panel's own background — and the seam between the two — stays exactly
+     where it is while the content behind recedes. */
 
   (function () {
     if (reduced || !hasGsap) return;
@@ -127,12 +127,10 @@
     });
   })();
 
-  /* ---------------------------------------------------------- Header tint
+  /* ---------------------------------------------------------- Header
 
-     Flip the header to its light-on-dark form while a dark band sits under
-     it. The bottom margin collapses the observer's box down to a line 4rem
-     from the top of the viewport, so a section counts as "under the header"
-     exactly when it crosses that line. */
+     Two jobs: flip to the light-on-dark form while a dark band sits under
+     the header, and mark which section you are actually in. */
 
   (function () {
     if (!('IntersectionObserver' in window)) return;
@@ -140,9 +138,11 @@
     /* Track which sections are on the line rather than counting entries.
        The observer's first callback reports every section it watches, most
        of them not intersecting, and a running tally starts that far in the
-       hole and never climbs back to one. */
+       hole and never climbs back to one. The bottom margin collapses the
+       box down to a line 4rem from the top of the viewport, so a section
+       counts as "under the header" exactly when it crosses that line. */
     var live = [];
-    var io = new IntersectionObserver(function (entries) {
+    var tint = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         var at = live.indexOf(entry.target);
         if (entry.isIntersecting) { if (at < 0) live.push(entry.target); }
@@ -151,7 +151,26 @@
       document.body.classList.toggle('head-dark', live.length > 0);
     }, { rootMargin: '-64px 0px -100% 0px' });
 
-    document.querySelectorAll('.on-dark').forEach(function (el) { io.observe(el); });
+    document.querySelectorAll('.on-dark').forEach(function (el) { tint.observe(el); });
+
+    /* Current section. Same collapsed box, one section deep at a time. */
+    var links = {};
+    document.querySelectorAll('.nav a[href^="#"]').forEach(function (a) {
+      links[a.getAttribute('href').slice(1)] = a;
+    });
+
+    var here = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var id = entry.target.id;
+        for (var key in links) links[key].classList.toggle('is-here', key === id);
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+
+    Object.keys(links).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) here.observe(el);
+    });
   })();
 
   /* ---------------------------------------------------------- Parallax
@@ -177,89 +196,92 @@
   })();
 
   /* ==========================================================================
-     The loop
+     The spiral
 
-     A horizontal corkscrew. Each card gets a position u in [0,1) along the
-     path; u advances and wraps, so the row is endless.
+     Cards wind around a horizontal axis running left to right across the
+     screen. Each card has a position u in [0,1) along that axis; u advances
+     and wraps, so the row is endless.
 
-         ang = u·2π + π
-         x   = (u − ½)·2·SPAN        far left to far right
-         y   = sin(ang)·RY           over the top, then under the bottom
-         g   = ((cos(ang) + 1)/2)^BIAS
-         z   = (2g − 1)·RZ           away at both ends, nearest in the middle
+         x   = (u − ½)·2·SPAN            far left to far right
+         ang = u·2π·TURNS + π
+         y   = sin(ang)·RY               over the top, then under the bottom
+         z   = cos(ang)·RZ               behind the axis, then in front of it
 
-     At u = 0 and u = 1 the angle differs by exactly 2π, so y and z match and
-     only x has jumped — and by then the card is a long way off screen, which
-     is what makes the wrap invisible.
+     TURNS is what makes it a spiral rather than a queue. At three turns over
+     the path two neighbours are most of a revolution apart, so the card next
+     to the one at the front is round the far side and small — they wind past
+     each other instead of lining up. TURNS has to stay a whole number: the
+     wrap from u=1 back to u=0 only disappears because the angle differs by
+     an exact multiple of 2π there, leaving nothing but the jump in x, which
+     happens well off screen.
 
-     A plain cos for the depth put the two cards flanking the front one at
-     z = 0, which is full size: three cards of equal weight fighting over the
-     middle of the screen. BIAS bends that curve so a card only comes forward
-     near the very front of its pass, and SPAN is set wide enough that
-     neighbours clear the front card entirely rather than stacking on it.
-     About four of the fourteen are on screen at once.
+     The name sits at depth zero in the same 3D rendering context, so cards
+     coming round the near side cover it and cards on the far side are
+     covered by it. That sorting is the picture, and it is why nothing in the
+     subtree sets z-index or opacity — either one flattens the context.
 
-     Card i sits at u = ½ + base − i/N, so card i is dead centre when
-     base = i/N. Three things move base, and they simply add:
+     Three things move the position, and they simply add:
 
-       auto    a constant drift, so the loop turns on its own
-       scroll  a scrubbed offset while the section is on screen
+       auto    a constant drift, so it turns on its own
+       scroll  a scrubbed offset while the hero is pinned
        drag    the pointer, with a fling that decays after release
-
-     Rendering is a gsap.ticker callback. Nothing measures the DOM per frame;
-     each card gets five custom properties and an opacity, all of which the
-     compositor can handle on its own.
      ========================================================================== */
 
-  (function () {
-    var section = document.querySelector('.loop');
-    if (!section) return;
+  var heroSpiral = (function () {
+    var hero = document.querySelector('.hero');
+    if (!hero) return null;
 
-    var stage = section.querySelector('.loop-stage');
-    var list  = section.querySelector('.loop-fallback');
-    var bar   = section.querySelector('.loop-bar');
-    var count = section.querySelector('.loop-count');
-    if (!stage || !list) return;
+    var stage = hero.querySelector('.hero-stage');
+    var inner = hero.querySelector('.hero-inner');
+    var veil  = hero.querySelector('.hero-veil');
+    var list  = hero.querySelector('.spiral-fallback');
+    if (!stage || !inner || !list) return null;
 
     var cards = [].slice.call(list.children);
     var N = cards.length;
-    if (N < 3) return;
+    if (N < 4) return null;
 
     /* Below this there is no room for the sideways travel, and the cards at
        the back would be too small to make sense of. */
     var MIN_WIDTH = 900;
 
-    var TILT   = 22;    /* deg the card turns to face the middle             */
-    var ROLL   = 3;     /* deg of in-plane roll, tied to height on the path  */
-    var BIAS   = 2.2;   /* how near the front a card has to be to come close */
-    var BACK   = 0.05;  /* how visible a card is at the back of the loop     */
-    var TURN   = 68;    /* seconds for one unattended revolution             */
-    var SCROLL = 0.55;  /* revolutions added by scrolling past the section   */
-    var GAIN   = 2.0;   /* how much of a drag carries into the loop          */
-    var DECAY  = 0.04;  /* of the fling speed left after one second          */
+    var TURNS  = 3;     /* whole revolutions across the path — must be integer */
+    var TILT   = 18;    /* deg a card turns to face the middle                 */
+    var ROLL   = 5;     /* deg of in-plane roll, tied to height on the path    */
+    var SEAM   = 0.08;  /* fraction of the path spent fading through the wrap  */
+    var BACK   = 0.28;  /* how visible a card is at the very back              */
+    var TURN   = 74;    /* seconds for one unattended pass of the whole path   */
+    var SCROLL = 0.30;  /* passes added by scrolling the hero away             */
+    var GAIN   = 1.8;   /* how much of a drag carries into the spiral          */
+    var DECAY  = 0.04;  /* of the fling speed left after one second            */
 
-    var SPAN = 0, RY = 0, RZ = 0;
+    var SPAN = 0, RY = 0, RZ = 0, AXIS = 0;
 
     var auto = 0, scrolled = 0, thrown = 0, vel = 0;
     var dragging = false, moved = 0, lastX = 0, lastT = 0;
-    var running = false, ticking = false;
-    var active = false, tween = null;
+    var ticking = false, active = false, pin = null;
     var lastBase = -1, lastFocus = -1;
-    var scrollProxy = { p: 0 };
 
-    /* Spacing is set from the card, not the viewport. Consecutive cards sit
-       2·SPAN/N apart, so pinning SPAN to a multiple of the card width is
-       what guarantees the gap between neighbours rather than hoping a
-       viewport fraction happens to clear them at this count. */
     function measure() {
-      var w  = window.innerWidth;
-      var h  = stage.offsetHeight || window.innerHeight;
-      var cw = cards[0].offsetWidth || 260;
-
-      SPAN = Math.max(cw * 13, w * 1.5);
+      var w = window.innerWidth;
+      var h = stage.offsetHeight || window.innerHeight;
+      /* Spacing is 2·SPAN/N, so this is what decides how many cards are on
+         screen and how much air is between them. 1.5 viewports of travel
+         puts six or so in view at once. The card-width floor is what holds
+         at the narrow end, where the card stops shrinking with the viewport
+         and a pure viewport fraction would start stacking them. */
+      var cw = cards[0].offsetWidth || 200;
+      SPAN = Math.max(w * 1.5, cw * 10);
       RY   = Math.min(h * 0.26, 230);
-      RZ   = 600;                    /* paired with the 1800px perspective:
-                                        1.5x at the front, 0.75x at the back */
+      RZ   = 520;                     /* paired with the 1700px perspective:
+                                         1.44x at the front, 0.77x at the back */
+      /* The nearest point of a helix is also its mid-height, so with the axis
+         through the middle of the screen the biggest card parks exactly on
+         the name every pass and blots it out. Dropping the axis puts that
+         point below the name: cards still cross it, but they cross it on the
+         way up and down, at middling depth and size, which is where the
+         sorting reads anyway. */
+      AXIS = Math.min(h * 0.13, 115);
     }
 
     function wrap01(v) { v %= 1; return v < 0 ? v + 1 : v; }
@@ -269,41 +291,47 @@
       if (base === lastBase) return;              /* nothing moved this frame */
       lastBase = base;
 
-      var focus = 0, best = 2;
+      var focus = 0, best = -Infinity;
 
       for (var i = 0; i < N; i++) {
         var u = wrap01(0.5 + base - i / N);
 
-        var ang = u * Math.PI * 2 + Math.PI;
+        var ang = u * Math.PI * 2 * TURNS + Math.PI;
         var x   = (u - 0.5) * 2 * SPAN;
-        var y   = Math.sin(ang) * RY;
-        var g   = Math.pow((Math.cos(ang) + 1) / 2, BIAS);   /* 0 back, 1 front */
-        var z   = (g * 2 - 1) * RZ;
+        var c   = Math.cos(ang);
+        var y   = Math.sin(ang) * RY + AXIS;
+        var z   = c * RZ;
 
-        var s = cards[i].style;
+        /* Two fades multiplied. The first hides the jump in x at the wrap;
+           the second just settles the far side back so the near side reads
+           first. Kept gentle — the whole point is that you can see a lot of
+           them at once. */
+        var edge  = Math.min(u, 1 - u);
+        var seam  = edge >= SEAM ? 1 : edge / SEAM;
+        var depth = (c + 1) / 2;                            /* 0 back, 1 front */
+
+        var card = cards[i];
+        var s = card.style;
         s.setProperty('--x',  x.toFixed(2) + 'px');
         s.setProperty('--y',  y.toFixed(2) + 'px');
         s.setProperty('--z',  z.toFixed(2) + 'px');
         s.setProperty('--ry', (x / SPAN * TILT).toFixed(2) + 'deg');
-        s.setProperty('--rz', (-y / RY * ROLL).toFixed(2) + 'deg');
-        s.opacity = (BACK + (1 - BACK) * Math.pow(g, 1.7)).toFixed(3);
-        s.zIndex  = Math.round(1000 + z);
+        s.setProperty('--rz', (-(y - AXIS) / RY * ROLL).toFixed(2) + 'deg');
+        s.opacity = (seam * (BACK + (1 - BACK) * depth)).toFixed(3);
 
-        var d = Math.abs(u - 0.5);
-        if (d < best) { best = d; focus = i; }
+        card.classList.toggle('is-far', c < -0.3);
+
+        /* Whichever card is nearest the front, and not off in the wings. */
+        var score = c - Math.abs(x) / SPAN;
+        if (score > best) { best = score; focus = i; }
       }
 
       if (focus !== lastFocus) {
         if (lastFocus >= 0) cards[lastFocus].classList.remove('is-focus');
         cards[focus].classList.add('is-focus');
         lastFocus = focus;
-        if (count) count.textContent = pad(focus + 1) + ' / ' + pad(N);
       }
-
-      if (bar) bar.style.setProperty('--p', (base * 100).toFixed(1) + '%');
     }
-
-    function pad(n) { return n < 10 ? '0' + n : String(n); }
 
     /* One ticker for the whole thing: advance the drift, bleed off whatever
        is left of the last fling, then place the cards. */
@@ -327,8 +355,7 @@
 
        x maps linearly to u, so a drag is just dx / (2·SPAN) — the card under
        the pointer keeps up with it. GAIN lifts that a little, because at this
-       spacing a one-to-one drag asks for a very long swipe to reach the next
-       card. */
+       spacing a one-to-one drag asks for a very long swipe. */
 
     function onDown(e) {
       if (e.button > 0) return;
@@ -338,7 +365,7 @@
       lastT = e.timeStamp;
       vel = 0;
       stage.classList.add('is-dragging');
-      stage.setPointerCapture && stage.setPointerCapture(e.pointerId);
+      if (stage.setPointerCapture) stage.setPointerCapture(e.pointerId);
     }
 
     function onMove(e) {
@@ -358,16 +385,15 @@
       if (!dragging) return;
       dragging = false;
       stage.classList.remove('is-dragging');
-      stage.releasePointerCapture && stage.releasePointerCapture(e.pointerId);
+      if (stage.releasePointerCapture) stage.releasePointerCapture(e.pointerId);
       /* A stale velocity from a drag that stopped before the finger lifted
-         would launch the loop off a still pointer. */
+         would launch the spiral off a still pointer. */
       if (e.timeStamp - lastT > 120) vel = 0;
     }
 
     /* A drag that ends on a card must not also open it. */
-    function onClick(e) {
-      if (moved > 8) { e.preventDefault(); e.stopPropagation(); }
-    }
+    function onClick(e) { if (moved > 8) { e.preventDefault(); e.stopPropagation(); } }
+    function prevent(e) { e.preventDefault(); }
 
     function bindDrag() {
       stage.addEventListener('pointerdown', onDown);
@@ -385,7 +411,6 @@
       stage.removeEventListener('click', onClick, true);
       stage.removeEventListener('dragstart', prevent);
     }
-    function prevent(e) { e.preventDefault(); }
 
     /* ---- wiring ---------------------------------------------------------- */
 
@@ -393,39 +418,38 @@
       if (active) return;
       active = true;
 
-      list.classList.remove('loop-fallback');
-      list.classList.add('loop-track');
-      stage.appendChild(list);
-      section.classList.add('is-spiral');
+      list.classList.remove('spiral-fallback');
+      list.classList.add('spiral-track');
+      inner.appendChild(list);
+      hero.classList.add('is-spiral');
 
       measure();
       bindDrag();
 
-      /* One screen of hold, and the scroll through it turns the loop about
-         half a revolution on top of the drift so the two read as one
-         motion. Deliberately short: the loop keeps turning on its own, so
-         there is nothing to wait for and no reason to trap anyone here
-         until all fourteen have filed past. */
-      tween = gsap.to(scrollProxy, {
-        p: SCROLL,
-        ease: 'none',
+      /* The hero holds still while the timeline climbs over it. pinSpacing
+         is off on purpose: with no reserved space the next panel scrolls
+         straight up over the fixed stage, which is the handoff. It lasts one
+         screen, which is exactly how long the timeline takes to cover it. */
+      var tl = gsap.timeline({
         scrollTrigger: {
-          trigger: stage,
+          trigger: hero,
           start: 'top top',
           end: '+=100%',
-          pin: true,
-          pinSpacing: true,
+          pin: stage,
+          pinSpacing: false,
           scrub: 0.6,
           invalidateOnRefresh: true,
-          onUpdate: function () { scrolled = scrollProxy.p; }
+          onUpdate: function (self) { scrolled = self.progress * SCROLL; }
         }
       });
+      tl.to(inner, { scale: 0.9, ease: 'none' }, 0);
+      if (veil) tl.to(veil, { opacity: 0.92, ease: 'none' }, 0);
+      pin = tl;
 
-      /* No timers and no decoding while the loop is off screen. */
+      /* No ticker and no decoding while the spiral is off screen. */
       if (window.IntersectionObserver) {
         new IntersectionObserver(function (entries) {
-          running = entries[0] && entries[0].isIntersecting;
-          running ? run() : halt();
+          (entries[0] && entries[0].isIntersecting) ? run() : halt();
         }, { threshold: 0 }).observe(stage);
       } else run();
 
@@ -439,25 +463,24 @@
 
       halt();
       unbindDrag();
-      if (tween) {
-        if (tween.scrollTrigger) tween.scrollTrigger.kill(true);   /* unwrap the pin spacer */
-        tween.kill();
-        tween = null;
+      if (pin) {
+        if (pin.scrollTrigger) pin.scrollTrigger.kill(true);
+        pin.kill();
+        pin = null;
       }
-      scrolled = 0;
-      scrollProxy.p = 0;
+      gsap.set([inner, veil].filter(Boolean), { clearProps: 'all' });
 
-      section.classList.remove('is-spiral');
-      list.classList.remove('loop-track');
-      list.classList.add('loop-fallback');
-      section.appendChild(list);
+      hero.classList.remove('is-spiral');
+      list.classList.remove('spiral-track');
+      list.classList.add('spiral-fallback');
+      hero.appendChild(list);
 
       cards.forEach(function (card) {
         ['--x', '--y', '--z', '--ry', '--rz'].forEach(function (p) { card.style.removeProperty(p); });
         card.style.opacity = '';
-        card.style.zIndex = '';
-        card.classList.remove('is-focus');
+        card.classList.remove('is-focus', 'is-far');
       });
+      scrolled = 0;
       lastBase = -1;
       lastFocus = -1;
     }
@@ -469,13 +492,118 @@
     }
 
     decide();
+    return { decide: decide, refresh: function () { if (active) { lastBase = -1; render(); } } };
+  })();
 
-    var resizeTimer;
+  /* ==========================================================================
+     The drawn timeline
+
+     The stops are laid out first, as an ordinary alternating grid, and the
+     line is built afterwards from wherever the nodes actually landed — so
+     the curve follows the layout rather than the layout being bent to fit a
+     curve, and it survives any reflow by being rebuilt.
+
+     Between two stops the path is a cubic with its control points pulled
+     vertically, which gives the S-bend as the nodes alternate sides. At two
+     of the joins it also turns a full loop: an arc with the large-arc and
+     sweep flags both set and an end point a hair from the start draws a
+     circle that closes on itself, which is the loop, and the path carries on
+     from where it was.
+     ========================================================================== */
+
+  var timelineLine = (function () {
+    var rail = document.querySelector('.tl-rail');
+    if (!rail) return null;
+
+    var svg  = rail.querySelector('.tl-line');
+    var path = svg && svg.querySelector('path');
+    var nodes = [].slice.call(rail.querySelectorAll('.tl-node'));
+    if (!svg || !path || nodes.length < 2) return null;
+
+    var LOOP_AT = [1, 3];     /* which joins turn a loop on the way down */
+    var LOOP_R  = 30;
+
+    var length = 0;
+
+    function build() {
+      var box = rail.getBoundingClientRect();
+      if (!box.width || !box.height) return;
+
+      svg.setAttribute('viewBox', '0 0 ' + box.width + ' ' + box.height);
+
+      var pts = nodes.map(function (n) {
+        var r = n.getBoundingClientRect();
+        return [r.left - box.left + r.width / 2, r.top - box.top + r.height / 2];
+      });
+
+      /* Start a little above the first node and finish a little below the
+         last, so the line reads as passing through rather than starting and
+         stopping at them. */
+      var d = 'M ' + pts[0][0] + ' ' + (pts[0][1] - 56) +
+              ' L ' + pts[0][0] + ' ' + pts[0][1];
+
+      for (var i = 0; i < pts.length - 1; i++) {
+        if (LOOP_AT.indexOf(i) >= 0) {
+          d += ' a ' + LOOP_R + ',' + LOOP_R + ' 0 1,1 0.4,0';
+        }
+        var a = pts[i], b = pts[i + 1];
+        var bend = (b[1] - a[1]) * 0.45;
+        d += ' C ' + a[0] + ' ' + (a[1] + bend) +
+             ', ' + b[0] + ' ' + (b[1] - bend) +
+             ', ' + b[0] + ' ' + b[1];
+      }
+
+      var last = pts[pts.length - 1];
+      d += ' L ' + last[0] + ' ' + (last[1] + 56);
+
+      path.setAttribute('d', d);
+      length = path.getTotalLength();
+
+      if (reduced) {
+        path.style.strokeDasharray = 'none';
+        path.style.strokeDashoffset = '0';
+      } else {
+        path.style.strokeDasharray = length;
+        /* Keep whatever fraction is already drawn across a rebuild, rather
+           than snapping the line back to empty on a resize. */
+        var drawn = parseFloat(path.dataset.drawn || '0');
+        path.style.strokeDashoffset = length * (1 - drawn);
+      }
+    }
+
+    build();
+
+    if (!reduced && hasGsap) {
+      ScrollTrigger.create({
+        trigger: rail,
+        start: 'top 78%',
+        end: 'bottom 65%',
+        scrub: 0.7,
+        invalidateOnRefresh: true,
+        onRefreshInit: build,
+        onUpdate: function (self) {
+          path.dataset.drawn = self.progress;
+          path.style.strokeDashoffset = length * (1 - self.progress);
+        }
+      });
+    }
+
+    return { build: build };
+  })();
+
+  /* ---------------------------------------------------------- Resize
+
+     One debounced handler for everything that measures, so a drag on a
+     window edge does not run three independent rebuilds per frame. */
+
+  (function () {
+    var timer;
     window.addEventListener('resize', function () {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function () {
-        decide();
-        if (active) { lastBase = -1; render(); ScrollTrigger.refresh(); }
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        if (heroSpiral) { heroSpiral.decide(); heroSpiral.refresh(); }
+        if (timelineLine) timelineLine.build();
+        if (hasGsap) ScrollTrigger.refresh();
       }, 180);
     });
   })();
@@ -648,10 +776,10 @@
 
     if (!runners.length) return;
 
-    /* Gate on the section rather than the cards. Inside the loop the cards
+    /* Gate on the section rather than the cards. Inside the spiral the cards
        are on a 3D-transformed stage, where per-element intersection is not
        something to rely on. */
-    var host = document.querySelector('.loop') || document.body;
+    var host = document.querySelector('.hero') || document.body;
 
     if (!window.IntersectionObserver) {
       runners.forEach(function (r) { r.run(); });
@@ -664,12 +792,13 @@
     }, { threshold: 0 }).observe(host);
   })();
 
-  /* ScrollTrigger measures at load; late fonts and the portrait shift things
-     under it. One refresh once everything has landed. */
-  if (hasGsap) {
-    window.addEventListener('load', function () { ScrollTrigger.refresh(); });
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(function () { ScrollTrigger.refresh(); });
-    }
+  /* Everything measures at load; late fonts and the portrait shift things
+     under it. Rebuild once each has landed. */
+  function settle() {
+    if (timelineLine) timelineLine.build();
+    if (heroSpiral) heroSpiral.refresh();
+    if (hasGsap) ScrollTrigger.refresh();
   }
+  window.addEventListener('load', settle);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(settle);
 })();

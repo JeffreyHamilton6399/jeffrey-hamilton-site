@@ -8,146 +8,510 @@
 <meta name="theme-color" content="#F4F1EA">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<a class="skip" href="#work">Skip to work</a>
+<a class="skip" href="#timeline">Skip to the timeline</a>
 
 <header class="site-head">
-  <div class="wrap head-inner">
-    <a class="wordmark" href="#top">Jeffrey&nbsp;Hamilton</a>
+  <div class="head-inner">
+
+    <a class="mark" href="#top">
+      <span class="mark-face">
+        <img src="assets/portrait.jpg" width="1100" height="1489" fetchpriority="high" decoding="async"
+             alt="Jeffrey Hamilton">
+      </span>
+      <span class="mark-where"><span class="dot" aria-hidden="true"></span>Provo, Utah</span>
+    </a>
+
     <nav class="nav" aria-label="Primary">
-      <a href="#story">Story</a>
-      <a href="#work">Work</a>
-      <a href="#more">Loop</a>
-      <a href="#contact">Contact</a>
+      <a href="#top">Work</a>
+      <a href="#timeline">Timeline</a>
+      <a href="#featured">Close up</a>
     </nav>
+
+    <a class="head-mail" href="mailto:jeffreyscotthamilton6399@gmail.com">jeffreyscotthamilton6399@gmail.com</a>
+
   </div>
 </header>
 
 <main id="top">
 
-  <!-- ── Hero ─────────────────────────────────────────────── -->
-  <section class="hero">
-    <div class="slab-inner">
-      <div class="wrap hero-grid">
+  <!-- ── The spiral ───────────────────────────────────────── -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="hero-stage">
+      <div class="hero-inner">
 
-        <div class="hero-copy" data-stagger="0.09">
-          <h1 class="hero-title">
+        <span class="hero-glow" aria-hidden="true"></span>
+
+        <div class="hero-center">
+          <h1 class="hero-title" id="hero-heading">
             <span class="line"><span>Jeffrey</span></span>
             <span class="line"><span>Hamilton</span></span>
           </h1>
-          <p class="hero-role" data-reveal>
+          <p class="hero-role">
             I make software that runs on <em>your</em> computer, not on somebody's server.
+            Seventeen of them are turning around this.
           </p>
-          <p class="lede" data-reveal>
-            Most of it started as something I wanted and couldn't find. Tools that don't ask you
-            to upload your files somewhere first. An assistant that still works when the internet
-            drops. It's all free, and the code is public.
-          </p>
-          <div class="hero-actions" data-reveal>
-            <a class="btn" href="#work">See the work</a>
-            <a class="btn btn-quiet" href="mailto:jeffreyscotthamilton6399@gmail.com">Get in touch</a>
-          </div>
-
-          <ul class="hero-meta" role="list" data-reveal>
-            <li>Digital designer</li>
-            <li>17 years old</li>
-            <li>Class of 2027</li>
-            <li>Building since 2018</li>
-          </ul>
         </div>
 
-        <figure class="hero-portrait" data-reveal>
-          <img src="assets/portrait.jpg" width="1100" height="1489" fetchpriority="high" decoding="async"
-               alt="Jeffrey Hamilton, arms folded, in a blue quarter-zip against a panelled wall.">
-        </figure>
-
       </div>
+
+      <!-- Both of these stay outside .hero-inner. That subtree is one 3D
+           rendering context, where things sort by depth rather than by
+           z-index, so anything that has to sit flatly on top of the whole
+           scene has to live beside it. -->
+      <div class="hero-cue" aria-hidden="true">
+        <span class="cue-pill">Explore <span class="cue-arrow">&#8595;</span></span>
+        <span class="cue-hint">Drag to spin</span>
+      </div>
+
+      <!-- Fades in as the timeline arrives, so the spiral reads as sinking
+           behind it. A veil rather than a fade on the stage: opacity on an
+           ancestor of a preserve-3d subtree flattens it, and the cards would
+           stop sorting in front of and behind the name. -->
+      <span class="hero-veil" aria-hidden="true"></span>
     </div>
+
+    <!-- app.js moves the list into the stage and winds it around the axis.
+         On a narrow screen, or with reduced motion, it stays a plain grid. -->
+    <ul class="spiral-fallback" role="list">
+
+      <li class="spiral-card">
+        <a href="https://jeffrey-hamilton-tools.vercel.app/" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/tools.png" width="2880" height="1800" loading="lazy" decoding="async"
+                 alt="The Privacy-First Web Tools index, showing a grid of tool cards including ShrinkRay, ConvertIt, Cutout and DevToys.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">Privacy-First Web Tools</span>
+            <span class="card-desc">
+              Sixteen small tools I kept needing. They all run inside the browser tab, so your
+              files never get uploaded — there is nowhere for them to go.
+            </span>
+            <span class="card-tech">TypeScript &middot; WebAssembly</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://jeffreyhamilton6399.github.io/buddy-desktop" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/buddy.png" width="2880" height="1800" loading="lazy" decoding="async"
+                 alt="Buddy's landing page: an AI that lives on your desktop, shown beside a chat window with the orb assistant.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">Buddy</span>
+            <span class="card-desc">
+              An orb that sits on top of your other windows. The model, the voice and the speech
+              recognition are bundled in, so it keeps working with the wifi off.
+            </span>
+            <span class="card-tech">Electron &middot; llama.cpp</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://jeffreyhamilton6399.github.io/vela/" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/vela.png" width="2880" height="1800" loading="lazy" decoding="async"
+                 alt="Vela's landing page: a browser that collects nothing, above a shot of the browser reporting 14 trackers blocked on a search page.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">Vela</span>
+            <span class="card-desc">
+              A browser with the tracking taken out. Blocking is on before the first tab, and it
+              makes two kinds of request: the pages you ask for, and one update check.
+            </span>
+            <span class="card-tech">Electron &middot; Chromium</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://mouse-fx.vercel.app" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/mousefx.png" width="2880" height="1800" loading="lazy" decoding="async"
+                 alt="MOUSE FX's field manual page, headlined Sixteen things your mouse can leave behind, with the trails section listing Dot Trail and Comet.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">MOUSE FX</span>
+            <span class="card-desc">
+              Sixteen mouse and cursor effects. Each one is a single HTML file you can copy
+              straight into your own site.
+            </span>
+            <span class="card-tech">Vanilla JS &middot; Canvas</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://marketplace.visualstudio.com/items?itemName=jeffreyhamilton.violet-hour" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/violethour.png" width="1120" height="720" loading="lazy" decoding="async"
+                 alt="Violet Hour open in VS Code: a TypeScript React file on a deep violet background, with the theme's swatches listed down the sidebar.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">Violet Hour</span>
+            <span class="card-desc">
+              A dark violet theme for VS Code and Visual Studio 2022. Every color comes out of one
+              palette file the build runs 113 contrast checks over.
+            </span>
+            <span class="card-tech">VS Code &middot; Color theme</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://slate-client.vercel.app/" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/slate.png" width="1600" height="900" loading="lazy" decoding="async"
+                 alt="Slate's 3D editor: a white mesh on a purple grid, with hierarchy and properties panels, and a live collaborator cursor labelled Jeffy.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">Slate</span>
+            <span class="card-desc">
+              A whiteboard a few people can draw on at once, with a 3D editor built in. A copy of
+              every board stays on your machine.
+            </span>
+            <span class="card-tech">Yjs &middot; WebRTC</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="assets/robotics/testing.mp4" target="_blank" rel="noopener">
+          <span class="card-shot cycle">
+            <img alt="" src="assets/robotics/build-1.jpg" loading="lazy" decoding="async">
+            <img alt="" src="assets/robotics/build-2.jpg" loading="lazy" decoding="async">
+            <img alt="" src="assets/robotics/build-3.jpg" loading="lazy" decoding="async">
+            <img alt="" src="assets/robotics/build-4.jpg" loading="lazy" decoding="async">
+            <img alt="" src="assets/robotics/build-5.jpg" loading="lazy" decoding="async">
+            <img alt="" src="assets/robotics/build-6.jpg" loading="lazy" decoding="async">
+          </span>
+          <span class="card-body">
+            <span class="card-title">Robotics Builds</span>
+            <span class="card-desc">
+              VEX robots put together for Robotics 1 and 2. Tank tracks, flywheels, and a lot of
+              taking things apart again after they broke.
+            </span>
+            <span class="card-tech">VEX &middot; Robotics</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://inboxpilot-eight.vercel.app" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/inboxpilot.png" width="2880" height="1800" loading="lazy" decoding="async"
+                 alt="InboxPilot's landing page, showing a mock inbox with messages triaged as To Respond, Notification and Awaiting Reply.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">InboxPilot</span>
+            <span class="card-desc">
+              Connects to your Gmail, sorts what comes in, and writes drafts that sound like you
+              wrote them. You host it yourself.
+            </span>
+            <span class="card-tech">TypeScript &middot; Gmail API</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://bulletin-classifieds.vercel.app/" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/bulletin.png" width="2880" height="1800" loading="lazy" decoding="async"
+                 alt="Bulletin's region picker, headlined Where are you looking, with a grid of US cities.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">Bulletin</span>
+            <span class="card-desc">
+              Classifieds for wherever you live. Post without an account, replies come through a
+              relay so your email stays hidden.
+            </span>
+            <span class="card-tech">Next.js &middot; Prisma</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://modrinth.com/user/JeffreyHamilton" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/modrinth.png" width="1478" height="904" loading="lazy" decoding="async"
+                 alt="The Modrinth profile page listing SmartChat Macros, KeybindSync, Clean and Fast, and TablistPlus.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">Minecraft Mods</span>
+            <span class="card-desc">
+              Four Fabric mods and modpacks on Modrinth, about 1,200 downloads between them.
+            </span>
+            <span class="card-tech">Java &middot; Fabric</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="assets/animations/TimpviewLogo6TBirdTV.mp4" target="_blank" rel="noopener">
+          <span class="card-shot cycle">
+            <video src="assets/animations/TimpviewLogo.mp4" data-hold="5900" poster="assets/animations/poster.jpg"
+                   width="1920" height="1080" muted playsinline preload="metadata"></video>
+            <video src="assets/animations/TimpviewLogo2.mp4" data-hold="5500"
+                   width="1920" height="1080" muted playsinline preload="metadata"></video>
+            <video src="assets/animations/TimpviewLogo3.mp4" data-hold="5210"
+                   width="1920" height="1080" muted playsinline preload="metadata"></video>
+            <video src="assets/animations/TimpviewLogo4.mp4" data-hold="4050"
+                   width="1920" height="1080" muted playsinline preload="metadata"></video>
+            <video src="assets/animations/TimpviewLogo5.mp4" data-hold="3730"
+                   width="1920" height="1080" muted playsinline preload="metadata"></video>
+            <video src="assets/animations/TimpviewLogo6TBirdTV.mp4" data-hold="5970"
+                   width="1920" height="1080" muted playsinline preload="metadata"></video>
+          </span>
+          <span class="card-body">
+            <span class="card-title">School Animations</span>
+            <span class="card-desc">
+              Logo idents I made for my school, including the one that plays on TBird TV.
+            </span>
+            <span class="card-tech">Motion graphics</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://signbridge-jet.vercel.app/" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/signbridge.png" width="2880" height="1800" loading="lazy" decoding="async"
+                 alt="SignBridge's landing page: your camera reads the sign, nothing leaves this device.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">SignBridge</span>
+            <span class="card-desc">
+              Point your webcam at ASL fingerspelling and it reads the letters back, in the tab,
+              and tells you how sure it is instead of pretending.
+            </span>
+            <span class="card-tech">On device ML</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://line-glide.vercel.app" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/lineglide.png" width="2880" height="1800" loading="lazy" decoding="async"
+                 alt="Line Glide's first level, with a rider on a drawn slope and a checkered flag as the goal.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">Line Glide</span>
+            <span class="card-desc">
+              Draw a line and watch a guy sled down it. There are levels to get through, and the
+              physics is all written by hand.
+            </span>
+            <span class="card-tech">Next.js &middot; Canvas</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://drive.google.com/drive/folders/1r71Wdb5uY_n4Q6YD1srzxSA3QBqubkqv" target="_blank" rel="noopener">
+          <span class="card-shot cycle">
+            <img alt="" src="assets/cad/sheet-1.jpg" width="1600" height="1035" loading="lazy" decoding="async">
+            <img alt="" src="assets/cad/sheet-2.jpg" width="1600" height="1035" loading="lazy" decoding="async">
+            <img alt="" src="assets/cad/sheet-3.jpg" width="1600" height="1035" loading="lazy" decoding="async">
+            <img alt="" src="assets/cad/sheet-4.jpg" width="1600" height="1035" loading="lazy" decoding="async">
+            <img alt="" src="assets/cad/sheet-5.jpg" width="1600" height="1035" loading="lazy" decoding="async">
+            <img alt="" src="assets/cad/sheet-6.jpg" width="1600" height="1035" loading="lazy" decoding="async">
+          </span>
+          <span class="card-body">
+            <span class="card-title">CAD Housing</span>
+            <span class="card-desc">
+              A full set of construction drawings for a house, done in Revit. Floor plans,
+              elevations, sections, roof and foundation.
+            </span>
+            <span class="card-tech">Revit &middot; Architecture</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://spellfall.vercel.app" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/spellfall.png" width="2880" height="1800" loading="lazy" decoding="async"
+                 alt="SpellFall's title screen, a word battle royale, with letter tiles scattered around the logo.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">SpellFall</span>
+            <span class="card-desc">
+              A word game where everybody plays at once. Spell fast enough and you stay in; the
+              rest get knocked out until one person is left.
+            </span>
+            <span class="card-tech">Multiplayer</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://counterpoint-six.vercel.app/" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/counterpoint.png" width="1600" height="900" loading="lazy" decoding="async"
+                 alt="Counterpoint in Devil's Advocate mode, picking apart a claim about launching a product on a fixed deadline.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">Counterpoint</span>
+            <span class="card-desc">
+              An AI that argues with you on purpose. Handy when you want the holes poked in an
+              idea before somebody else finds them.
+            </span>
+            <span class="card-tech">TypeScript &middot; LLM</span>
+          </span>
+        </a>
+      </li>
+
+      <li class="spiral-card">
+        <a href="https://pixelparty-eight.vercel.app" target="_blank" rel="noopener">
+          <span class="card-shot">
+            <img src="assets/shots/pixelparty.png" width="2880" height="1800" loading="lazy" decoding="async"
+                 alt="PixelParty's home screen with a Create a room button and a field to join an existing room.">
+          </span>
+          <span class="card-body">
+            <span class="card-title">PixelParty</span>
+            <span class="card-desc">
+              Make a room, send the link to someone, and draw pixel art together. Nobody has to
+              sign up for anything.
+            </span>
+            <span class="card-tech">WebSockets</span>
+          </span>
+        </a>
+      </li>
+
+    </ul>
   </section>
 
-  <!-- ── Story ────────────────────────────────────────────── -->
-  <section id="story" class="slab story on-dark" aria-labelledby="story-heading">
+  <!-- ── Timeline ─────────────────────────────────────────── -->
+  <section id="timeline" class="slab timeline on-dark" aria-labelledby="tl-heading">
     <div class="slab-inner">
       <div class="wrap">
 
-        <div class="story-head" data-stagger="0.1">
-          <p class="eyebrow" data-reveal>The short version</p>
-          <h2 id="story-heading">
-            <span class="line"><span>None of this</span></span>
-            <span class="line"><span>started with code.</span></span>
-          </h2>
+        <div class="section-head" data-reveal>
+          <h2 id="tl-heading">How I got here</h2>
+          <p class="section-note">2018 to now</p>
         </div>
 
-        <ol class="chapters" role="list">
+        <div class="tl-rail">
+          <svg class="tl-line" aria-hidden="true" focusable="false" preserveAspectRatio="none">
+            <path fill="none" />
+          </svg>
 
-          <li class="chapter" data-stagger="0.08">
-            <p class="ch-year" data-reveal>2018</p>
-            <div class="ch-body">
-              <h3 class="ch-title" data-reveal>Eggs</h3>
-              <p class="ch-text" data-reveal>
-                Four years of farm operations at the family egg business. It is not complicated
-                work. You do it every morning whether or not you feel like it, and if you skip a
-                day the problem is still there tomorrow, only bigger.
-              </p>
-              <p class="ch-text" data-reveal>
-                That is most of what I learned about finishing things.
-              </p>
-            </div>
-          </li>
+          <ol class="tl-stops" role="list">
 
-          <li class="chapter" data-stagger="0.08">
-            <p class="ch-year" data-reveal>2022</p>
-            <div class="ch-body">
-              <h3 class="ch-title" data-reveal>The second test</h3>
-              <p class="ch-text" data-reveal>
-                I failed my first black belt test. Went back, trained, and passed the second one.
-                Then I spent three years teaching at Bobby Lawrence Karate, which is where I found
-                out that explaining a thing properly is harder than doing it.
-              </p>
-              <p class="ch-text" data-reveal>
-                That is roughly how the rest of it has gone too.
-              </p>
-            </div>
-          </li>
+            <li class="tl-stop" data-side="left">
+              <span class="tl-node" aria-hidden="true"></span>
+              <div class="tl-card" data-reveal>
+                <p class="tl-when">2018 <span>to 2022</span></p>
+                <h3 class="tl-title">Eggs</h3>
+                <p class="tl-text">
+                  Four years of farm operations at the family egg business. It is not complicated
+                  work. You do it every morning whether or not you feel like it, and if you skip a
+                  day the problem is still there tomorrow, only bigger.
+                </p>
+                <p class="tl-text">That is most of what I learned about finishing things.</p>
+                <p class="tl-role">Farm Operations &middot; Hamilton Egg Business</p>
+              </div>
+            </li>
 
-          <li class="chapter" data-stagger="0.08">
-            <p class="ch-year" data-reveal>Since then</p>
-            <div class="ch-body">
-              <h3 class="ch-title" data-reveal>Things I couldn't find</h3>
-              <p class="ch-text" data-reveal>
-                Every project below started the same way: I wanted something, went looking, and
-                what I found wanted an account, a subscription, or my files on its server first.
-                So I built the version I wanted instead.
-              </p>
-              <p class="ch-text" data-reveal>
-                None of it came from a bootcamp or a fancy program. I just kept showing up and
-                figured things out.
-              </p>
-            </div>
-          </li>
+            <li class="tl-stop" data-side="right">
+              <span class="tl-node" aria-hidden="true"></span>
+              <div class="tl-card" data-reveal>
+                <p class="tl-when">2021 <span>to now</span></p>
+                <h3 class="tl-title">Showing up</h3>
+                <p class="tl-text">
+                  Volunteering with my church since 2021. Same lesson as the eggs, better company.
+                </p>
+                <p class="tl-role">Volunteer &middot; The Church of Jesus Christ of Latter-day Saints</p>
+              </div>
+            </li>
 
-          <li class="chapter" data-stagger="0.08">
-            <p class="ch-year" data-reveal>2026</p>
-            <div class="ch-body">
-              <h3 class="ch-title" data-reveal>Now</h3>
-              <p class="ch-text" data-reveal>
-                Software engineering at Provo CAPS, interning at Doing Business Intelligently,
-                managing an apartment on 200 East, and on the register at Day's Market. Senior
-                year, diploma expected 2027.
-              </p>
-              <p class="ch-text" data-reveal>
-                I like making things that just work. No fluff, no broken buttons, no excuses.
-              </p>
-            </div>
-          </li>
+            <li class="tl-stop" data-side="left">
+              <span class="tl-node" aria-hidden="true"></span>
+              <div class="tl-card" data-reveal>
+                <p class="tl-when">2022 <span>to 2025</span></p>
+                <h3 class="tl-title">The second test</h3>
+                <p class="tl-text">
+                  I failed my first black belt test. Went back, trained, and passed the second one.
+                  Then I spent three years teaching there, which is where I found out that
+                  explaining a thing properly is harder than doing it.
+                </p>
+                <p class="tl-text">That is roughly how the rest of it has gone too.</p>
+                <p class="tl-role">
+                  Teaching &middot;
+                  <a href="https://oremkarate.com/" target="_blank" rel="noopener">Bobby Lawrence Karate</a>
+                </p>
+              </div>
+            </li>
 
-        </ol>
+            <li class="tl-stop" data-side="right">
+              <span class="tl-node" aria-hidden="true"></span>
+              <div class="tl-card" data-reveal>
+                <p class="tl-when">Since then</p>
+                <h3 class="tl-title">Things I couldn't find</h3>
+                <p class="tl-text">
+                  Every project turning up there started the same way: I wanted something, went
+                  looking, and what I found wanted an account, a subscription, or my files on its
+                  server first. So I built the version I wanted instead.
+                </p>
+                <p class="tl-text">
+                  None of it came from a bootcamp or a fancy program. I just kept showing up and
+                  figured things out.
+                </p>
+              </div>
+            </li>
+
+            <li class="tl-stop" data-side="left">
+              <span class="tl-node" aria-hidden="true"></span>
+              <div class="tl-card" data-reveal>
+                <p class="tl-when">2026 <span>to now</span></p>
+                <h3 class="tl-title">Now</h3>
+                <p class="tl-text">
+                  Four things at once, which is about right.
+                </p>
+                <ul class="tl-list" role="list">
+                  <li><strong>Software Engineering</strong> &middot; Provo CAPS</li>
+                  <li><strong>Intern</strong> &middot; Doing Business Intelligently (DBI)</li>
+                  <li><strong>Property Manager</strong> &middot; Apartment 221, 642 N 200 E, Provo</li>
+                  <li><strong>Bagger, then Cashier</strong> &middot;
+                    <a href="https://www.daysmarket.com/" target="_blank" rel="noopener">Day's Market</a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="tl-stop" data-side="right">
+              <span class="tl-node" aria-hidden="true"></span>
+              <div class="tl-card" data-reveal>
+                <p class="tl-when">2027 <span>expected</span></p>
+                <h3 class="tl-title">Timpview High School</h3>
+                <p class="tl-text">
+                  Diploma expected 2027, currently taking digital media. Black belt at Bobby
+                  Lawrence Karate. Nine course certificates along the way, each one a PDF.
+                </p>
+                <ul class="chips" role="list">
+                  <li><a href="assets/certificates/digital-media-2.pdf" target="_blank" rel="noopener">Digital Media 2</a></li>
+                  <li><a href="assets/certificates/digital-media-1.pdf" target="_blank" rel="noopener">Digital Media 1</a></li>
+                  <li><a href="assets/certificates/computer-programming-2-java.pdf" target="_blank" rel="noopener">Computer Programming 2</a></li>
+                  <li><a href="assets/certificates/computer-programming-1.pdf" target="_blank" rel="noopener">Computer Programming 1</a></li>
+                  <li><a href="assets/certificates/game-development-fundamentals.pdf" target="_blank" rel="noopener">Game Development</a></li>
+                  <li><a href="assets/certificates/robotics-1.pdf" target="_blank" rel="noopener">Robotics 1</a></li>
+                  <li><a href="assets/certificates/unmanned-aerial-systems.pdf" target="_blank" rel="noopener">Unmanned Aerial Systems</a></li>
+                  <li><a href="assets/certificates/architectural-design-2.pdf" target="_blank" rel="noopener">Architectural Design 2</a></li>
+                  <li><a href="assets/certificates/cad-architectural-design-1.pdf" target="_blank" rel="noopener">CAD Architectural Design I</a></li>
+                </ul>
+              </div>
+            </li>
+
+          </ol>
+        </div>
 
         <ul class="story-links" role="list" data-reveal>
           <li><a class="ulink" href="https://github.com/JeffreyHamilton6399" target="_blank" rel="noopener">GitHub</a></li>
@@ -159,16 +523,15 @@
     </div>
   </section>
 
-  <!-- ── Selected work ────────────────────────────────────── -->
-  <section id="work" class="slab work" aria-labelledby="work-heading">
+  <!-- ── Three up close ───────────────────────────────────── -->
+  <section id="featured" class="slab work" aria-labelledby="work-heading">
     <div class="slab-inner">
       <div class="wrap">
         <div class="section-head" data-reveal>
-          <h2 id="work-heading">What I've built</h2>
-          <p class="section-note">Three of them up close</p>
+          <h2 id="work-heading">Three up close</h2>
+          <p class="section-note">The rest are in the spiral</p>
         </div>
 
-        <!-- 01 -->
         <article class="project">
           <div class="project-body" data-stagger="0.07">
             <p class="project-index" data-reveal>01</p>
@@ -193,7 +556,6 @@
           </figure>
         </article>
 
-        <!-- 02 -->
         <article class="project project-flip">
           <div class="project-body" data-stagger="0.07">
             <p class="project-index" data-reveal>02</p>
@@ -218,7 +580,6 @@
           </figure>
         </article>
 
-        <!-- 03 -->
         <article class="project">
           <div class="project-body" data-stagger="0.07">
             <p class="project-index" data-reveal>03</p>
@@ -247,394 +608,13 @@
     </div>
   </section>
 
-  <!-- ── The loop ─────────────────────────────────────────── -->
-  <section id="more" class="slab loop on-dark" aria-labelledby="more-heading">
-
-    <div class="wrap loop-head">
-      <div class="section-head" data-reveal>
-        <h2 id="more-heading">Everything else</h2>
-        <p class="section-note">Fourteen more, turning</p>
-      </div>
-    </div>
-
-    <!-- app.js moves the list below into here and puts it on the corkscrew.
-         On a narrow screen, or with reduced motion, the stage stays empty
-         and the list stays a plain grid. -->
-    <div class="loop-stage">
-      <span class="loop-glow" aria-hidden="true"></span>
-      <div class="loop-readout" aria-hidden="true">
-        <span class="loop-count">01 / 14</span>
-        <span class="loop-bar"></span>
-        <span class="loop-hint">Drag it, or keep scrolling</span>
-      </div>
-    </div>
-
-    <ul class="loop-fallback" role="list">
-
-      <li class="loop-card">
-        <a href="https://mouse-fx.vercel.app" target="_blank" rel="noopener">
-          <span class="card-shot">
-            <img src="assets/shots/mousefx.png" width="2880" height="1800" loading="lazy" decoding="async"
-                 alt="MOUSE FX's field manual page, headlined Sixteen things your mouse can leave behind, with the trails section listing Dot Trail and Comet.">
-          </span>
-          <span class="card-body">
-            <span class="card-title">MOUSE FX</span>
-            <span class="card-desc">
-              Sixteen mouse and cursor effects &mdash; trails, custom cursors, springs, click
-              bursts. Each one is a single HTML file you can copy straight into your own site.
-            </span>
-            <span class="card-tech">Vanilla JS &middot; Canvas</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="https://marketplace.visualstudio.com/items?itemName=jeffreyhamilton.violet-hour" target="_blank" rel="noopener">
-          <span class="card-shot">
-            <img src="assets/shots/violethour.png" width="1120" height="720" loading="lazy" decoding="async"
-                 alt="Violet Hour open in VS Code: a TypeScript React file on a deep violet background, with the theme's swatches listed down the sidebar.">
-          </span>
-          <span class="card-body">
-            <span class="card-title">Violet Hour</span>
-            <span class="card-desc">
-              A dark violet theme for VS Code and Visual Studio 2022. Every color comes out of
-              one palette file that the build runs 113 contrast checks over.
-            </span>
-            <span class="card-tech">VS Code &middot; Color theme</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="https://slate-client.vercel.app/" target="_blank" rel="noopener">
-          <span class="card-shot">
-            <img src="assets/shots/slate.png" width="1600" height="900" loading="lazy" decoding="async"
-                 alt="Slate's 3D editor: a white mesh on a purple grid, with hierarchy and properties panels, and a live collaborator cursor labelled Jeffy.">
-          </span>
-          <span class="card-body">
-            <span class="card-title">Slate</span>
-            <span class="card-desc">
-              A whiteboard a few people can draw on at the same time, with a 3D editor built
-              into it. Edits show up live for everyone, and a copy of every board stays on
-              your machine.
-            </span>
-            <span class="card-tech">Yjs &middot; WebRTC</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="assets/robotics/testing.mp4" target="_blank" rel="noopener">
-          <span class="card-shot cycle">
-            <img alt="" src="assets/robotics/build-1.jpg" loading="lazy" decoding="async">
-            <img alt="" src="assets/robotics/build-2.jpg" loading="lazy" decoding="async">
-            <img alt="" src="assets/robotics/build-3.jpg" loading="lazy" decoding="async">
-            <img alt="" src="assets/robotics/build-4.jpg" loading="lazy" decoding="async">
-            <img alt="" src="assets/robotics/build-5.jpg" loading="lazy" decoding="async">
-            <img alt="" src="assets/robotics/build-6.jpg" loading="lazy" decoding="async">
-          </span>
-          <span class="card-body">
-            <span class="card-title">Robotics Builds</span>
-            <span class="card-desc">
-              VEX robots put together for Robotics 1 and 2. Tank tracks, flywheels, and a lot
-              of taking things apart again after they broke.
-            </span>
-            <span class="card-tech">VEX &middot; Robotics</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="https://inboxpilot-eight.vercel.app" target="_blank" rel="noopener">
-          <span class="card-shot">
-            <img src="assets/shots/inboxpilot.png" width="2880" height="1800" loading="lazy" decoding="async"
-                 alt="InboxPilot's landing page, showing a mock inbox with messages triaged as To Respond, Notification and Awaiting Reply.">
-          </span>
-          <span class="card-body">
-            <span class="card-title">InboxPilot</span>
-            <span class="card-desc">
-              Connects to your Gmail, sorts what comes in, and writes drafts that sound like
-              you wrote them. You host it yourself and bring your own API key.
-            </span>
-            <span class="card-tech">TypeScript &middot; Gmail API</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="https://bulletin-classifieds.vercel.app/" target="_blank" rel="noopener">
-          <span class="card-shot">
-            <img src="assets/shots/bulletin.png" width="2880" height="1800" loading="lazy" decoding="async"
-                 alt="Bulletin's region picker, headlined Where are you looking, with a grid of US cities.">
-          </span>
-          <span class="card-body">
-            <span class="card-title">Bulletin</span>
-            <span class="card-desc">
-              Classifieds for wherever you live. Post without making an account, replies come
-              through a relay so your email stays hidden, and old listings clear themselves out.
-            </span>
-            <span class="card-tech">Next.js &middot; Prisma</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="https://modrinth.com/user/JeffreyHamilton" target="_blank" rel="noopener">
-          <span class="card-shot">
-            <img src="assets/shots/modrinth.png" width="1478" height="904" loading="lazy" decoding="async"
-                 alt="The Modrinth profile page listing SmartChat Macros, KeybindSync, Clean and Fast, and TablistPlus.">
-          </span>
-          <span class="card-body">
-            <span class="card-title">Minecraft Mods</span>
-            <span class="card-desc">
-              Four Fabric mods and modpacks on Modrinth, about 1,200 downloads between them.
-              Chat macros, keybind profiles, a performance pack, and a tab list tweak.
-            </span>
-            <span class="card-tech">Java &middot; Fabric</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="assets/animations/TimpviewLogo6TBirdTV.mp4" target="_blank" rel="noopener">
-          <span class="card-shot cycle">
-            <video src="assets/animations/TimpviewLogo.mp4" data-hold="5900" poster="assets/animations/poster.jpg"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video src="assets/animations/TimpviewLogo2.mp4" data-hold="5500"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video src="assets/animations/TimpviewLogo3.mp4" data-hold="5210"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video src="assets/animations/TimpviewLogo4.mp4" data-hold="4050"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video src="assets/animations/TimpviewLogo5.mp4" data-hold="3730"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video src="assets/animations/TimpviewLogo6TBirdTV.mp4" data-hold="5970"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
-          </span>
-          <span class="card-body">
-            <span class="card-title">School Animations</span>
-            <span class="card-desc">
-              I make animations. These are a few of the logo idents I made for my school,
-              including the one that plays on TBird TV.
-            </span>
-            <span class="card-tech">Motion graphics</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="https://signbridge-jet.vercel.app/" target="_blank" rel="noopener">
-          <span class="card-shot">
-            <img src="assets/shots/signbridge.png" width="2880" height="1800" loading="lazy" decoding="async"
-                 alt="SignBridge's landing page: your camera reads the sign, nothing leaves this device.">
-          </span>
-          <span class="card-body">
-            <span class="card-title">SignBridge</span>
-            <span class="card-desc">
-              Point your webcam at ASL fingerspelling and it reads the letters back. It runs
-              in the tab, so no video gets sent anywhere, and it tells you how sure it is.
-            </span>
-            <span class="card-tech">TypeScript &middot; On device ML</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="https://line-glide.vercel.app" target="_blank" rel="noopener">
-          <span class="card-shot">
-            <img src="assets/shots/lineglide.png" width="2880" height="1800" loading="lazy" decoding="async"
-                 alt="Line Glide's first level, with a rider on a drawn slope and a checkered flag as the goal.">
-          </span>
-          <span class="card-body">
-            <span class="card-title">Line Glide</span>
-            <span class="card-desc">
-              Draw a line and watch a guy sled down it, like Line Rider. There are levels to
-              get through, and the physics is all written by hand.
-            </span>
-            <span class="card-tech">Next.js &middot; Canvas</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="https://pixelparty-eight.vercel.app" target="_blank" rel="noopener">
-          <span class="card-shot">
-            <img src="assets/shots/pixelparty.png" width="2880" height="1800" loading="lazy" decoding="async"
-                 alt="PixelParty's home screen with a Create a room button and a field to join an existing room.">
-          </span>
-          <span class="card-body">
-            <span class="card-title">PixelParty</span>
-            <span class="card-desc">
-              Make a room, send the link to someone, and draw pixel art together. Nobody has
-              to sign up for anything.
-            </span>
-            <span class="card-tech">TypeScript &middot; WebSockets</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="https://drive.google.com/drive/folders/1r71Wdb5uY_n4Q6YD1srzxSA3QBqubkqv" target="_blank" rel="noopener">
-          <span class="card-shot cycle">
-            <img alt="" src="assets/cad/sheet-1.jpg" width="1600" height="1035" loading="lazy" decoding="async">
-            <img alt="" src="assets/cad/sheet-2.jpg" width="1600" height="1035" loading="lazy" decoding="async">
-            <img alt="" src="assets/cad/sheet-3.jpg" width="1600" height="1035" loading="lazy" decoding="async">
-            <img alt="" src="assets/cad/sheet-4.jpg" width="1600" height="1035" loading="lazy" decoding="async">
-            <img alt="" src="assets/cad/sheet-5.jpg" width="1600" height="1035" loading="lazy" decoding="async">
-            <img alt="" src="assets/cad/sheet-6.jpg" width="1600" height="1035" loading="lazy" decoding="async">
-          </span>
-          <span class="card-body">
-            <span class="card-title">CAD Housing</span>
-            <span class="card-desc">
-              A full set of construction drawings for a house, done in Revit for my
-              architecture class. Floor plans, elevations, sections, roof and foundation.
-            </span>
-            <span class="card-tech">Revit &middot; Architectural design</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="https://counterpoint-six.vercel.app/" target="_blank" rel="noopener">
-          <span class="card-shot">
-            <img src="assets/shots/counterpoint.png" width="1600" height="900" loading="lazy" decoding="async"
-                 alt="Counterpoint in Devil's Advocate mode, picking apart a claim about launching a product on a fixed deadline.">
-          </span>
-          <span class="card-body">
-            <span class="card-title">Counterpoint</span>
-            <span class="card-desc">
-              An AI that argues with you on purpose. Handy when you want the holes poked in
-              an idea before somebody else finds them.
-            </span>
-            <span class="card-tech">TypeScript &middot; LLM</span>
-          </span>
-        </a>
-      </li>
-
-      <li class="loop-card">
-        <a href="https://spellfall.vercel.app" target="_blank" rel="noopener">
-          <span class="card-shot">
-            <img src="assets/shots/spellfall.png" width="2880" height="1800" loading="lazy" decoding="async"
-                 alt="SpellFall's title screen, a word battle royale, with letter tiles scattered around the logo.">
-          </span>
-          <span class="card-body">
-            <span class="card-title">SpellFall</span>
-            <span class="card-desc">
-              A word game where everybody plays at once. Spell fast enough and you stay in;
-              the rest get knocked out until one person is left.
-            </span>
-            <span class="card-tech">TypeScript &middot; Multiplayer</span>
-          </span>
-        </a>
-      </li>
-
-    </ul>
-  </section>
-
-  <!-- ── Timeline ─────────────────────────────────────────── -->
-  <section id="about" class="slab background" aria-labelledby="bg-heading">
-    <div class="slab-inner">
-      <div class="wrap">
-        <div class="section-head" data-reveal>
-          <h2 id="bg-heading">The timeline</h2>
-          <p class="section-note">Where the time has gone</p>
-        </div>
-
-        <ol class="timeline" role="list">
-
-          <li class="tl-group" data-reveal>
-            <span class="tl-date"><span class="tl-year">2027</span><span class="tl-span">expected</span></span>
-            <div class="tl-roles">
-              <div class="tl-item">
-                <span class="tl-role">Diploma, Timpview High School</span>
-                <span class="tl-org">Currently taking digital media. Black belt at Bobby Lawrence Karate.</span>
-              </div>
-              <div class="tl-item tl-certs">
-                <span class="tl-role">Nine course certificates</span>
-                <ul class="chips" role="list">
-                  <li><a href="assets/certificates/digital-media-2.pdf" target="_blank" rel="noopener">Digital Media 2</a></li>
-                  <li><a href="assets/certificates/digital-media-1.pdf" target="_blank" rel="noopener">Digital Media 1</a></li>
-                  <li><a href="assets/certificates/computer-programming-2-java.pdf" target="_blank" rel="noopener">Computer Programming 2</a></li>
-                  <li><a href="assets/certificates/computer-programming-1.pdf" target="_blank" rel="noopener">Computer Programming 1</a></li>
-                  <li><a href="assets/certificates/game-development-fundamentals.pdf" target="_blank" rel="noopener">Game Development</a></li>
-                  <li><a href="assets/certificates/robotics-1.pdf" target="_blank" rel="noopener">Robotics 1</a></li>
-                  <li><a href="assets/certificates/unmanned-aerial-systems.pdf" target="_blank" rel="noopener">Unmanned Aerial Systems</a></li>
-                  <li><a href="assets/certificates/architectural-design-2.pdf" target="_blank" rel="noopener">Architectural Design 2</a></li>
-                  <li><a href="assets/certificates/cad-architectural-design-1.pdf" target="_blank" rel="noopener">CAD Architectural Design I</a></li>
-                </ul>
-                <span class="tl-note">Each one opens as a PDF.</span>
-              </div>
-            </div>
-          </li>
-
-          <li class="tl-group" data-reveal>
-            <span class="tl-date"><span class="tl-year">2026</span><span class="tl-span">to now</span></span>
-            <div class="tl-roles">
-              <div class="tl-item">
-                <span class="tl-role">Software Engineering</span>
-                <span class="tl-org">Provo CAPS</span>
-              </div>
-              <div class="tl-item">
-                <span class="tl-role">Intern</span>
-                <span class="tl-org">Doing Business Intelligently (DBI)</span>
-                <!-- TODO: link the org once DBI has the site up -->
-              </div>
-              <div class="tl-item">
-                <span class="tl-role">Property Manager</span>
-                <span class="tl-org">Apartment 221, 642 N 200 E, Provo</span>
-              </div>
-              <div class="tl-item">
-                <span class="tl-role">Bagger, then Cashier</span>
-                <span class="tl-org">
-                  <a href="https://www.daysmarket.com/" target="_blank" rel="noopener">Day's Market</a>
-                </span>
-              </div>
-            </div>
-          </li>
-
-          <li class="tl-group" data-reveal>
-            <span class="tl-date"><span class="tl-year">2022</span><span class="tl-span">to 2025</span></span>
-            <div class="tl-roles">
-              <div class="tl-item">
-                <span class="tl-role">Teaching</span>
-                <span class="tl-org">
-                  <a href="https://oremkarate.com/" target="_blank" rel="noopener">Bobby Lawrence Karate</a>
-                </span>
-              </div>
-            </div>
-          </li>
-
-          <li class="tl-group" data-reveal>
-            <span class="tl-date"><span class="tl-year">2021</span><span class="tl-span">to now</span></span>
-            <div class="tl-roles">
-              <div class="tl-item">
-                <span class="tl-role">Volunteer</span>
-                <span class="tl-org">The Church of Jesus Christ of Latter-day Saints</span>
-              </div>
-            </div>
-          </li>
-
-          <li class="tl-group" data-reveal>
-            <span class="tl-date"><span class="tl-year">2018</span><span class="tl-span">to 2022</span></span>
-            <div class="tl-roles">
-              <div class="tl-item">
-                <span class="tl-role">Farm Operations</span>
-                <span class="tl-org">Hamilton Egg Business</span>
-              </div>
-            </div>
-          </li>
-
-        </ol>
-      </div>
-    </div>
-  </section>
-
   <!-- ── Contact ──────────────────────────────────────────── -->
   <section id="contact" class="slab contact on-dark" aria-labelledby="contact-heading">
     <div class="slab-inner">
       <div class="wrap" data-stagger="0.09">
         <h2 id="contact-heading">
-          <span class="line"><span>Want to work together?</span></span>
+          <span class="line"><span>Want to work</span></span>
+          <span class="line"><span>together?</span></span>
         </h2>
         <p class="contact-note" data-reveal>
           I'm looking for software engineering work, or anything that has me writing code all day.

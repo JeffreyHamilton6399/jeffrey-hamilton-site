@@ -6,14 +6,15 @@
 
 :root {
   /* Brand */
-  --void:    #14121C;   /* near-black with a violet cast — dark sections    */
-  --ink:     #1D1A28;   /* body text on light                              */
-  --paper:   #F4F1EA;   /* warm bone — page background                     */
-  --shell:   #EAE5DB;   /* recessed surface on light                       */
-  --iris:    #5B3CE8;   /* violet — links, focus, accents                   */
-  --iris-lo: #8168F0;   /* lifted violet, for use on dark                  */
-  --haze:    #C6B9F7;   /* pale violet — labels and hairlines on dark       */
-  --ember:   #E4623C;   /* persimmon — one accent at a time                 */
+  --void:    #14121C;   /* near-black with a violet cast — display type, dark bands */
+  --ink:     #1D1A28;   /* body text on light                                       */
+  --paper:   #F4F1EA;   /* warm bone — page background                              */
+  --shell:   #EAE5DB;   /* recessed surface on light                                */
+  --card:    #FFFDF8;   /* the face of a card on the light ground                   */
+  --iris:    #5B3CE8;   /* violet — links, focus, the drawn line                    */
+  --iris-lo: #8168F0;   /* lifted violet, for use on dark                           */
+  --haze:    #C6B9F7;   /* pale violet — labels and hairlines on dark               */
+  --ember:   #E4623C;   /* persimmon — one accent at a time                         */
 
   /* Derived — light ground */
   --ink-soft:  color-mix(in srgb, var(--ink) 66%, transparent);
@@ -32,17 +33,15 @@
   --ease:     cubic-bezier(.22, .7, .28, 1);
   --ease-out: cubic-bezier(.16, 1, .3, 1);
 
-  /* Type. Source Serif 4 rather than Fraunces: Fraunces ships with its WONK
-     axis on by default, which gives it a swashed J and a tangled ff — fine
-     as a novelty face, wrong for a name set at 90px. */
-  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
-  --sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --mono:  "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Type. Anton for display: one heavy condensed weight with no lighter cut
+     to fall back to, which is exactly what a name set this large wants. */
+  --display: "Anton", "Haettenschweiler", "Arial Narrow", Impact, sans-serif;
+  --sans:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Rhythm */
   --wrap: 1180px;
   --gutter: clamp(1.25rem, 5vw, 4rem);
-  --section-y: clamp(5rem, 11vw, 9rem);
 
   /* How far each panel rides up over the one before it */
   --slab-r:    clamp(1.25rem, 3.5vw, 2.5rem);
@@ -77,13 +76,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3 {
-  font-family: var(--serif);
-  font-weight: 600;
-  line-height: 1.06;
-  letter-spacing: -.015em;
+h1, h2 {
+  font-family: var(--display);
+  font-weight: 400;                     /* Anton ships one weight */
+  line-height: .92;
+  letter-spacing: -.01em;
   margin: 0;
 }
+h3 { font-weight: 600; line-height: 1.2; letter-spacing: -.01em; margin: 0; }
 p { margin: 0; }
 img, video { max-width: 100%; height: auto; display: block; }
 a { color: inherit; }
@@ -118,22 +118,23 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 /* --------------------------------------------------------- Panels
 
-   Every section after the hero is a slab: its own opaque ground, a rounded
-   top edge, and a negative top margin so it rides up over the section
-   before it. They come in document order with no z-index of their own, so
-   each one paints over the last — the overlap is the transition. app.js
-   pairs it with a scrubbed recede on the outgoing .slab-inner, so the
-   panel underneath settles back as the next one arrives rather than just
-   scrolling away. */
+   The hero sits at the bottom of the stack and every section after it is a
+   slab: its own opaque ground, a rounded top edge, and a negative top
+   margin so it rides up over what came before. They carry z-index 2 against
+   the hero's 1, because the hero's stage is pinned — fixed — while the
+   timeline climbs over it. */
 
-.hero, .slab { position: relative; background: var(--paper); }
-.on-dark { background: var(--void); color: var(--on-dark); }
+.hero { position: relative; z-index: 1; background: var(--paper); }
 
 .slab {
+  position: relative;
+  z-index: 2;
+  background: var(--paper);
   margin-top: calc(-1 * var(--slab-lift));
   border-radius: var(--slab-r) var(--slab-r) 0 0;
-  box-shadow: 0 -18px 44px color-mix(in srgb, var(--void) 22%, transparent);
+  box-shadow: 0 -18px 44px color-mix(in srgb, var(--void) 26%, transparent);
 }
+.on-dark { background: var(--void); color: var(--on-dark); }
 
 /* The transform target. Keeping it off the section itself means the panel's
    own background never scales, so the seam between two panels stays put
@@ -142,41 +143,12 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 /* --------------------------------------------------------- Shared bits */
 
-.eyebrow {
+.section-note, .card-tech, .tl-when, .cue-hint, .nav, .mark-where {
   font-family: var(--mono);
-  font-size: .6875rem;
-  font-weight: 500;
-  letter-spacing: .18em;
+  letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--ink-faint);
-  margin: 0;
 }
-.on-dark .eyebrow { color: var(--haze); }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: .5rem;
-  padding: .8125rem 1.5rem;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: var(--void);
-  color: var(--paper);
-  font-size: .9375rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition: transform .4s var(--ease), background-color .3s var(--ease), color .3s var(--ease);
-}
-.btn:hover { transform: translateY(-2px); background: var(--iris); }
-
-.btn-quiet {
-  background: transparent;
-  color: var(--ink);
-  border-color: var(--rule);
-}
-.btn-quiet:hover { background: transparent; border-color: var(--iris); color: var(--iris); }
-
-/* An underline that draws in from the left. */
 .ulink {
   text-decoration: none;
   color: var(--iris);
@@ -188,6 +160,16 @@ section[id] { scroll-margin-top: 4.5rem; }
 }
 .ulink:hover { background-size: 100% 1px; }
 .on-dark .ulink { color: var(--haze); }
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem 1.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: .9375rem;
+}
 
 /* --------------------------------------------------------- Reveals
 
@@ -227,176 +209,453 @@ html.motion .line.is-in > span {
 
 /* --------------------------------------------------------- Header
 
-   No pill, no panel — a wordmark and four labels that take their colour
-   from whichever band is under them. A short scrim keeps them legible over
-   a busy panel without reading as a bar. */
+   Three columns of very small type and nothing else: the face and where I
+   am, the sections, the address. It takes its colour from whichever band is
+   under it. */
 
 .site-head {
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 60;
-  padding-block: clamp(1rem, 2.4vw, 1.5rem);
+  padding: clamp(.875rem, 2vw, 1.375rem) var(--gutter);
   pointer-events: none;
   color: var(--ink);
   transition: color .45s var(--ease);
 }
 body.head-dark .site-head { color: var(--on-dark); }
 
-.site-head::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 6.5rem;
-  background: linear-gradient(to bottom,
-    color-mix(in srgb, var(--paper) 94%, transparent) 35%,
-    color-mix(in srgb, var(--paper) 0%, transparent));
-  transition: opacity .45s var(--ease);
-  pointer-events: none;
-}
-body.head-dark .site-head::before {
-  background: linear-gradient(to bottom,
-    color-mix(in srgb, var(--void) 92%, transparent) 35%,
-    color-mix(in srgb, var(--void) 0%, transparent));
-}
-
 .head-inner {
-  position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 1.5rem;
 }
 
-.wordmark {
+.mark {
   pointer-events: auto;
-  font-family: var(--serif);
-  font-size: 1.0625rem;
-  font-weight: 600;
-  letter-spacing: -.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: .625rem;
+  justify-self: start;
   text-decoration: none;
+}
+.mark-face {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: none;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+}
+.mark-face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 26%; }
+
+.mark-where {
+  display: inline-flex;
+  align-items: center;
+  gap: .4375rem;
+  font-size: .625rem;
+  font-weight: 500;
   white-space: nowrap;
 }
+.mark-where .dot { width: .3125rem; height: .3125rem; border-radius: 50%; background: var(--iris); }
+body.head-dark .mark-where .dot { background: var(--iris-lo); }
 
 .nav {
   pointer-events: auto;
   display: flex;
   align-items: center;
-  gap: clamp(.875rem, 2.4vw, 1.75rem);
-  font-family: var(--mono);
-  font-size: .6875rem;
+  gap: .375rem;
+  font-size: .625rem;
   font-weight: 500;
-  letter-spacing: .14em;
-  text-transform: uppercase;
 }
 .nav a {
+  padding: .3125rem .5rem;
+  border-radius: 2px;
   text-decoration: none;
   color: inherit;
-  opacity: .58;
-  transition: opacity .3s var(--ease);
+  opacity: .6;
+  transition: opacity .3s var(--ease), background-color .3s var(--ease), color .3s var(--ease);
 }
 .nav a:hover { opacity: 1; }
+/* The section you are in inverts, the way the reference marks its current
+   page. app.js sets the flag. */
+.nav a.is-here { opacity: 1; background: var(--ink); color: var(--paper); }
+body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); }
 
-/* --------------------------------------------------------- Hero */
-
-.hero {
-  padding-top: clamp(7rem, 16vw, 11rem);
-  padding-bottom: clamp(4rem, 10vw, 7rem);
+.head-mail {
+  pointer-events: auto;
+  justify-self: end;
+  font-size: .6875rem;
+  text-decoration: none;
+  opacity: .6;
+  white-space: nowrap;
+  transition: opacity .3s var(--ease);
 }
+.head-mail:hover { opacity: 1; }
 
-.hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
-  gap: clamp(2rem, 6vw, 5rem);
-  align-items: end;
+/* --------------------------------------------------------- The spiral
+
+   Cards wind around a horizontal axis that runs across the screen. Three
+   full turns over the path, so two neighbours are most of a turn apart and
+   the row reads as winding rather than as a queue. Cards coming round the
+   near side pass in front of the name; cards on the far side pass behind
+   it. That sorting is the whole picture, which is why nothing in this
+   subtree may set opacity — see .hero-veil.
+
+   Without app.js, or on a screen too narrow for the travel, none of this
+   applies and the same list is a plain grid. */
+
+.hero-stage {
+  position: relative;
+  padding: clamp(7rem, 18vw, 10rem) var(--gutter) clamp(2rem, 6vw, 4rem);
 }
+.hero-inner { display: grid; place-items: center; }
+.hero-center { text-align: center; max-width: 36rem; }
+.hero-glow, .hero-veil, .hero-cue { display: none; }
 
 .hero-title {
-  font-size: clamp(3.25rem, 12.5vw, 9.5rem);
-  line-height: .92;
-  letter-spacing: -.035em;
-  margin-bottom: clamp(1.25rem, 3vw, 2rem);
+  font-size: clamp(3rem, 15vw, 13rem);
+  letter-spacing: -.015em;
+  text-transform: uppercase;
+  color: var(--void);
 }
+/* The reveal mask clips to the line box, and Anton's caps are taller than a
+   .84 line box — set at the tight leading the name wants, the tops and
+   bottoms of the letters were being cut off. So: a line box tall enough to
+   hold the glyphs, pulled back together with a negative margin. */
+.hero-title .line { line-height: 1.06; }
+.hero-title .line + .line { margin-top: -.17em; }
 
 .hero-role {
-  font-family: var(--serif);
-  font-size: clamp(1.25rem, 2.4vw, 1.75rem);
-  line-height: 1.35;
-  max-width: 30ch;
-  margin-bottom: 1.125rem;
+  margin: clamp(1.25rem, 3vw, 2rem) auto 0;
+  max-width: 34rem;
+  font-size: 1.0625rem;
+  color: var(--ink-soft);
 }
-.hero-role em { font-style: italic; color: var(--iris); }
+.hero-role em { font-style: normal; color: var(--iris); }
 
-.lede { color: var(--ink-soft); max-width: 46ch; font-size: 1.0625rem; }
+.hero.is-spiral .hero-stage {
+  height: 100vh;
+  height: 100svh;
+  padding: 0;
+  overflow: hidden;
+  perspective: 1700px;
+  perspective-origin: 50% 50%;
+  cursor: grab;
+  touch-action: pan-y;          /* a vertical swipe still scrolls the page */
+  -webkit-user-select: none;
+  user-select: none;
+}
+.hero.is-spiral .hero-stage.is-dragging { cursor: grabbing; }
 
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .75rem;
-  margin-top: clamp(1.75rem, 4vw, 2.5rem);
+.hero.is-spiral .hero-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
-.hero-meta {
+/* Sits at depth zero inside the 3D rendering context, so a card in front of
+   the axis covers it and a card behind it is covered. No z-index anywhere in
+   here: within a 3D context the browser sorts by depth, and a z-index would
+   pull the element out of that and flatten it against the cards. */
+.hero.is-spiral .hero-center {
+  position: relative;
+  /* Lifted off centre to meet the dropped axis in app.js, so the front of
+     the helix passes under the name rather than through it. */
+  transform: translateZ(0) translateY(-7vh);
+  max-width: min(94vw, 62rem);
+  pointer-events: none;
+}
+.hero.is-spiral .hero-role { max-width: 32rem; pointer-events: auto; }
+
+.hero.is-spiral .hero-glow {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(84vw, 66rem);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) translateY(-7vh) translateZ(-1px);
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    color-mix(in srgb, var(--paper) 88%, transparent) 28%,
+    transparent 66%);
+  pointer-events: none;
+}
+
+/* Flat colour over the top rather than a fade on the stage: opacity on an
+   ancestor of a preserve-3d subtree flattens it, and the cards would stop
+   sorting around the name. */
+.hero-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 600;
+  background: var(--paper);
+  opacity: 0;
+  pointer-events: none;
+}
+.hero.is-spiral .hero-veil { display: block; }
+
+.hero.is-spiral .hero-cue {
   display: flex;
-  flex-wrap: wrap;
-  gap: .5rem 1.5rem;
-  list-style: none;
-  margin: clamp(2rem, 5vw, 3rem) 0 0;
-  padding: clamp(1.25rem, 3vw, 1.75rem) 0 0;
-  border-top: 1px solid var(--rule);
+  position: absolute;
+  z-index: 550;
+  left: 0; right: 0;
+  bottom: clamp(1.25rem, 4vh, 2.25rem);
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--gutter);
+  pointer-events: none;
+}
+.cue-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .875rem;
+  border-radius: 999px;
+  background: var(--void);
+  color: var(--paper);
   font-family: var(--mono);
-  font-size: .6875rem;
-  letter-spacing: .12em;
+  font-size: .625rem;
+  font-weight: 500;
+  letter-spacing: .16em;
   text-transform: uppercase;
+}
+.cue-arrow { animation: cue 2.4s var(--ease) infinite; }
+@keyframes cue {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(3px); }
+}
+.cue-hint {
+  position: absolute;
+  right: var(--gutter);
+  font-size: .625rem;
+  font-weight: 500;
   color: var(--ink-faint);
 }
 
-.hero-portrait { margin: 0; }
-.hero-portrait img {
-  width: 100%;
-  border-radius: 4px;
-  border: 1px solid var(--frame);
-  filter: saturate(.92);
+/* Same <ul> as .spiral-fallback — app.js moves it in and swaps the class. */
+.spiral-track {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  transform-style: preserve-3d;
 }
 
-/* --------------------------------------------------------- Story */
+.spiral-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(11rem, 15vw, 14.5rem);
+  margin: 0;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  /* app.js writes the five custom properties each frame; the -50% pair
+     centres the card on its own point so nothing has to be measured. */
+  transform:
+    translate(-50%, -50%)
+    translate3d(var(--x, 0px), var(--y, 0px), var(--z, 0px))
+    rotateY(var(--ry, 0deg))
+    rotate(var(--rz, 0deg));
+  will-change: transform;
+}
 
-.story { padding-block: clamp(6rem, 13vw, 10rem) clamp(5rem, 11vw, 8.5rem); }
+.spiral-card > a {
+  display: block;
+  text-decoration: none;
+  color: var(--ink);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--void) 16%, transparent);
+  transition: border-color .5s var(--ease), box-shadow .5s var(--ease);
+}
+.spiral-track .spiral-card > a { -webkit-user-drag: none; }
 
-.story-head { max-width: 32ch; margin-bottom: clamp(3.5rem, 9vw, 6.5rem); }
-.story-head h2 { font-size: clamp(2.25rem, 5.5vw, 4rem); margin-top: 1.25rem; }
+.card-shot {
+  display: block;
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--shell);
+}
+.card-shot img, .card-shot video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  pointer-events: none;         /* so a drag never grabs the image itself */
+}
 
-.chapters { display: grid; gap: clamp(3.5rem, 9vw, 7rem); list-style: none; margin: 0; padding: 0; }
+/* Multi-frame cards. Every frame is stacked and only the live one is
+   opaque, so a swap is a cross-fade rather than a cut. */
+.card-shot.cycle img, .card-shot.cycle video {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity .6s var(--ease);
+}
+.card-shot.cycle img.is-on, .card-shot.cycle video.is-on { opacity: 1; }
+/* Before the cycler starts, hold the first frame up so the card is never an
+   empty box. */
+.card-shot.cycle:not([data-cycling]) > :first-child { opacity: 1; }
 
-.chapter {
+.card-body { display: block; padding: .875rem 1rem 1rem; border-top: 1px solid var(--rule-soft); }
+.card-title { display: block; font-weight: 600; font-size: 1rem; letter-spacing: -.01em; margin-bottom: .3125rem; }
+.card-desc {
+  /* Cards go past at every size; clamping keeps them all the same shape. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: .8125rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.card-tech { display: block; margin-top: .625rem; font-size: .5625rem; font-weight: 500; color: var(--iris); }
+
+/* Far round the back a card is small enough that the words are noise. */
+.spiral-card.is-far .card-body { display: none; }
+
+.spiral-card.is-focus > a {
+  border-color: color-mix(in srgb, var(--iris) 60%, transparent);
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--void) 24%, transparent),
+              0 0 0 1px color-mix(in srgb, var(--iris) 30%, transparent);
+}
+
+/* The starting state, and where the cards stay on a narrow screen, with
+   reduced motion, or if app.js never runs. */
+.spiral-fallback {
   display: grid;
-  grid-template-columns: 8rem minmax(0, 1fr);
-  gap: clamp(1.5rem, 5vw, 4rem);
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: clamp(1.25rem, 3vw, 2rem);
+  list-style: none;
+  width: 100%;
+  max-width: var(--wrap);
+  margin-inline: auto;
+  padding: clamp(2.5rem, 7vw, 4.5rem) var(--gutter) clamp(4rem, 10vw, 7rem);
+}
+.spiral-fallback .spiral-card { position: static; transform: none; width: auto; will-change: auto; }
+.spiral-fallback .card-desc { -webkit-line-clamp: 4; }
+
+/* --------------------------------------------------------- Section heads */
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem 2rem;
+  padding-bottom: clamp(1.5rem, 3vw, 2.25rem);
+  margin-bottom: clamp(3rem, 7vw, 5rem);
+  border-bottom: 1px solid var(--rule);
+}
+.on-dark .section-head { border-bottom-color: var(--rule-dark); }
+
+.section-head h2 { font-size: clamp(2rem, 5.5vw, 4rem); text-transform: uppercase; }
+.section-note { font-size: .625rem; font-weight: 500; color: var(--ink-faint); }
+.on-dark .section-note { color: var(--haze); }
+
+/* --------------------------------------------------------- Timeline
+
+   A line that snakes down between the stops and turns two loops on the way.
+   app.js builds the path from where the nodes actually landed and draws it
+   as the section scrolls, so the curve follows the layout rather than the
+   layout being bent to fit a curve. */
+
+.timeline { padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 7rem); }
+
+.tl-rail { position: relative; }
+
+.tl-line {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.tl-line path {
+  stroke: var(--iris-lo);
+  stroke-width: 2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--iris-lo) 55%, transparent));
+}
+
+.tl-stops { display: grid; gap: clamp(3rem, 8vw, 6.5rem); list-style: none; margin: 0; padding: 0; }
+
+.tl-stop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem minmax(0, 1fr);
   align-items: start;
 }
+.tl-stop[data-side="left"]  .tl-card { grid-column: 1; justify-self: end; text-align: right; }
+.tl-stop[data-side="right"] .tl-card { grid-column: 3; }
 
-.ch-year {
-  position: relative;
-  font-family: var(--mono);
-  font-size: .8125rem;
-  letter-spacing: .1em;
-  color: var(--haze);
-  padding-top: .6em;
-}
-.ch-year::before {
-  content: "";
-  position: absolute;
-  left: -1.125rem;
-  top: 1.35em;
-  width: .375rem;
-  height: .375rem;
+.tl-node {
+  grid-column: 2;
+  justify-self: center;
+  margin-top: 1.1rem;
+  width: .625rem;
+  height: .625rem;
   border-radius: 50%;
-  background: var(--iris-lo);
+  background: var(--void);
+  border: 2px solid var(--iris-lo);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--iris) 16%, transparent);
 }
+/* Offsetting the nodes to alternate sides is what gives the drawn line
+   something to weave between. */
+.tl-stop[data-side="left"]  .tl-node { transform: translateX(-2.25rem); }
+.tl-stop[data-side="right"] .tl-node { transform: translateX(2.25rem); }
 
-.ch-body { max-width: 52ch; }
-.ch-title { font-size: clamp(1.5rem, 3.2vw, 2.25rem); margin-bottom: .875rem; }
-.ch-text { color: var(--on-dark-soft); font-size: 1.0625rem; }
-.ch-text + .ch-text { margin-top: .875rem; }
+.tl-card { max-width: 30rem; }
+
+.tl-when { font-size: .625rem; font-weight: 500; color: var(--haze); margin-bottom: .625rem; }
+.tl-when span { color: var(--on-dark-faint); }
+
+.tl-title { font-size: clamp(1.375rem, 2.8vw, 1.875rem); margin-bottom: .75rem; }
+.tl-text { color: var(--on-dark-soft); }
+.tl-text + .tl-text { margin-top: .75rem; }
+
+.tl-role { margin-top: 1rem; font-size: .875rem; color: var(--on-dark-faint); }
+.tl-role a,
+.tl-list a {
+  color: var(--haze);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color .3s var(--ease);
+}
+.tl-role a:hover, .tl-list a:hover { border-bottom-color: currentColor; }
+
+.tl-list {
+  display: grid;
+  gap: .5rem;
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  font-size: .9375rem;
+  color: var(--on-dark-soft);
+}
+.tl-list strong { font-weight: 500; color: var(--on-dark); }
+
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 1.25rem 0 0; padding: 0; }
+.tl-stop[data-side="left"] .chips { justify-content: flex-end; }
+.chips a {
+  display: inline-block;
+  padding: .375rem .75rem;
+  border: 1px solid var(--rule-dark);
+  border-radius: 999px;
+  font-size: .75rem;
+  text-decoration: none;
+  color: var(--on-dark-soft);
+  transition: border-color .3s var(--ease), color .3s var(--ease), transform .3s var(--ease);
+}
+.chips a:hover { border-color: var(--iris-lo); color: var(--on-dark); transform: translateY(-2px); }
 
 .story-links {
   display: flex;
@@ -409,30 +668,7 @@ body.head-dark .site-head::before {
   font-size: .9375rem;
 }
 
-/* --------------------------------------------------------- Section heads */
-
-.section-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: .5rem 2rem;
-  padding-bottom: clamp(1.5rem, 3vw, 2.25rem);
-  margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
-  border-bottom: 1px solid var(--rule);
-}
-.on-dark .section-head { border-bottom-color: var(--rule-dark); }
-
-.section-head h2 { font-size: clamp(2rem, 4.6vw, 3.25rem); }
-.section-note {
-  font-family: var(--mono);
-  font-size: .75rem;
-  letter-spacing: .06em;
-  color: var(--ink-faint);
-}
-.on-dark .section-note { color: var(--on-dark-faint); }
-
-/* --------------------------------------------------------- Featured work */
+/* --------------------------------------------------------- Three up close */
 
 .work { padding-block: clamp(5rem, 11vw, 9rem); }
 
@@ -455,7 +691,7 @@ body.head-dark .site-head::before {
   margin-bottom: 1rem;
 }
 
-.project-title { font-size: clamp(1.875rem, 4vw, 3rem); margin-bottom: 1.125rem; }
+.project-title { font-size: clamp(1.5rem, 3.2vw, 2.25rem); margin-bottom: 1.125rem; }
 .project-desc { color: var(--ink-soft); max-width: 48ch; }
 
 .meta {
@@ -473,11 +709,11 @@ body.head-dark .site-head::before {
 }
 .meta dt {
   font-family: var(--mono);
-  font-size: .6875rem;
-  letter-spacing: .12em;
+  font-size: .625rem;
+  letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--ink-faint);
-  padding-top: .2em;
+  padding-top: .25em;
 }
 .meta dd { margin: 0; color: var(--ink-soft); }
 
@@ -513,284 +749,19 @@ body.head-dark .site-head::before {
   will-change: transform;
 }
 
-/* --------------------------------------------------------- The loop
-
-   A horizontal corkscrew. Cards enter far left and small, rise over the
-   top, come forward through the middle at full size, drop under, and
-   recede off to the right. Exactly one revolution across the whole path,
-   so a card leaving on the right is in the same rotational state as the one
-   entering on the left and the loop has no seam.
-
-   It turns on its own, scroll adds to it, and you can throw it left or
-   right with the pointer. Every card is placed by app.js with one
-   translate3d + rotate on a stage with real perspective. Nothing in here
-   reads layout back, so the whole thing stays on the compositor. */
-
-.loop { padding-bottom: clamp(3rem, 8vw, 6rem); }
-
-.loop-head { position: relative; z-index: 3; padding-top: clamp(5rem, 11vw, 8rem); }
-
-/* The stage only exists once app.js has decided the screen can hold the
-   loop; until then the cards are a plain grid further down. */
-.loop-stage { display: none; }
-
-/* The stage holds for one screen of scrolling and then releases — long
-   enough to watch it turn, short enough that you are never stuck waiting
-   for fourteen cards to file past. app.js pins it; position:sticky refused
-   to engage on this element and the pin is the thing that works. */
-.loop.is-spiral .loop-stage {
-  display: block;
-  position: relative;
-  height: 100vh;
-  height: 100svh;
-  overflow: hidden;
-  perspective: 1800px;
-  perspective-origin: 50% 47%;
-  cursor: grab;
-  touch-action: pan-y;          /* let a vertical swipe still scroll the page */
-  -webkit-user-select: none;
-  user-select: none;
-}
-.loop.is-spiral .loop-stage.is-dragging { cursor: grabbing; }
-
-/* Same <ul> as .loop-fallback — app.js moves it in here and swaps the class. */
-.loop-track {
-  position: absolute;
-  inset: 0;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  transform-style: preserve-3d;
-}
-
-/* A violet pool behind the point where cards come closest, so the front
-   card has something to sit against. */
-.loop-glow {
-  position: absolute;
-  left: 50%;
-  top: 47%;
-  width: min(75vw, 62rem);
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle,
-    color-mix(in srgb, var(--iris) 24%, transparent),
-    transparent 62%);
-  filter: blur(40px);
-  pointer-events: none;
-}
-
-.loop-card {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: clamp(13rem, 19vw, 18rem);
-  margin: 0;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  /* app.js writes the five custom properties each frame; the -50% pair
-     centres the card on its own point so nothing has to be measured. */
-  transform:
-    translate(-50%, -50%)
-    translate3d(var(--x, 0px), var(--y, 0px), var(--z, 0px))
-    rotateY(var(--ry, 0deg))
-    rotate(var(--rz, 0deg));
-  will-change: transform, opacity;
-}
-
-.loop-card > a {
-  display: block;
-  text-decoration: none;
-  color: var(--on-dark);
-  border-radius: 8px;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--on-dark) 7%, var(--void));
-  border: 1px solid var(--rule-dark);
-  box-shadow: 0 24px 60px rgb(0 0 0 / .45);
-  transition: border-color .5s var(--ease), box-shadow .5s var(--ease);
-}
-.loop-track .loop-card > a { -webkit-user-drag: none; }
-
-.card-shot {
-  display: block;
-  position: relative;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--on-dark) 5%, var(--void));
-}
-.card-shot img, .card-shot video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  pointer-events: none;         /* so a drag never grabs the image itself */
-}
-
-/* Multi-frame cards. Every frame is stacked and only the live one is
-   opaque, so a swap is a cross-fade rather than a cut. */
-.card-shot.cycle img, .card-shot.cycle video {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity .6s var(--ease);
-}
-.card-shot.cycle img.is-on, .card-shot.cycle video.is-on { opacity: 1; }
-/* Before the cycler starts, hold the first frame up so the card is never an
-   empty box. */
-.card-shot.cycle:not([data-cycling]) > :first-child { opacity: 1; }
-
-.card-body { display: block; padding: 1rem 1.125rem 1.125rem; border-top: 1px solid var(--rule-dark); }
-.card-title {
-  display: block;
-  font-family: var(--serif);
-  font-size: 1.125rem;
-  font-weight: 600;
-  letter-spacing: -.01em;
-  margin-bottom: .375rem;
-}
-.card-desc {
-  /* Only the card at the front of the loop is close enough to read, so the
-     rest are clamped to keep every card the same height. */
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-size: .8125rem;
-  line-height: 1.5;
-  color: var(--on-dark-soft);
-}
-.card-tech {
-  display: block;
-  margin-top: .625rem;
-  font-family: var(--mono);
-  font-size: .625rem;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--haze);
-}
-
-/* The card at the front gets the accent edge. */
-.loop-card.is-focus > a {
-  border-color: color-mix(in srgb, var(--iris-lo) 55%, transparent);
-  box-shadow: 0 30px 80px rgb(0 0 0 / .55),
-              0 0 0 1px color-mix(in srgb, var(--iris-lo) 25%, transparent);
-}
-
-.loop-readout {
-  position: absolute;
-  left: 0; right: 0;
-  bottom: clamp(1.25rem, 4vh, 2.5rem);
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding-inline: var(--gutter);
-  pointer-events: none;
-}
-.loop-count {
-  font-family: var(--mono);
-  font-size: .75rem;
-  letter-spacing: .12em;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  color: var(--haze);
-}
-.loop-bar { position: relative; flex: 1; height: 1px; background: var(--rule-dark); }
-.loop-bar::after {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--p, 0%);
-  background: var(--iris-lo);
-}
-.loop-hint {
-  font-family: var(--mono);
-  font-size: .6875rem;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--on-dark-faint);
-}
-
-/* The starting state, and where the cards stay for good on a narrow screen,
-   with reduced motion, or if app.js never runs: an ordinary grid. */
-.loop-fallback {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: clamp(1.25rem, 3vw, 2rem);
-  list-style: none;
-  width: 100%;
-  max-width: var(--wrap);
-  margin-inline: auto;
-  padding: clamp(2rem, 6vw, 4rem) var(--gutter) 0;
-}
-.loop-fallback .loop-card {
-  position: static;
-  transform: none;
-  width: auto;
-  opacity: 1;
-  will-change: auto;
-}
-.loop-fallback .card-desc { -webkit-line-clamp: 4; }
-
-/* --------------------------------------------------------- Timeline */
-
-.background { padding-block: clamp(5rem, 11vw, 9rem); }
-
-.timeline { display: grid; list-style: none; margin: 0; padding: 0; }
-
-.tl-group {
-  display: grid;
-  grid-template-columns: 7.5rem minmax(0, 1fr);
-  gap: clamp(1rem, 4vw, 2.5rem);
-  padding-block: clamp(1.75rem, 4vw, 2.75rem);
-  border-top: 1px solid var(--rule-soft);
-}
-.tl-group:first-child { border-top: 0; padding-top: 0; }
-
-.tl-date { display: grid; align-content: start; font-family: var(--mono); font-size: .875rem; line-height: 1.4; }
-.tl-year { font-weight: 500; }
-.tl-span { color: var(--ink-faint); font-size: .6875rem; letter-spacing: .06em; }
-
-.tl-roles { display: grid; gap: 1.125rem; }
-.tl-item { display: grid; gap: .1875rem; max-width: 54ch; }
-.tl-role { font-weight: 500; font-size: 1rem; }
-.tl-org { font-size: .9375rem; color: var(--ink-soft); }
-.tl-org a {
-  color: var(--iris);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color .3s var(--ease);
-}
-.tl-org a:hover { border-bottom-color: currentColor; }
-
-.tl-certs { max-width: none; gap: .75rem; }
-.tl-note { font-size: .8125rem; color: var(--ink-faint); }
-
-.chips { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 0; padding: 0; }
-.chips a {
-  display: inline-block;
-  padding: .4375rem .8125rem;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  font-size: .8125rem;
-  text-decoration: none;
-  color: var(--ink-soft);
-  transition: border-color .3s var(--ease), color .3s var(--ease), transform .3s var(--ease);
-}
-.chips a:hover { border-color: var(--iris); color: var(--iris); transform: translateY(-2px); }
-
 /* --------------------------------------------------------- Contact */
 
 .contact { padding-block: clamp(5rem, 12vw, 9rem); text-align: center; }
-.contact h2 { font-size: clamp(2.125rem, 6vw, 4.5rem); margin-bottom: 1.5rem; }
+.contact h2 { font-size: clamp(2.25rem, 8vw, 6rem); text-transform: uppercase; margin-bottom: 1.75rem; }
+.contact h2 .line { line-height: 1.06; }
+.contact h2 .line + .line { margin-top: -.15em; }
 .contact-note { max-width: 46ch; margin-inline: auto; color: var(--on-dark-soft); }
 
 .contact-mail {
   display: inline-block;
   margin-top: clamp(2rem, 5vw, 3rem);
-  font-family: var(--serif);
-  font-size: clamp(1.0625rem, 3.4vw, 2rem);
+  font-size: clamp(1rem, 2.6vw, 1.5rem);
+  font-weight: 500;
   text-decoration: none;
   color: var(--on-dark);
   background-image: linear-gradient(var(--iris-lo), var(--iris-lo));
@@ -802,21 +773,13 @@ body.head-dark .site-head::before {
 }
 .contact-mail:hover { background-size: 100% 3px; color: var(--haze); }
 
-.links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .5rem 1.75rem;
-  list-style: none;
-  margin: .75rem 0 0;
-  padding: 0;
-  font-size: .9375rem;
-}
 .contact-links { justify-content: center; margin-top: clamp(2rem, 5vw, 2.75rem); }
 
 /* --------------------------------------------------------- Footer */
 
 .site-foot {
   position: relative;
+  z-index: 2;
   background: var(--void);
   color: var(--on-dark-faint);
   padding-block: 2rem;
@@ -828,35 +791,46 @@ body.head-dark .site-head::before {
 /* --------------------------------------------------------- Responsive */
 
 @media (max-width: 1000px) {
-  .hero-grid { grid-template-columns: 1fr; align-items: start; }
-  .hero-portrait { max-width: 24rem; }
   .project, .project-flip { grid-template-columns: 1fr; }
   .project-flip .project-body { order: 0; }
 }
 
-@media (max-width: 760px) {
-  .chapter { grid-template-columns: 1fr; gap: .625rem; }
-  .ch-year::before { display: none; }
-  .tl-group { grid-template-columns: 1fr; gap: .875rem; }
-  .tl-date { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: .5rem; }
+@media (max-width: 860px) {
+  /* One column, the line down the left, every stop hanging off it. */
+  .tl-stop { grid-template-columns: 2.5rem minmax(0, 1fr); column-gap: 1.25rem; }
+  .tl-stop .tl-card,
+  .tl-stop[data-side="left"] .tl-card,
+  .tl-stop[data-side="right"] .tl-card { grid-column: 2; justify-self: stretch; text-align: left; }
+  .tl-node { grid-column: 1; justify-self: center; }
+  .tl-stop[data-side="left"]  .tl-node { transform: translateX(-.4rem); }
+  .tl-stop[data-side="right"] .tl-node { transform: translateX(.4rem); }
+  .tl-stop[data-side="left"] .chips { justify-content: flex-start; }
+
   .meta > div { grid-template-columns: 1fr; gap: .125rem; }
   .section-head { display: grid; gap: .5rem; }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 680px) {
   :root { --slab-lift: 1.25rem; }
 
-  .site-head { padding-block: .875rem; }
-  .wordmark { font-size: .9375rem; }
-  /* Four labels plus the wordmark do not fit; the wordmark is the anchor,
-     and every destination is still one scroll away. */
-  .nav { display: none; }
+  .head-inner { grid-template-columns: 1fr auto; }
+  /* Three columns of micro type do not fit. The address is one tap away in
+     the contact panel, so it is the one that goes. */
+  .head-mail, .mark-where { display: none; }
+  .nav { justify-self: end; }
 
-  .hero { padding-top: 6rem; }
-  .hero-actions .btn { flex: 1 1 auto; justify-content: center; }
-  .hero-meta { gap: .375rem 1rem; }
-  .loop-fallback { grid-template-columns: 1fr; }
+  .hero-stage { padding-top: 6.5rem; }
+  .hero-title { font-size: clamp(2.75rem, 17vw, 5rem); }
+  .spiral-fallback { grid-template-columns: 1fr; }
   .foot-inner { justify-content: flex-start; }
+}
+
+@media (max-width: 400px) {
+  /* Below this the three labels start wrapping onto two lines. Tighten
+     rather than drop one — every section is still reachable. */
+  .nav { gap: .125rem; font-size: .5625rem; }
+  .nav a { padding: .25rem .375rem; }
+  .mark-face { width: 1.75rem; height: 1.75rem; }
 }
 
 /* --------------------------------------------------------- Reduced motion */
@@ -872,4 +846,5 @@ body.head-dark .site-head::before {
   html.motion .line > span { opacity: 1; transform: none; }
   .project-shot img { height: 100%; transform: none; }
   .slab-inner { transform: none !important; opacity: 1 !important; }
+  .tl-line path { stroke-dasharray: none !important; stroke-dashoffset: 0 !important; }
 }
