@@ -20,12 +20,17 @@
 <header class="site-head">
   <div class="head-inner">
 
+    <!-- Where the boot name lands. app.js flies the title into the face,
+         then this whole lockup fades up. -->
     <a class="mark" href="#top">
       <span class="mark-face">
         <img src="assets/portrait.jpg" width="1100" height="1489" fetchpriority="high" decoding="async"
              alt="Jeffrey Hamilton">
       </span>
-      <span class="mark-where"><span class="dot" aria-hidden="true"></span>Provo, Utah</span>
+      <span class="mark-text">
+        <span class="mark-name">Jeffrey Hamilton</span>
+        <span class="mark-where"><span class="dot" aria-hidden="true"></span>Provo, Utah</span>
+      </span>
     </a>
 
     <nav class="nav" aria-label="Primary">
@@ -48,9 +53,13 @@
            against nothing else. -->
       <div class="hero-inner"></div>
 
+      <!-- Layer 8: the loading screen. Covers the spiral while the name is
+           on its own, then fades out from under it. -->
+      <span class="boot" aria-hidden="true"></span>
+
       <!-- Layer 9: the shield. A soft blurred ellipse over the dead centre
-           that the cards dive behind, so the name never has to compete with
-           whatever is passing through. -->
+           that the cards dive behind, so the text never has to compete with
+           whatever is circling through. -->
       <span class="hero-shield" aria-hidden="true"></span>
 
       <!-- Layer 10: the text, straight and level, always on top. Staged by
@@ -438,7 +447,7 @@
             </a>
             <a class="vid" href="https://www.youtube.com/watch?v=rYwJTA4PRdY" data-yt="rYwJTA4PRdY" target="_blank" rel="noopener" aria-label="Play another Blender video on YouTube">
               <span class="vid-frame">
-                <img src="https://i.ytimg.com/vi/rYwJTA4PRdY/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/rYwJTA4PRdY/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
+                <img src="https://i.ytimg.com/vi/rYwJTA4PRdY/sddefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/rYwJTA4PRdY/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
                 <span class="vid-play" aria-hidden="true"></span>
               </span>
               <span class="vid-cap"><span class="vid-title">More Blender</span><span class="vid-kind">Blender</span></span>

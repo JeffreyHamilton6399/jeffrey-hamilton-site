@@ -196,22 +196,25 @@
   })();
 
   /* ==========================================================================
-     The 45° spiral loop
+     The horizontal spiral loop
 
-     Every card winds around one virtual cylinder whose axis runs diagonally
-     across the screen at 45°, and travels along that axis while it turns —
-     so each card corkscrews up-and-right, exits the corner, and comes back
-     in at the opposite corner. Three things at once, as spec'd:
+     Every card winds around one virtual cylinder whose axis runs straight
+     across the screen, left to right, through the middle of the text — and
+     travels along that axis while it turns. So each card circles the text:
+     over the top, round behind it, under the bottom, back across the front.
+     Three things at once:
 
-       travel   s = (u − ½)·SPAN along the axis d = (√½, −√½)
-       spin     a = u·2π·TURNS around the axis, offset by the radius R
-                along the in-plane perpendicular p = (√½, √½) and by R in z
-       depth    the outer ends of the path push back in z and fade to
-                nothing, so the wrap happens off screen and unseen
+       travel   s = (u − ½)·SPAN along the axis
+       spin     a = u·2π·TURNS around it, at radius R
+       depth    the outer ends push back in z and fade to nothing, so the
+                wrap happens off screen and unseen
 
-         x = s·dx + cos(a)·R·px
-         y = s·dy + cos(a)·R·py
-         z = sin(a)·R − exit push-back
+         x = s
+         y = cos(a)·R          over the top, under the bottom
+         z = sin(a)·R          behind the text, then in front of it
+
+     R is the same vertically and in depth, so the cross section is a circle
+     and the ring reads as genuinely round.
 
      TURNS must stay a whole number: at u = 0 and u = 1 the spin angle then
      differs by an exact multiple of 2π, so the only thing that jumps at the
@@ -231,46 +234,138 @@
        drag    the pointer, with a fling that decays after release
      ========================================================================== */
 
-  /* ---------------------------------------------------------- Hero intro
+  /* ---------------------------------------------------------- The boot
 
-     A staged open, then a running typewriter:
+     The open, in four beats:
 
-       1. the name fades up on its own, like a title card
-       2. a beat later the "I build ___" line rises into place
-       3. the word types itself out, holds, deletes, and types the next —
-          around the list forever, with a blinking caret
+       1. a loading screen — a sheet of page colour over the spiral, with
+          nothing on it but the name, which resolves out of a blur
+       2. the name flies up and left, shrinking into the face in the header,
+          while the sheet fades out from under it and the spiral is revealed
+       3. the header lockup arrives to catch it
+       4. the "I build ___" line fades up in the middle of the cylinder and
+          the word starts typing itself out
 
-     The markup already reads correctly (name + first word visible) so with
-     the script off or reduced motion on, step 1's end-state is just the
-     resting page and nothing below animates. */
+     Step 2 is a FLIP: measure where the title is, measure where the face is,
+     and hand the difference to one tween. Nothing is hard-coded, so it lands
+     on the face at any size.
+
+     With the script off or reduced motion on, none of this runs — the name
+     and the first word are in the markup, already in their resting place. */
 
   (function () {
     var center = document.querySelector('[data-intro]');
     if (!center) return;
 
+    var title  = center.querySelector('.hero-title');
     var skills = center.querySelector('.skills-type');
     var out    = center.querySelector('.type-out');
+    var face   = document.querySelector('.mark-face');
     var list;
     try { list = JSON.parse(skills && skills.getAttribute('data-skills') || '[]'); }
     catch (e) { list = []; }
 
-    if (reduced || !list.length) { center.classList.add('intro-done'); return; }
+    if (reduced || !list.length || !title || !face) return;
 
-    /* Hold everything back, then release in order. The classes drive the
-       fade/slide in the CSS; the typewriter waits for the line to arrive. */
     out.textContent = '';
     center.classList.add('intro-armed');
+    doc.classList.add('booting');
 
-    var startDelay = 620;    /* let the name land first          */
-    var lineDelay  = 1180;   /* then the "I build" line rises     */
+    var HOLD_NAME = 1500;    /* how long the name has the screen to itself */
+    var FLIGHT    = 1150;    /* the trip up to the face                    */
 
     requestAnimationFrame(function () {
-      setTimeout(function () { center.classList.add('intro-name'); }, startDelay);
-      setTimeout(function () {
-        center.classList.add('intro-line');
-        setTimeout(type, 560);           /* start once the line has risen */
-      }, lineDelay);
+      setTimeout(function () { center.classList.add('boot-in'); }, 420);
+      setTimeout(fly, HOLD_NAME);
     });
+
+    /* The name does not go straight up — it swings out on a curve and draws
+       the curve as it goes, then the line is pulled in after it. One
+       quadratic bezier does both jobs: the path element is the visible line,
+       and the same three points are evaluated by hand each frame to place
+       the name on it. (Following a path properly is what GSAP's
+       MotionPathPlugin is for, and it is not among the three files vendored
+       here; the arithmetic for one quadratic is four lines.) */
+    function fly() {
+      var stage = document.querySelector('.hero-stage');
+      var t = title.getBoundingClientRect();
+      var m = face.getBoundingClientRect();
+      var box = stage && stage.getBoundingClientRect();
+      if (!t.width || !m.width || !box) { land(); return; }
+
+      /* Hand over cleanly: the class transition and the per-frame writes
+         would otherwise both be setting transform on the same element. */
+      title.style.transition = 'none';
+
+      /* Stage-local, because that is what the svg is measured in. */
+      var x0 = t.left + t.width / 2 - box.left, y0 = t.top + t.height / 2 - box.top;
+      var x1 = m.left + m.width / 2 - box.left, y1 = m.top + m.height / 2 - box.top;
+
+      /* Bow the curve out to the right before it turns back into the face,
+         so it reads as a drawn arc rather than a straight shot. */
+      var vx = x1 - x0, vy = y1 - y0;
+      var len = Math.hypot(vx, vy) || 1;
+      var nx = -vy / len, ny = vx / len;
+      if (nx < 0) { nx = -nx; ny = -ny; }
+      var bow = len * 0.42;
+      var cx = (x0 + x1) / 2 + nx * bow, cy = (y0 + y1) / 2 + ny * bow;
+
+      var svg  = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      svg.setAttribute('class', 'boot-trail');
+      svg.setAttribute('viewBox', '0 0 ' + box.width + ' ' + box.height);
+      svg.setAttribute('aria-hidden', 'true');
+      path.setAttribute('d', 'M ' + x0 + ' ' + y0 + ' Q ' + cx + ' ' + cy + ' ' + x1 + ' ' + y1);
+      svg.appendChild(path);
+      stage.insertBefore(svg, center);
+
+      var L = path.getTotalLength();
+      path.style.strokeDasharray  = L;
+      path.style.strokeDashoffset = L;
+
+      var scale = m.width / t.width;
+
+      /* The sheet goes now, not at the end — the spiral is revealed while
+         the name is still travelling over it, which is the whole effect. */
+      doc.classList.remove('booting');
+      doc.classList.add('booted');
+
+      if (!hasGsap) { svg.remove(); title.style.opacity = '0'; setTimeout(land, FLIGHT); return; }
+
+      var at = { p: 0 };
+      gsap.to(at, {
+        p: 1,
+        duration: FLIGHT / 1000,
+        ease: 'power2.inOut',
+        onUpdate: function () {
+          var p = at.p, q = 1 - p;
+          var x = q * q * x0 + 2 * q * p * cx + p * p * x1;
+          var y = q * q * y0 + 2 * q * p * cy + p * p * y1;
+          title.style.transform =
+            'translate(' + (x - x0) + 'px,' + (y - y0) + 'px) scale(' + (1 + (scale - 1) * p) + ')';
+          /* Hold full until it is nearly home, then dissolve into the face. */
+          title.style.opacity = p < 0.72 ? '1' : String(1 - (p - 0.72) / 0.28);
+          path.style.strokeDashoffset = L * (1 - p);
+        },
+        onComplete: function () {
+          /* Pull the line in after it, from the tail forward. */
+          gsap.to(path, {
+            strokeDashoffset: -L,
+            duration: 0.55,
+            ease: 'power2.in',
+            onComplete: function () { svg.remove(); }
+          });
+          gsap.fromTo(face, { scale: 1 }, { scale: 1.14, duration: 0.16, yoyo: true, repeat: 1, ease: 'power2.out' });
+          land();
+        }
+      });
+    }
+
+    function land() {
+      center.classList.add('name-gone');   /* take it out of the flow */
+      center.classList.add('intro-line');
+      setTimeout(type, 380);
+    }
 
     var TYPE = 55, ERASE = 32, HOLD = 1500, GAP = 420;
     var wi = 0;
@@ -323,12 +418,6 @@
     var GAIN   = 1.0;   /* how much of a drag carries into the travel         */
     var DECAY  = 0.04;  /* of the fling speed left after one second           */
 
-    /* The axis: 45 degrees, up and to the right. p is its in-plane
-       perpendicular, which is where the corkscrew's sideways swing goes. */
-    var DIAG = Math.SQRT1_2;
-    var DX = DIAG, DY = -DIAG;
-    var PX = DIAG, PY =  DIAG;
-
     var SPAN = 0, R = 0, EDGE = 1;
 
     var auto = 0, scrolled = 0, thrown = 0, vel = 0;
@@ -336,19 +425,20 @@
     var ticking = false, active = false, pin = null;
     var lastBase = -1, lastFocus = -1;
 
-    /* SPAN has to run well past the corners, because that is where the loop
-       wraps and the wrap must happen out of sight. A card leaves the frame
-       once its distance along the 45 degree axis passes roughly the screen's
-       half-height over cos45; SPAN/2 is set comfortably beyond that, and the
-       last EXIT of each end is spent faded out anyway. */
+    /* SPAN has to run well past both edges, because that is where the loop
+       wraps and the wrap must happen out of sight; the last EXIT of each end
+       is spent faded to nothing anyway. R is the radius of the cylinder the
+       cards circle on — big enough that they clear the text in the middle,
+       and it is the same number vertically and in depth, so the cross
+       section is a circle and the ring reads as round rather than as an
+       ellipse pretending. */
     function measure() {
       var w = window.innerWidth;
       var h = stage.offsetHeight || window.innerHeight;
       var cw = cards[0].offsetWidth || 220;
 
-      var offscreen = (h / 2 + cw * 0.4) / DIAG;
-      SPAN = Math.max(offscreen * 2.6, w * 1.6);
-      R    = Math.max(Math.min(w, h) * 0.30, cw * 0.9);
+      SPAN = Math.max(w * 2.4, (w / 2 + cw) * 3);
+      R    = Math.max(Math.min(w * 0.30, h * 0.36), cw * 0.85);
       EDGE = w * 0.40;                /* x at which a card is fully lit */
     }
 
@@ -365,14 +455,15 @@
         var u = wrap01(base + i / N);
         var t = u - 0.5;                       /* −½ … +½ along the axis */
 
-        /* Travel along the 45° axis, plus the corkscrew's swing around it. */
+        /* Travel straight across, plus the circle the card rides around the
+           axis: cos takes it over the top and under the bottom, sin swings
+           it behind the text and back in front. */
         var ang = u * Math.PI * 2 * TURNS;
         var ca  = Math.cos(ang);
         var sa  = Math.sin(ang);
-        var s0  = t * SPAN;
 
-        var x = s0 * DX + ca * R * PX;
-        var y = s0 * DY + ca * R * PY;
+        var x = t * SPAN;
+        var y = ca * R;
 
         /* The ends of the path are the exit: recede and fade so the wrap is
            never seen. 1 through the middle, easing to 0 at both tips. */
