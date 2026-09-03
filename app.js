@@ -196,50 +196,40 @@
   })();
 
   /* ==========================================================================
-     The spiral
+     The cylinder
 
-     A spiral standing in the middle of the screen with the cards wound
-     along it. One parameter does all of it:
+     A drum of a fixed radius lying across the middle of the screen. The
+     cards are on its surface and they do two things at once: they travel
+     along the axis, left to right, and they turn around it. So the shape
+     never changes — it is always the same tube — while the contents flow
+     through it.
 
-         u   = the card's place along the spiral, 0…1, wrapping
-         th  = u·TURNS·2π             how far round it has come
-         r   = R_IN → R_OUT           and how far out that has carried it
-         x   = cos(th)·r
-         y   = sin(th)·r·FLAT − LIFT  squashed, and lifted clear of the line
-         z   = (u − ½)·DEPTH          far at the centre, near at the rim
-         sc  = SMALL → 1              and small at the centre, full at the rim
-
-     Radius, depth and size all grow together with u, so a card starts tiny
-     and deep at the middle, winds outward, and arrives full size and close
-     at the edge — which is what makes it read as a spiral coming toward you
-     rather than a flat one drawn on glass. FLAT squashes the circle into an
-     ellipse so the whole coil looks tipped away.
-
-     The size is scaled by hand rather than left to the perspective. Depth
-     alone would need an enormous DEPTH to shrink the middle enough to stop
-     the innermost cards piling on each other, and that same DEPTH would blow
-     the outermost ones far past the edges of the frame. Scaling directly
-     separates the two.
-
-     r rises as u^SPREAD with SPREAD below 1, so it climbs fastest where the
-     cards are closest together. Spacing them evenly in u would otherwise
-     crowd every early card into the middle, where there is the least room.
+         u   = the card's place along the tube, 0…1, wrapping
+         x   = (u − ½)·LEN                 left to right along the axis
+         ang = (u·TURNS + i/N)·2π          and round the tube as it goes
+         y   = cos(ang)·R − LIFT           over the top, under the bottom
+         z   = sin(ang)·R                  behind, then in front
 
      TURNS is a whole number, which is what makes the wrap invisible: at u=0
-     and u=1 the angle differs by an exact multiple of 2π, so only the radius
-     and the depth jump — and both ends are faded out by then.
+     and u=1 the angle differs by an exact multiple of 2π, so only x jumps —
+     and the fade at both ends means the card is already gone by then.
 
-     LIFT carries the coil up clear of the line, and the vanishing point goes
-     with it: perspective-origin is moved onto the coil's own centre. Lifting
-     the cards while leaving the vanishing point at the middle of the stage
-     is the trap here — the projection would then multiply the lift by
-     however near a card had come, and the front of the coil would climb out
-     of the top of the frame while the back of it barely moved. With the
-     origin on the coil, the lift is exact and the coil is seen head-on.
+     R is the same vertically and in depth, so the cross section is a circle
+     and the tube reads as genuinely round.
 
-     The line lives below the spiral on its own flat layer, so nothing has to
-     be dimmed to keep the words readable: opacity here is only depth, far
-     cards sitting back and near ones coming up full.
+     LIFT carries the whole tube up clear of the line below it, and the
+     vanishing point goes with it: perspective-origin is moved onto the
+     tube's own axis. Lifting the cards while leaving the vanishing point at
+     the middle of the stage is the trap here — the projection would then
+     multiply the lift by however near a card had come, and the near side of
+     the tube would climb out of the top of the frame while the far side
+     barely moved. With the origin on the axis, the lift is exact and the
+     tube is seen end-on.
+
+     Legibility used to be the hard part, because the words sat inside the
+     tube and everything passing behind them had to be held down. The line
+     is below it now, so opacity is only what it should be: depth as a card
+     swings round, and the ends of the tube so the wrap is never seen.
 
      Three things move it, and they simply add:
 
@@ -682,42 +672,39 @@
        the back would be too small to make sense of. */
     var MIN_WIDTH = 900;
 
-    var TURNS  = 3;     /* whole turns a card makes winding out              */
-    var FLAT   = 0.42;  /* how far the circle is squashed into an ellipse     */
-    var SPREAD = 0.62;  /* below 1: radius climbs fastest near the middle     */
-    var SMALL  = 0.30;  /* how big a card is at the dead centre of the coil   */
-    var FACE   = 20;    /* deg a card turns to face the middle of the coil    */
-    var ROLL   = 7;     /* deg of in-plane roll, following the tangent        */
-    var DEEP   = 0.30;  /* how lit a card is at the deep end of the coil      */
-    var EDGEF  = 0.14;  /* fraction of each end spent fading in and out       */
-    var TURN   = 34;    /* seconds for one unattended pass, middle to rim     */
+    var TURNS  = 3;     /* whole turns a card makes crossing the tube        */
+    var FACE   = 22;    /* deg a card turns as it comes round the cylinder    */
+    var ROLL   = 6;     /* deg of in-plane roll, for life                     */
+    var BACK   = 0.34;  /* how lit a card is round the back of the drum       */
+    var EDGEF  = 0.10;  /* fraction of each end spent fading in and out       */
+    var TURN   = 40;    /* seconds for one unattended pass end to end         */
     var SCROLL = 0.30;  /* revolutions added by scrolling the hero away       */
     var GAIN   = 1.0;   /* how much of a drag carries into the spin           */
     var DECAY  = 0.04;  /* of the fling speed left after one second           */
 
-    var R_IN = 0, R_OUT = 0, DEPTH = 0, LIFT = 0;
+    var LEN = 0, R = 0, LIFT = 0;
 
     var auto = 0, scrolled = 0, thrown = 0, vel = 0;
     var dragging = false, moved = 0, lastX = 0, lastT = 0;
     var ticking = false, active = false, pin = null;
     var lastBase = -1, lastFocus = -1;
 
-    /* The coil takes the band above the line and centres itself in it.
+    /* LEN is the length of the drum, a little wider than the frame so it
+       reads as a cylinder carrying on past both edges rather than a row that
+       stops. R is its radius, the same number vertically and in depth.
 
-       Everything here is worked in screen pixels, because that is where the
-       constraint is. A card at the front of the coil is magnified by the
-       perspective, so the room it needs is its height once projected, not
-       the height it has in the flow — which is what `near` is. Fixing DEPTH
-       off the stage rather than off R_OUT is what keeps that solvable in one
-       pass: the magnification is known before the radius is chosen. */
+       The band is what R has to fit inside: under the header, over the line.
+       Both edges are measured rather than assumed, so the tube follows them
+       at any size instead of drifting under one or the other. Everything is
+       worked in screen pixels, because that is where the constraint is — a
+       card on the near side of the tube is magnified by the perspective, so
+       the room it needs is its height once projected, not the height it has
+       in the flow, which is what `near` is. */
     function measure() {
       var w = window.innerWidth;
       var h = stage.offsetHeight || window.innerHeight;
       var cw = cards[0].offsetWidth || 220;
 
-      /* The band the coil gets: under the header, over the line. Both edges
-         are measured rather than assumed, so the coil follows them at any
-         size instead of drifting under one or the other. */
       var sTop = stage.getBoundingClientRect().top;
       var head = document.querySelector('.site-head');
       var top  = (head ? head.offsetHeight : 0) + h * 0.02;
@@ -726,25 +713,20 @@
         : h * 0.86;
 
       var band = Math.max(foot - top, h * 0.4);
-      var cy = top + band / 2;        /* the coil's centre, from the stage top */
+      var cy = top + band / 2;        /* the axis, measured from the stage top */
       LIFT = h / 2 - cy;              /* and how far up the whole thing slides */
 
+      /* Long enough that the ends sit well outside the frame, so the wrap
+         happens off screen; the fade at each end covers what is left. */
+      LEN = Math.max(w * 1.9, (w + cw) * 1.3);
+
       var PERSP = 1700;
-      DEPTH = Math.min(h * 0.55, PERSP * 0.5);
-      var near = PERSP / Math.max(PERSP - DEPTH / 2, 1);
-
-      /* the card that constrains everything is the outermost one: full size,
-         nearest the eye, and therefore the biggest thing on the screen */
+      var near = PERSP / Math.max(PERSP - cw * 0.9, 1);
       var halfCard = cw * 0.66 * near * 0.5;
-      var vRoom = Math.max(band / 2 - halfCard, cw * 0.25);
-      var hRoom = w / 2 - cw * near * 0.5;
 
-      R_IN  = cw * 0.16;
-      R_OUT = Math.max(
-        Math.min(vRoom / (FLAT * near), hRoom / near, w * 0.38),
-        cw * 0.7);
+      R = Math.max(Math.min(w * 0.26, (band / 2 - halfCard) / near), cw * 0.45);
 
-      /* look straight down the middle of the coil, not the middle of the
+      /* look straight down the axis of the tube, not the middle of the
          stage — see the note at the top */
       stage.style.perspectiveOrigin = '50% ' + cy.toFixed(1) + 'px';
     }
@@ -759,40 +741,37 @@
       var focus = 0, best = -Infinity;
 
       for (var i = 0; i < N; i++) {
-        /* Where it is along the spiral. How far round it has come, how far
-           out that has carried it and how close it has come all fall out of
-           the one number, which is what makes it a coil rather than a ring
-           that happens to grow. */
+        /* Where it is along the tube, and — from the same number — where it
+           is around it. Travel and spin off one parameter is what makes it a
+           helix rather than a ring that happens to slide. */
         var u = wrap01(base + i / N);
+        var x = (u - 0.5) * LEN;
 
-        var ang = u * TURNS * Math.PI * 2;
+        var ang = (u * TURNS + i / N) * Math.PI * 2;
         var ca  = Math.cos(ang);
         var sa  = Math.sin(ang);
 
-        var r = R_IN + (R_OUT - R_IN) * Math.pow(u, SPREAD);
-        var x = ca * r;
-        var y = sa * r * FLAT - LIFT;
-        var z = (u - 0.5) * DEPTH;
+        var y = ca * R - LIFT;
+        var z = sa * R;
 
-        /* Two dimmers multiplied: depth, so the middle of the coil sits
-           back, and the ends, so the wrap is never seen. */
+        /* Two dimmers multiplied: depth as it swings round, and the ends of
+           the tube so the wrap is never seen. Nothing has to be held down
+           for the words any more — they are below the tube, not inside it. */
         var edge = Math.min(u, 1 - u) / EDGEF;
         var ends = edge >= 1 ? 1 : edge * edge * (3 - 2 * edge);
-        var depth = DEEP + (1 - DEEP) * u;
+        var depth = BACK + (1 - BACK) * ((sa + 1) / 2);
 
         var card = cards[i];
         var st = card.style;
         st.setProperty('--x',  x.toFixed(2) + 'px');
         st.setProperty('--y',  y.toFixed(2) + 'px');
         st.setProperty('--z',  z.toFixed(2) + 'px');
-        /* turned to face the middle of the coil, and rolled along it */
-        st.setProperty('--ry', (-ca * FACE).toFixed(2) + 'deg');
-        st.setProperty('--rz', (ca * ROLL).toFixed(2) + 'deg');
-        st.setProperty('--sc', (SMALL + (1 - SMALL) * u).toFixed(3));
+        st.setProperty('--ry', (ca * FACE).toFixed(2) + 'deg');
+        st.setProperty('--rz', (sa * ROLL).toFixed(2) + 'deg');
         st.opacity = (depth * ends).toFixed(3);
 
-        /* Deep in the middle a card is too small for its caption. */
-        card.classList.toggle('is-far', u < 0.3);
+        /* Round the back of the tube there is no room for the caption. */
+        card.classList.toggle('is-far', sa < -0.4);
 
         var score = depth * ends;
         if (score > best) { best = score; focus = i; }
@@ -968,7 +947,7 @@
       hero.appendChild(list);
 
       cards.forEach(function (card) {
-        ['--x', '--y', '--z', '--ry', '--rz', '--sc'].forEach(function (p) { card.style.removeProperty(p); });
+        ['--x', '--y', '--z', '--ry', '--rz'].forEach(function (p) { card.style.removeProperty(p); });
         card.style.opacity = '';
         card.classList.remove('is-focus', 'is-far');
       });

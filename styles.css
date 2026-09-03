@@ -416,18 +416,18 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 
 /* --------------------------------------------------------- The spiral
 
-   Cards wound along a coil standing in the middle of the screen: small and
-   deep at the centre, full size and close at the rim, three full turns
-   between the two — so two neighbours are most of a turn apart and the set
-   reads as winding rather than as a ring. The changing line sits below it on
-   its own flat layer.
+   Cards wind around a horizontal axis running across the screen, travelling
+   left to right as they turn. Three full turns over the length, so two
+   neighbours are most of a turn apart and the row reads as winding rather
+   than as a queue. The changing line sits below the tube on its own flat
+   layer, clear of it.
 
    Depth sorting is the whole picture, which is why nothing in the 3D subtree
    may set opacity or z-index — either one flattens it. That is what .hero-veil
    is for.
 
-   Without app.js, or on a screen too narrow for it, none of this applies and
-   the same list is a plain grid. */
+   Without app.js, or on a screen too narrow for the travel, none of this
+   applies and the same list is a plain grid. */
 
 .hero-stage {
   position: relative;
@@ -720,8 +720,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
     translate(-50%, -50%)
     translate3d(var(--x, 0px), var(--y, 0px), var(--z, 0px))
     rotateY(var(--ry, 0deg))
-    rotate(var(--rz, 0deg))
-    scale(var(--sc, 1));
+    rotate(var(--rz, 0deg));
   will-change: transform;
 }
 
