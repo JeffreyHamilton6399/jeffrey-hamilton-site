@@ -672,7 +672,9 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   z-index: 4;
   /* the same width the strap has on the watch, so the one becomes the other
      rather than stepping up in size at the seam */
-  width: clamp(3.25rem, 4.4vw, 4.25rem);
+  /* app.js overrides this with the strap's measured width; the clamp is what
+     shows if it never runs */
+  width: var(--tab-w, clamp(3.25rem, 4.4vw, 4.25rem));
   height: var(--hs, 6.5rem);
   transform: translateX(-50%);
   pointer-events: none;
@@ -914,19 +916,18 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 /* A block of words in the middle of a grid of footage, so the year reads as
    something being talked about rather than a column of text with a column of
    thumbnails beside it. */
+/* Words, not another card. Boxing them put them in the same visual class as
+   the thumbnails, so a board of nine things read as nine cards whatever was
+   inside them; unboxed they sit behind and between the footage, which is
+   what makes the difference between a page of tiles and a page being
+   written on. */
 .era-note {
-  display: flex;
-  align-items: center;
   margin: 0;
-  padding: .75rem .875rem;
-  border: 1px solid var(--rule-dark);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--on-dark) 3%, transparent);
-  font-size: .8125rem;
-  line-height: 1.45;
+  font-size: .875rem;
+  line-height: 1.5;
   color: var(--on-dark-soft);
 }
-.is-live-era .era-note { padding: .5rem .625rem; font-size: .6875rem; line-height: 1.35; }
+.is-live-era .era-note { font-size: .8125rem; line-height: 1.45; }
 
 /* Footage and words thrown down on a board rather than filed into a grid.
 
@@ -955,7 +956,23 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   transform: translate(-50%, -50%) rotate(var(--sr, 0deg));
 }
 .is-live-era .era-scatter .vid-frame { box-shadow: 0 14px 34px color-mix(in srgb, var(--void) 46%, transparent); }
-.is-live-era .era-scatter .era-note { background: color-mix(in srgb, var(--void) 86%, transparent); }
+/* a channel, shown as itself */
+.chan {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  padding: .625rem .75rem;
+  border: 1px solid var(--rule-dark);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--void) 88%, transparent);
+  text-decoration: none;
+  color: var(--on-dark);
+  transition: border-color .35s var(--ease), color .35s var(--ease);
+}
+.chan:hover, .chan:focus-visible { border-color: var(--ember); color: var(--ember); }
+.chan svg { flex: none; width: 1.125rem; height: 1.125rem; fill: var(--ember); }
+.chan-name { display: block; font-family: var(--mono); font-size: .625rem; letter-spacing: .08em; }
+.chan-what { display: block; font-size: .6875rem; color: var(--on-dark-soft); }
 /* whatever is under the pointer comes to the top of the heap */
 .is-live-era .era-scatter > *:hover { z-index: 3; }
 
@@ -1139,6 +1156,11 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
    play badge that app.js swaps for the real player on click. */
 
 .eras { padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 7rem); }
+/* With the watch running, the scene is the section: it has to start at the
+   bevelled edge, because that edge is where the leather meets the tab left
+   at the foot of the hero. The section's own top padding was holding it a
+   hundred and thirty-six pixels below that. */
+#path.is-watch { padding-top: 0; }
 
 /* ---- the watch ----------------------------------------------------------
    The progression is a watch face. The spiral is wound inside the dial and

@@ -950,6 +950,10 @@
          rest of it the leather is already something you have seen. */
       var strap = hero.querySelector('.hero-strap');
       if (strap) {
+        /* the tab is the strap, so it is the strap's width — worked out the
+           same way rather than guessed at in a clamp */
+        var sh = Math.min(window.innerHeight * 0.99, 48 * 16);
+        strap.style.setProperty('--tab-w', (120 * (sh * 1000 / 1400) / 1000).toFixed(1) + 'px');
         tl.fromTo(strap,
           { '--hs': '4.5rem' },
           { '--hs': '26rem', ease: 'none' }, 0);
