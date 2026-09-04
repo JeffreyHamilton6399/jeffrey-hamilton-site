@@ -1165,6 +1165,8 @@
     if (!svg || !eras.length) return;
 
     orbit.classList.add('is-live');
+    var section = orbit.closest('section');
+    if (section) section.classList.add('is-watch');
 
     /* The case, in viewBox units. Everything else is measured off these. */
     var CX = 500, CY = 700, R_CASE = 292, R_TRACK = 222;
@@ -1213,7 +1215,8 @@
     if (hub) hub.style.opacity = '0';
 
     if (year) year.style.opacity = '0';
-    var yearIn = 0;
+    if (dial) dial.style.opacity = '0';
+    var yearIn = 0, dialIn = 0, held = false;
 
     /* ---- the eras take the sides ----------------------------------------
        The side is the half of the dial the hand is in over that era's
@@ -1234,7 +1237,43 @@
     if (now) inner.appendChild(now);
     if (picks) inner.appendChild(picks);
     if (certs) inner.appendChild(certs);
-    if (pile) { inner.appendChild(pile); stackPile(); }
+    /* Anything lifted onto the dial has to stop being parallaxed.
+
+       The drift is set up earlier, against the position these blocks have in
+       the flow, and it writes the same style property this module does — so
+       the two took turns winning and a media column would sit a hundred
+       pixels off its own container. Killing the tween is the fix; the block
+       is not scrolling past anything any more, so there is nothing left for
+       it to drift against. */
+    function stopDrift(root) {
+      if (!root) return;
+      var els = [].slice.call(root.querySelectorAll('[data-parallax]'));
+      if (root.hasAttribute && root.hasAttribute('data-parallax')) els.push(root);
+      els.forEach(function (el) {
+        ScrollTrigger.getAll().forEach(function (t) { if (t.trigger === el) t.kill(); });
+        gsap.set(el, { clearProps: 'transform' });
+        el.removeAttribute('data-parallax');
+      });
+    }
+    eras.forEach(stopDrift);
+
+    /* The projects and the photographs are the same year's right-hand side,
+       so they go into one column and arrive as one thing. */
+    var right = null, ships = null;
+    if (pile) {
+      var lastEra = eras[eras.length - 1];
+      ships = lastEra && lastEra.querySelector('.era-ships');
+      right = document.createElement('div');
+      right.className = 'path-right';
+      if (ships) { stopDrift(ships); right.appendChild(ships); }
+      /* the label belongs to the pile, so it travels with it — left behind
+         it ends up captioning the copy on the other side of the case */
+      var pileLabel = document.querySelector('.pile-label');
+      if (pileLabel) right.appendChild(pileLabel);
+      right.appendChild(pile);
+      inner.appendChild(right);
+      stackPile();
+    }
 
     /* ---- the pile -------------------------------------------------------
        One heap of photographs, top card live. Pull it off and let go and it
@@ -1504,11 +1543,10 @@
 
         if (stitching) stitching.style.opacity = String(ramp(p, 0.34, 0.56));
         ticks.style.opacity = String(ramp(p, 0.68, 0.86));
-        if (dial) dial.style.opacity = String(ramp(p, 0.76, 0.94));
         if (hand) hand.style.opacity = String(ramp(p, 0.84, 0.98) * 0.9);
         if (hub) hub.style.opacity = String(ramp(p, 0.84, 0.98));
         if (year) year.style.opacity = String(ramp(p, 0.86, 1));
-        yearIn = ramp(p, 0.86, 1);
+        if (dial) dial.style.opacity = String(ramp(p, 0.76, 0.94));
       }
     });
 
@@ -1599,13 +1637,13 @@
              played at all. */
           era.style.pointerEvents = vis > 0.9 ? 'auto' : 'none';
 
-          /* the photographs belong to one year, so they come and go with it,
-             on the opposite side of the case to the panel */
-          if (pile && era === eras[eras.length - 1]) {
-            pile.style.opacity = vis.toFixed(3);
-            pile.style.transform =
+          /* the right-hand column belongs to one year, so it comes and goes
+             with it, opposite the panel */
+          if (right && era === eras[eras.length - 1]) {
+            right.style.opacity = vis.toFixed(3);
+            right.style.transform =
               'translateY(-50%) translateX(' + ((1 - vis) * 70).toFixed(1) + 'px)';
-            pile.style.pointerEvents = vis > 0.9 ? 'auto' : 'none';
+            right.style.pointerEvents = vis > 0.9 ? 'auto' : 'none';
           }
         });
 
@@ -1680,7 +1718,23 @@
           if (i < 2) el.setAttribute('transform', 'translate(0 ' + (-part * 420).toFixed(1) + ')');
           else el.style.opacity = String(1 - part);
         });
-        if (year) year.style.opacity = String(yearIn * (1 - ramp(raw, HOME, HOME + 0.3)));
+        /* The reading and the markers are part of the watch, so they go with
+           it. They were left behind by the collapse — the year sat in the
+           middle of nothing and the four years still ringed a case that was
+           no longer there.
+
+           Both are written by the build trigger too, so the outro takes what
+           it finds at the moment it starts rather than a value cached from
+           whenever that trigger last ran. Caching it meant the dial went dark
+           whenever the build had not updated since load. */
+        if (raw > HOME) {
+          if (!held) { held = true; yearIn = +year.style.opacity || 1; dialIn = +dial.style.opacity || 1; }
+          var gone = ramp(raw, HOME, HOME + 0.12);
+          if (year) year.style.opacity = String(yearIn * (1 - gone));
+          if (dial) dial.style.opacity = String(dialIn * (1 - gone));
+        } else {
+          held = false;
+        }
         if (o > 0 && mark) mark.style.opacity = '0';
 
         if (tail) {
@@ -1692,7 +1746,7 @@
 
         if (now && o > 0) now.style.opacity = String((1 - o) * (+now.style.opacity || 0));
         if (picks && o > 0) picks.style.opacity = String((1 - o) * (+picks.style.opacity || 0));
-        if (pile && o > 0) pile.style.opacity = String((1 - o) * (+pile.style.opacity || 0));
+        if (right && o > 0) right.style.opacity = String((1 - o) * (+right.style.opacity || 0));
       }
     });
 

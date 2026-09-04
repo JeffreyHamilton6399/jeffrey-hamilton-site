@@ -670,35 +670,37 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   /* Anchored by its top, not its bottom: a strap hangs down off the end of
      the screen, and anchoring the other edge would have it growing upward
      into the page instead. Only the tip shows at rest. */
-  top: calc(100% - 4.5rem);
+  top: calc(100% - 6.5rem);
   z-index: 4;
-  width: clamp(9rem, 14vw, 12.5rem);
-  height: var(--hs, 4.5rem);
+  /* the same width the strap has on the watch, so the one becomes the other
+     rather than stepping up in size at the seam */
+  width: clamp(4.5rem, 6vw, 5.5rem);
+  height: var(--hs, 6.5rem);
   transform: translateX(-50%);
   pointer-events: none;
 }
 .hs-tab {
   position: absolute;
   inset: 0;
-  border: 1px solid var(--frame);
+  border: 1px solid var(--rule);
   border-bottom: 0;
   /* A strap tip, not a box: the top is a half-round the width of the band,
      which is the shape that reads as the end of a watch strap rather than as
      a panel someone slid up from the bottom of the screen. */
   border-radius: 50% 50% 0 0 / 46% 46% 0 0;
-  background: color-mix(in srgb, var(--ink) 9%, transparent);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 /* the stitching, the same two runs the strap has on the watch */
 .hs-tab::before, .hs-tab::after {
   content: "";
   position: absolute;
-  top: clamp(1.5rem, 4vw, 2.5rem);
+  top: 2.25rem;
   bottom: 0;
   width: 0;
-  border-left: 2px dashed color-mix(in srgb, var(--ink) 12%, transparent);
+  border-left: 2px dashed color-mix(in srgb, var(--ink) 9%, transparent);
 }
-.hs-tab::before { left: 18%; }
-.hs-tab::after  { right: 18%; }
+.hs-tab::before { left: 13.5%; }
+.hs-tab::after  { right: 13.5%; }
 .hero:not(.is-spiral) .hero-strap { display: none; }
 
 .hero-veil {
@@ -716,26 +718,25 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   position: absolute;
   z-index: 550;
   left: 0; right: 0;
-  bottom: clamp(1.25rem, 4vh, 2.25rem);
+  /* above the strap tip, which now owns the bottom of the screen */
+  bottom: clamp(5.5rem, 11vh, 7.5rem);
   align-items: center;
-  /* out of the middle, because the end of the strap is there now */
-  justify-content: flex-start;
+  justify-content: center;
   padding-inline: var(--gutter);
   pointer-events: none;
 }
+/* A caption, not a badge. As a dark pill in the corner it read as a tab
+   stuck to the side of the page — which is exactly what it is not. */
 .cue-pill {
   display: inline-flex;
   align-items: center;
   gap: .5rem;
-  padding: .5rem .875rem;
-  border-radius: 999px;
-  background: var(--void);
-  color: var(--paper);
   font-family: var(--mono);
-  font-size: .625rem;
+  font-size: .5625rem;
   font-weight: 500;
-  letter-spacing: .16em;
+  letter-spacing: .18em;
   text-transform: uppercase;
+  color: var(--ink-faint);
 }
 .cue-arrow { animation: cue 2.4s var(--ease) infinite; }
 @keyframes cue {
@@ -1014,17 +1015,31 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 }
 
 /* ---- stacked, once app.js is running -------------------------------- */
-.path-orbit.is-live .pile {
+/* Both right-hand groups in one column: the projects, then the pile of
+   photographs under them. They belong to the same year and arrive together,
+   so they travel as one thing rather than two that happen to agree. */
+.path-orbit.is-live .path-right {
   position: absolute;
   top: 50%;
   right: clamp(1rem, 4vw, 4rem);
-  display: block;
-  width: min(22vw, 19rem);
-  aspect-ratio: 4 / 3;
-  margin: 0;
+  width: min(23vw, 20rem);
   transform: translateY(-50%);
   opacity: 0;
   pointer-events: none;
+}
+.path-orbit.is-live .path-right .era-ships { margin: 0 0 1rem; }
+.path-orbit.is-live .path-right .pile-label { margin: 0 0 .625rem; }
+.path-orbit.is-live .path-right .era-media-pair { grid-template-columns: 1fr 1fr; gap: .5rem; }
+.path-orbit.is-live .path-right .ship-body { padding: .4375rem .5rem .5rem; }
+.path-orbit.is-live .path-right .ship-title { font-size: .75rem; margin: 0; }
+.path-orbit.is-live .path-right .ship-desc { display: none; }
+
+.path-orbit.is-live .pile {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  margin: 0;
   touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;
@@ -1084,6 +1099,12 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
    sliding in, holding, and clearing for the next. Off by default: app.js
    turns it on only where there is room and a ticker to drive it, and
    everywhere else the same three eras stay in the flow underneath. */
+/* The pinned scene keeps a screen of its own height after the pin lets go,
+   and by then everything in it has gone — so it was a blank screen between
+   the watch coming apart and the leather starting again. The section is
+   pulled up by exactly that height, which puts the two together. */
+#path.is-watch { margin-bottom: -100vh; }
+
 .path-orbit { display: none; }
 .path-orbit.is-live {
   display: block;
@@ -1536,6 +1557,9 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
    same six on one panel that fits, and at this size the thumbnail is doing
    the work anyway — the caption underneath is the label. */
 .is-live-era.is-split .era-media-quad { grid-template-columns: repeat(3, 1fr); }
+/* Two videos side by side in a column this wide leaves most of it empty.
+   One above the other fills the same space with the same two, larger. */
+.is-live-era.is-split .era-media-pair { grid-template-columns: 1fr; }
 .is-live-era.is-split .vid-title { font-size: .625rem; }
 .is-live-era.is-split .vid-kind { font-size: .5rem; }
 .is-live-era .era-grid { display: block; padding: 0; }
