@@ -1409,7 +1409,15 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   color: var(--glow);
   margin: 0 0 1rem;
 }
-.pp-grid { display: grid; gap: 1rem; }
+.pg-text {
+  margin: 0 0 .75rem;
+  font-size: .875rem;
+  line-height: 1.55;
+  color: var(--on-dark-soft);
+}
+.pg-text:last-child { margin-bottom: 0; }
+.path-orbit.is-live .path-picks .pg-text { font-size: .75rem; line-height: 1.5; margin-bottom: .625rem; }
+.path-orbit.is-live .path-picks .group-title { margin-bottom: .625rem; }
 
 /* On the dial: the Now card takes one side, the three picks the other, and
    the certificates wind around the watch itself. */
@@ -1434,59 +1442,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   transform: translateY(-50%);
   opacity: 0;
   pointer-events: none;
-}
-/* On the dial a pick is a line, not a poster: the shot shrinks to a stamp
-   beside the name. At full size the three of them stood nearly a thousand
-   pixels tall and ran off both ends of the screen. */
-.path-orbit.is-live .pp-grid { gap: .5rem; }
-.path-orbit.is-live .app-card.pick {
-  display: grid;
-  grid-template-columns: 4.5rem 1fr;
-  align-items: center;
-  gap: .75rem;
-  padding: .5rem;
-}
-.path-orbit.is-live .app-card.pick .app-shot {
-  width: 4.5rem;
-  aspect-ratio: 3 / 2;
-  border-radius: 4px;
-  overflow: hidden;
-  margin: 0;
-}
-.path-orbit.is-live .app-card.pick .app-shot img { width: 100%; height: 100%; object-fit: cover; }
-.path-orbit.is-live .app-card.pick .app-body { padding: 0; }
-.path-orbit.is-live .app-card.pick .app-desc { display: none; }
-.path-orbit.is-live .app-card.pick .app-title { font-size: .875rem; margin: 0; }
-.path-orbit.is-live .app-card.pick .app-go { font-size: .5625rem; margin-top: .1875rem; }
-
-/* ---- the certificates, wound round the watch ---------------------------
-   The same helix the hero runs, stood on its end: the chips travel down the
-   axis of the strap while they turn about it, so they pass in front of the
-   case and then behind it. Radius is kept near the case so the column stays
-   between the two side panels.
-
-   The whole thing has to share one 3D context with the dial for that to
-   read — a chip behind the case has to actually be hidden by it — which is
-   why the perspective is on .path-orbit-in and why nothing between it and a
-   chip may set opacity: any of those would flatten the subtree and the
-   certificates would all composite in front of, or behind, the watch as a
-   single sheet. The fade is on each chip for exactly that reason. */
-/* The perspective is what gives the coil its depth. It does not give it
-   occlusion: an <svg> is a replaced element, its contents are 2D, and the
-   browser will not sort HTML siblings against the shapes inside it however
-   the transform-style is set — the chips stayed on top of the case at every
-   depth. So being hidden behind the watch is worked out in app.js from where
-   the chip actually is, and applied as opacity. */
-.path-orbit.is-live .path-orbit-in { perspective: 1200px; }
-.path-orbit.is-live .path-certs {
-  position: absolute;
-  top: 50%; left: 50%;
-  display: block;
-  width: 0; height: 0;
-  max-width: none;
-  margin: 0;
-  padding: 0;
-  transform-style: preserve-3d;
 }
 .path-orbit.is-live .path-certs li {
   position: absolute;
@@ -1641,7 +1596,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .is-live-era .era-title { font-size: clamp(1.25rem, 2.4vw, 2rem); }
 .is-live-era .vid-cap { margin-top: .375rem; }
 .is-live-era .vid-title { font-size: .75rem; }
-.is-live-era .era-apps { display: none; }
 /* the first era has no footage — there was nothing to film */
 .era-plain .era-grid { display: block; }
 .is-live-era .era-now { margin-top: 1rem; padding-top: .875rem; }
@@ -1767,42 +1721,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   white-space: nowrap;
 }
 
-/* The three flagship apps under era 3. */
-.era-apps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(1rem, 2.5vw, 1.75rem);
-  margin-top: clamp(2.5rem, 6vw, 4rem);
-}
-.app-card {
-  display: block;
-  text-decoration: none;
-  color: var(--on-dark);
-  border-radius: 8px;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--on-dark) 6%, var(--void));
-  border: 1px solid var(--rule-dark);
-  transition: border-color .4s var(--ease), transform .4s var(--ease), box-shadow .4s var(--ease);
-}
-.app-card:hover {
-  transform: translateY(-4px);
-  border-color: color-mix(in srgb, var(--iris-lo) 55%, transparent);
-  box-shadow: 0 22px 50px color-mix(in srgb, var(--void) 30%, transparent);
-}
-.app-shot { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: color-mix(in srgb, var(--on-dark) 5%, var(--void)); }
-.app-shot img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
-.app-body { display: block; padding: 1rem 1.125rem 1.125rem; }
-.app-title { display: block; font-weight: 600; font-size: 1.0625rem; letter-spacing: -.01em; margin-bottom: .375rem; }
-.app-desc { display: block; font-size: .8125rem; line-height: 1.5; color: var(--on-dark-soft); }
-.app-go {
-  display: inline-block;
-  margin-top: .875rem;
-  font-size: .8125rem;
-  font-weight: 500;
-  color: var(--haze);
-}
-.app-card:hover .app-go { color: var(--on-dark); }
-
 .chips { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 1.25rem 0 0; padding: 0; }
 .chips a {
   display: inline-block;
@@ -1851,7 +1769,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   .era-grid { grid-template-columns: 1fr; gap: clamp(1.5rem, 5vw, 2.5rem); }
   .era-flip .era-copy,
   .era-flip .era-media { order: 0; }
-  .era-apps { grid-template-columns: 1fr; }
   .section-head { display: grid; gap: .5rem; }
 }
 

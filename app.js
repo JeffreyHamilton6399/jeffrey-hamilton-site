@@ -1497,8 +1497,11 @@
            It is a fade rather than a cut, taken from how far the chip is
            from the middle of the face: right behind the dial it is gone, and
            it comes back as it swings out past the rim. */
-        var edge = Math.min(u, 1 - u) / 0.16;
-        var ends = edge >= 1 ? 1 : edge * edge * (3 - 2 * edge);
+        /* The ends of the travel get a long fade too — it is the other place
+           a chip arrives from nowhere, and a short one there reads the same
+           way a short one at the case did. */
+        var edge = Math.min(u, 1 - u) / 0.26;
+        var ends = edge >= 1 ? 1 : edge * edge * edge * (edge * (edge * 6 - 15) + 10);
         var depth = 0.34 + 0.66 * ((sa + 1) / 2);
 
         var hid = 1;
@@ -1512,8 +1515,13 @@
           var dist = Math.sqrt(ca * certR * ca * certR + y * y);
           var edge = dist - (el.offsetWidth || 120) / 2;
           var rc = R_CASE * unit;
-          var q = clamp01((edge - rc * 0.55) / (rc * 0.45));
-          hid = q * q * (3 - 2 * q);
+          /* A long band and a curve that is flat at both ends. Half a radius
+             was not enough room: a chip crossed it in a few frames and so
+             appeared to pop out from behind the case rather than come out
+             from behind it. Smootherstep rather than smoothstep, because the
+             first thing you notice is the moment it starts. */
+          var q = clamp01((edge - rc * 0.15) / (rc * 1.25));
+          hid = q * q * q * (q * (q * 6 - 15) + 10);
         }
 
         var lit2 = lit * depth * ends * hid * (1 - certPull);
