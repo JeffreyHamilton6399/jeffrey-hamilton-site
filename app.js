@@ -953,7 +953,7 @@
         /* the tab is the strap, so it is the strap's width — worked out the
            same way rather than guessed at in a clamp */
         var sh = Math.min(window.innerHeight * 0.99, 48 * 16);
-        strap.style.setProperty('--tab-w', (120 * (sh * 1000 / 1400) / 1000).toFixed(1) + 'px');
+        strap.style.setProperty('--tab-w', (123 * (sh * 1000 / 1400) / 1000).toFixed(1) + 'px');
         tl.fromTo(strap,
           { '--hs': '4.5rem' },
           { '--hs': '26rem', ease: 'none' }, 0);
@@ -1175,6 +1175,11 @@
     /* The case, in viewBox units. Everything else is measured off these. */
     var CX = 500, CY = 700, R_CASE = 292, R_TRACK = 222;
     var STRAP_TOP = 930;   /* where the lower strap meets the case */
+    /* The strap path is 120 units across and its edge is stroked at 3, and an
+       SVG stroke straddles the line it is on. So the leather is 123 units
+       wide, not 120, and anything continuing it in HTML has to be told that
+       or it arrives a pixel and a half narrow on each side. */
+    var STRAP_W = 123;
 
     /* ---- the dial ------------------------------------------------------- */
     var TICKS = 60;
@@ -1424,7 +1429,7 @@
          Both edges are measured, so it closes exactly at any height. */
       if (lead) {
         var ob = orbit.getBoundingClientRect();
-        lead.style.setProperty('--lead-w', (120 * unit).toFixed(1) + 'px');
+        lead.style.setProperty('--lead-w', (STRAP_W * unit).toFixed(1) + 'px');
         lead.style.setProperty('--lead-h', Math.max(sb.top - ob.top + 1, 0).toFixed(1) + 'px');
       }
 
@@ -1508,25 +1513,24 @@
         var ends = edge >= 1 ? 1 : edge * edge * edge * (edge * (edge * 6 - 15) + 10);
         var depth = 0.34 + 0.66 * ((sa + 1) / 2);
 
-        var hid = 1;
-        if (sa < 0) {
-          /* Measured off the chip's own edge, not its middle. A chip is as
-             wide as the case is across, so one whose centre has just cleared
-             the rim is still lying over most of the dial — going by the
-             centre left half of it showing through the watch it is meant to
-             be behind. It is fully out of sight until its near edge is clear
-             of the rim, and only then does it come back. */
-          var dist = Math.sqrt(ca * certR * ca * certR + y * y);
-          var edge = dist - (el.offsetWidth || 120) / 2;
-          var rc = R_CASE * unit;
-          /* A long band and a curve that is flat at both ends. Half a radius
-             was not enough room: a chip crossed it in a few frames and so
-             appeared to pop out from behind the case rather than come out
-             from behind it. Smootherstep rather than smoothstep, because the
-             first thing you notice is the moment it starts. */
-          var q = clamp01((edge - rc * 0.15) / (rc * 1.25));
-          hid = q * q * q * (q * (q * 6 - 15) + 10);
-        }
+        /* Being behind the watch is an angle, not a distance.
+
+           Two goes at this by distance both failed, in opposite directions: a
+           short band and the chips popped out from behind the case, a long
+           one and they spent the whole far side dim, which read as the coil
+           being somewhere off in the distance rather than going round.
+
+           How hidden a chip is has two parts, and both are already known. How
+           far round the back it has turned, which is -sin of its angle and
+           moves smoothly across the whole quarter turn; and whether it is
+           level with the case at all, since one passing above or below the
+           dial is behind nothing. Multiply them and the fade takes as long as
+           the turn does, with nothing dimmed that is not actually covered. */
+        var rc = R_CASE * unit;
+        var deep = clamp01(-sa);
+        deep = deep * deep * (3 - 2 * deep);
+        var level = 1 - clamp01((Math.abs(y) - rc * 0.35) / (rc * 0.95));
+        var hid = 1 - deep * level;
 
         var lit2 = lit * depth * ends * hid * (1 - certPull);
         el.style.opacity = lit2.toFixed(3);
@@ -1899,7 +1903,7 @@
        join on every viewport but the one it was measured on. */
     function strapWidth() {
       var h = Math.min(window.innerHeight * 0.99, 48 * 16);
-      return 120 * (h * 1000 / 1400) / 1000;
+      return 123 * (h * 1000 / 1400) / 1000;
     }
 
     function paint(p) {
