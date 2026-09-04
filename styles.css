@@ -667,26 +667,32 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .hero-strap {
   position: absolute;
   left: 50%;
-  bottom: 0;
+  /* Anchored by its top, not its bottom: a strap hangs down off the end of
+     the screen, and anchoring the other edge would have it growing upward
+     into the page instead. Only the tip shows at rest. */
+  top: calc(100% - 4.5rem);
   z-index: 4;
   width: clamp(9rem, 14vw, 12.5rem);
-  height: var(--hs, 2.75rem);
+  height: var(--hs, 4.5rem);
   transform: translateX(-50%);
   pointer-events: none;
 }
 .hs-tab {
   position: absolute;
   inset: 0;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--frame);
   border-bottom: 0;
-  border-radius: clamp(.75rem, 2vw, 1.25rem) clamp(.75rem, 2vw, 1.25rem) 0 0;
-  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  /* A strap tip, not a box: the top is a half-round the width of the band,
+     which is the shape that reads as the end of a watch strap rather than as
+     a panel someone slid up from the bottom of the screen. */
+  border-radius: 50% 50% 0 0 / 46% 46% 0 0;
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
 }
 /* the stitching, the same two runs the strap has on the watch */
 .hs-tab::before, .hs-tab::after {
   content: "";
   position: absolute;
-  top: clamp(.5rem, 1.4vw, .875rem);
+  top: clamp(1.5rem, 4vw, 2.5rem);
   bottom: 0;
   width: 0;
   border-left: 2px dashed color-mix(in srgb, var(--ink) 12%, transparent);
@@ -712,7 +718,8 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   left: 0; right: 0;
   bottom: clamp(1.25rem, 4vh, 2.25rem);
   align-items: center;
-  justify-content: center;
+  /* out of the middle, because the end of the strap is there now */
+  justify-content: flex-start;
   padding-inline: var(--gutter);
   pointer-events: none;
 }
@@ -1217,22 +1224,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .path-dial.is-arrived li:not(.is-origin) { opacity: .22; }
 .path-dial li { transition: opacity .5s var(--ease-out); }
 
-/* the line down from the Timeline button */
-.path-feed {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-}
-.path-feed path {
-  fill: none;
-  stroke: var(--glow);
-  stroke-width: 2;
-  stroke-linecap: round;
-  opacity: .8;
-}
 
 .path-mark {
   position: absolute;
@@ -1418,19 +1409,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   letter-spacing: .06em;
 }
 
-/* The same idea as .hero-veil and for the same reason — opacity on an
-   ancestor would flatten what is underneath — but a colour per panel, so no
-   two handoffs read as the same move played twice. */
-.panel-veil {
-  position: absolute;
-  inset: 0;
-  z-index: 500;
-  opacity: 0;
-  pointer-events: none;
-}
-.panel-veil[data-veil="violet"] { background: color-mix(in srgb, var(--iris) 52%, var(--void)); }
-.panel-veil[data-veil="dusk"]   { background: color-mix(in srgb, var(--void) 88%, var(--iris)); }
-
 /* ---- where the strap goes ----------------------------------------------
    The leather does not stop at the bottom of the watch. As the contact panel
    arrives it squares off into the sheet the last section is written on, with
@@ -1442,15 +1420,14 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
    the content. */
 .contact-hide {
   position: absolute;
-  inset: 0;
+  inset: -6rem 0 0 0;
   overflow: hidden;
   pointer-events: none;
-  border-radius: var(--slab-r) var(--slab-r) 0 0;
 }
 .contact-leather {
   position: absolute;
   left: 50%;
-  top: 0;
+  top: -6rem;
   width: var(--lw, 12rem);
   height: var(--lh, 100%);
   transform: translateX(-50%);
@@ -1482,6 +1459,16 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   stroke-linecap: round;
 }
 
+/* The last section is not a new page arriving over the timeline — it is
+   where the strap ends up. So it has none of the slab treatment: no lifted
+   edge, no rounded top, no shadow marking a seam. The ground simply carries
+   on, and the only thing that changes is the leather growing into it. */
+.contact {
+  position: relative;
+  z-index: 2;
+  background: var(--void);
+  color: var(--on-dark);
+}
 .contact .slab-inner { position: relative; z-index: 1; }
 .contact-mail {
   display: inline-block;
@@ -1573,19 +1560,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 /* the first era has no footage — there was nothing to film */
 .era-plain .era-grid { display: block; }
 .is-live-era .era-now { margin-top: 1rem; padding-top: .875rem; }
-
-/* The same idea as .hero-veil and for the same reason — opacity on an
-   ancestor would flatten what is underneath — but a colour per panel, so no
-   two handoffs read as the same move played twice. */
-.panel-veil {
-  position: absolute;
-  inset: 0;
-  z-index: 500;
-  opacity: 0;
-  pointer-events: none;
-}
-.panel-veil[data-veil="violet"] { background: color-mix(in srgb, var(--iris) 52%, var(--void)); }
-.panel-veil[data-veil="dusk"]   { background: color-mix(in srgb, var(--void) 88%, var(--iris)); }
 
 
 .era { padding-block: clamp(3.5rem, 9vw, 7rem); }

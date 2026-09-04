@@ -951,8 +951,8 @@
       var strap = hero.querySelector('.hero-strap');
       if (strap) {
         tl.fromTo(strap,
-          { '--hs': '2.75rem' },
-          { '--hs': '17rem', ease: 'none' }, 0);
+          { '--hs': '4.5rem' },
+          { '--hs': '26rem', ease: 'none' }, 0);
       }
       if (veil) tl.to(veil, { opacity: 0.92, ease: 'none' }, 0);
       pin = tl;
@@ -1080,12 +1080,13 @@
 
      The progression is a wristwatch, and it behaves like one.
 
-     It is built on the way in, not on the way through: a line comes down out
-     of the Timeline button — the control this section belongs to — and the
-     watch draws itself from it as the section rises, strap and stitching and
-     crown, then the case closing, the dial filling in and the numbers coming
-     up. By the time the section takes the screen the whole watch is sitting
-     there, leather and numbers and all, waiting to be read.
+     It is built on the way in, not on the way through: the tab of leather
+     showing at the foot of the hero gets longer as that screen is scrolled
+     away, and the watch draws itself onto the end of it as this section
+     rises — strap and stitching and crown, then the case closing, the dial
+     filling in and the numbers coming up. By the time the section takes the
+     screen the whole watch is sitting there, leather and numbers and all,
+     waiting to be read.
 
      Then it is pinned and the hand makes exactly one revolution, twelve back
      round to twelve, with the arc it has covered drawn in behind it. Nothing
@@ -1135,13 +1136,13 @@
     var hand  = orbit.querySelector('.path-hand');
     var hub   = orbit.querySelector('.path-hub');
     var mark  = orbit.querySelector('.path-mark');
-    var feed  = orbit.querySelector('.path-feed');
-    var feedPath = feed && feed.querySelector('path');
     var year  = orbit.querySelector('.path-year');
     var yearOut = year && year.querySelector('.py-now');
     var hand2 = orbit.querySelector('.path-hand-sm');
     var tail  = orbit.querySelector('.path-tail');
     var core  = orbit.querySelector('.watch-core');
+    var straps = [].slice.call(orbit.querySelectorAll('.watch-strap'));
+    var stitchRuns = [].slice.call(orbit.querySelectorAll('.watch-stitch'));
     var dialBits = [].slice.call(orbit.querySelectorAll(
       '.watch-core, .watch-crown, .watch-knurl'));
     var dial  = orbit.querySelector('.path-dial');
@@ -1167,6 +1168,7 @@
 
     /* The case, in viewBox units. Everything else is measured off these. */
     var CX = 500, CY = 700, R_CASE = 292, R_TRACK = 222;
+    var STRAP_TOP = 930;   /* where the lower strap meets the case */
 
     /* ---- the dial ------------------------------------------------------- */
     var TICKS = 60;
@@ -1370,7 +1372,6 @@
       layoutNow();
       drawTail();
 
-      drawFeed();
     }
 
     /* What Now looks like once the hand is home: the card on one side, the
@@ -1448,27 +1449,6 @@
       }
     }
 
-    /* The line down out of the Timeline button, into the top of the strap. */
-    function drawFeed() {
-      if (!feedPath) return;
-      var btn = document.querySelector('.nav a[href="#path"]');
-      var ob = orbit.getBoundingClientRect();
-      if (!btn) { feedPath.removeAttribute('d'); return; }
-      var b = btn.getBoundingClientRect();
-      var sx = b.left + b.width / 2 - ob.left;
-      var sy = b.bottom - ob.top;
-      var ex = ox + CX * unit;
-      var ey = oy + 6 * unit;
-      feedPath.setAttribute('d',
-        'M ' + sx + ' ' + sy +
-        ' C ' + sx + ' ' + (sy + (ey - sy) * 0.6) +
-        ', ' + ex + ' ' + (sy + (ey - sy) * 0.4) +
-        ', ' + ex + ' ' + ey);
-      var fl = feedPath.getTotalLength();
-      feedPath.style.strokeDasharray = fl;
-      feedPath.style.strokeDashoffset = fl;
-    }
-
     /* Where the hand goes when it stops being a hand: off the hub, out to
        the left, and then down the middle of the strap and off the bottom of
        the frame — which is where the contact panel picks the line up. */
@@ -1505,14 +1485,7 @@
       onUpdate: function (self) {
         var p = self.progress;
 
-        /* the feed comes down out of the button, and goes once it has fed */
-        if (feedPath) {
-          var fl = feedPath.getTotalLength();
-          feedPath.style.strokeDashoffset = fl * (1 - ramp(p, 0, 0.30));
-          feedPath.style.opacity = String(0.85 * (1 - ramp(p, 0.62, 0.86)));
-        }
-
-        /* then the watch draws itself, part after part */
+        /* the watch draws itself, part after part */
         var bp = ramp(p, 0.18, 0.80);
         built.forEach(function (part, i) {
           var slice = 1 / built.length;
@@ -1678,6 +1651,12 @@
         certPull = o;
         windCerts(certDrift, certLit);
 
+        /* The case goes, and the two halves of the strap go opposite ways:
+           the top one draws back up out of the frame, and the bottom one
+           stretches on down past it. Stretching the lower strap from its own
+           top edge rather than scaling the whole path is what keeps it
+           attached to where the case was — it grows away from the watch, not
+           away from the middle of the drawing. */
         var shrink = ramp(raw, HOME + 0.03, HOME + 0.15);
         dialBits.forEach(function (el) { el.style.opacity = String(1 - shrink); });
         if (core) {
@@ -1686,6 +1665,21 @@
             'translate(' + (CX * (1 - k)).toFixed(2) + ' ' + (CY * (1 - k)).toFixed(2) +
             ') scale(' + k.toFixed(4) + ')');
         }
+
+        var part = ramp(raw, HOME + 0.02, HOME + 0.20);
+        straps.forEach(function (el, i) {
+          if (i === 0) {
+            el.setAttribute('transform', 'translate(0 ' + (-part * 420).toFixed(1) + ')');
+          } else {
+            var g = 1 + part * 1.9;
+            el.setAttribute('transform',
+              'translate(0 ' + (STRAP_TOP * (1 - g)).toFixed(1) + ') scale(1 ' + g.toFixed(4) + ')');
+          }
+        });
+        stitchRuns.forEach(function (el, i) {
+          if (i < 2) el.setAttribute('transform', 'translate(0 ' + (-part * 420).toFixed(1) + ')');
+          else el.style.opacity = String(1 - part);
+        });
         if (year) year.style.opacity = String(yearIn * (1 - ramp(raw, HOME, HOME + 0.3)));
         if (o > 0 && mark) mark.style.opacity = '0';
 
@@ -1831,43 +1825,6 @@
       scrub: 0.6,
       invalidateOnRefresh: true,
       onUpdate: function (self) { paint(self.progress); }
-    });
-  })();
-
-  /* ---------------------------------------------------------- Panel veils
-
-     A slab carrying a veil gets washed in flat colour as the next section
-     climbs over it — the same handoff the hero makes, and flat colour for
-     the same reason: opacity on an ancestor would flatten the 3D or the
-     pinned scene underneath it. The colour is per panel so no two of these
-     read as the same move played twice.
-
-     It is keyed to the panel's own bottom edge travelling up the screen,
-     not to the next section arriving. Those are the same thing for a tall
-     pinned panel and nothing like it for a short one: the next section's top
-     crosses the bottom of the viewport while a short panel is still coming
-     into view, so a wash keyed that way was full before the panel had been
-     read. Its own bottom edge is exactly the moment something is climbing
-     over it, at any height, pinned or not. */
-
-  (function () {
-    if (reduced || !hasGsap) return;
-
-    document.querySelectorAll('.panel-veil').forEach(function (veil) {
-      var panel = veil.closest('section');
-      if (!panel) return;
-
-      gsap.fromTo(veil, { opacity: 0 }, {
-        opacity: 0.88,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: panel,
-          start: 'bottom bottom',
-          end: 'bottom 35%',
-          scrub: 0.5,
-          invalidateOnRefresh: true
-        }
-      });
     });
   })();
 
