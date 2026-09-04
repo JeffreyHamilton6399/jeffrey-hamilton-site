@@ -511,26 +511,35 @@ html.head-wait .site-head { opacity: 0; pointer-events: none; }
    marching down-right into a mid-tone, with one soft cast shadow under the
    whole thing — which reads as solid 3D while the letters themselves stay
    dead straight and horizontal, which is the point. */
+/* The name, set the way everything else on this page is set: one weight of
+   the display face in plain ink, and nothing behind it. It used to be pushed
+   out into a twelve step extrusion, which is a different site's idea and the
+   only thing on the page pretending to be a solid object.
+
+   What it has instead is an arrival. The two words come up a beat apart and a
+   violet hairline draws out from the middle under them, which is the same
+   line the timeline is about to draw. */
 .hero-title {
   font-size: clamp(3rem, 12vw, 10rem);
   line-height: .9;
   letter-spacing: -.015em;
   text-transform: uppercase;
   color: var(--void);
-  text-shadow:
-    1px 1px 0   var(--extrude),
-    2px 2px 0   var(--extrude),
-    3px 3px 0   var(--extrude),
-    4px 4px 0   var(--extrude),
-    5px 5px 0   var(--extrude),
-    6px 6px 0   var(--extrude),
-    7px 7px 0   var(--extrude),
-    8px 8px 0   var(--extrude),
-    9px 9px 0   var(--extrude),
-    10px 10px 0 var(--extrude),
-    11px 11px 0 var(--extrude),
-    12px 12px 0 var(--extrude),
-    18px 20px 26px color-mix(in srgb, var(--void) 26%, transparent);
+}
+.hw { display: inline-block; }
+
+.hero-rule {
+  display: block;
+  width: min(70%, 26rem);
+  height: 2px;
+  margin: clamp(1rem, 2.5vw, 1.75rem) auto 0;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--iris) 22%,
+    var(--iris) 78%,
+    transparent);
+  transform: scaleX(0);
+  transform-origin: 50% 50%;
 }
 
 /* The changing line, set the way the reference sets its headline: one huge
@@ -582,22 +591,29 @@ html.head-wait .site-head { opacity: 0; pointer-events: none; }
    app.js arms the centre (everything hidden), then adds boot-in and
    intro-line in turn. With no script, or reduced motion, none of this is
    set and the name and line just sit there. */
-html.motion [data-intro] .hero-title {
-  transition: opacity 1.1s var(--ease-out), transform 1.1s var(--ease-out), filter 1.1s var(--ease-out);
+/* The words and the rule each carry their own arrival, so the title element
+   itself is left free for the dip and the pack into the dot that follow. */
+html.motion [data-intro] .hw {
+  transition: opacity .95s var(--ease-out), transform .95s var(--ease-out);
 }
+html.motion [data-intro] .hw:nth-child(2) { transition-delay: .17s; }
+html.motion [data-intro] .hero-rule {
+  transition: transform 1.1s var(--ease-out);
+  transition-delay: .45s;
+}
+html.motion [data-intro].boot-in .hero-rule { transform: scaleX(1); }
 html.motion .hero-skills {
   transition: opacity .8s var(--ease-out), transform .8s var(--ease-out);
 }
-html.motion [data-intro].intro-armed .hero-title {
+html.motion [data-intro].intro-armed .hw {
   opacity: 0;
-  transform: scale(1.06);
-  filter: blur(14px);
+  transform: translateY(.22em);
 }
 html.motion .hero-skills.is-held {
   opacity: 0;
   transform: translateY(22px);
 }
-html.motion [data-intro].boot-in .hero-title { opacity: 1; transform: none; filter: none; }
+html.motion [data-intro].boot-in .hw { opacity: 1; transform: none; }
 html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 
 
@@ -1853,7 +1869,8 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   }
   html.motion [data-reveal],
   html.motion .line > span { opacity: 1; transform: none; }
-  html.motion [data-intro] .hero-title,
+  html.motion [data-intro] .hw,
+  html.motion [data-intro] .hero-rule,
   html.motion .hero-skills { opacity: 1 !important; transform: none !important; filter: none !important; }
   .slab-inner { transform: none !important; opacity: 1 !important; }
 }
