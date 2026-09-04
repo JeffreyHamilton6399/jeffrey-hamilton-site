@@ -435,7 +435,7 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 }
 .hero-center { position: relative; z-index: 10; text-align: center; max-width: 36rem; margin-inline: auto; }
 .hero-inner { display: block; }
-.hero-veil, .hero-cue { display: none; }
+.hero-veil { display: none; }
 
 /* The dot the name packs itself into, and rides to the face on. Positioned
    per frame by app.js from the drawn path, so it always sits exactly on the
@@ -503,11 +503,9 @@ html.sheet-held .boot { opacity: 1; }
 /* Same on both counts: gone instantly while the name has the screen to
    itself. head-wait outlives booting so the header is still absent while the
    name is in flight — it only appears when the name lands in the face. */
-html.booting .site-head,
-html.booting .hero-cue { opacity: 0; pointer-events: none; transition: none; }
+html.booting .site-head { opacity: 0; pointer-events: none; transition: none; }
 html.head-wait .site-head { opacity: 0; pointer-events: none; }
 .site-head { transition: opacity .45s var(--ease-out); }
-.hero-cue { transition: opacity .9s var(--ease-out); }
 
 /* Extruded, not tilted. The depth comes from a stack of offset copies
    marching down-right into a mid-tone, with one soft cast shadow under the
@@ -674,7 +672,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   z-index: 4;
   /* the same width the strap has on the watch, so the one becomes the other
      rather than stepping up in size at the seam */
-  width: clamp(4.5rem, 6vw, 5.5rem);
+  width: clamp(3.25rem, 4.4vw, 4.25rem);
   height: var(--hs, 6.5rem);
   transform: translateX(-50%);
   pointer-events: none;
@@ -697,13 +695,13 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .hs-tab::before, .hs-tab::after {
   content: "";
   position: absolute;
-  top: 2.25rem;
+  top: 1.75rem;
   bottom: 0;
   width: 0;
   border-left: 2px dashed color-mix(in srgb, var(--ink) 9%, transparent);
 }
-.hs-tab::before { left: 13.5%; }
-.hs-tab::after  { right: 13.5%; }
+.hs-tab::before { left: 13%; }
+.hs-tab::after  { right: 13%; }
 .hero:not(.is-spiral) .hero-strap { display: none; }
 
 .hero-veil {
@@ -716,36 +714,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 }
 .hero.is-spiral .hero-veil { display: block; }
 
-.hero.is-spiral .hero-cue {
-  display: flex;
-  position: absolute;
-  z-index: 550;
-  left: 0; right: 0;
-  /* above the strap tip, which now owns the bottom of the screen */
-  bottom: clamp(5.5rem, 11vh, 7.5rem);
-  align-items: center;
-  justify-content: center;
-  padding-inline: var(--gutter);
-  pointer-events: none;
-}
-/* A caption, not a badge. As a dark pill in the corner it read as a tab
-   stuck to the side of the page — which is exactly what it is not. */
-.cue-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: .5rem;
-  font-family: var(--mono);
-  font-size: .5625rem;
-  font-weight: 500;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-.cue-arrow { animation: cue 2.4s var(--ease) infinite; }
-@keyframes cue {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(3px); }
-}
 /* Same <ul> as .spiral-fallback — app.js moves it in and swaps the class. */
 .spiral-track {
   position: absolute;
@@ -1106,7 +1074,12 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
    and by then everything in it has gone — so it was a blank screen between
    the watch coming apart and the leather starting again. The section is
    pulled up by exactly that height, which puts the two together. */
-#path.is-watch { margin-bottom: -100vh; }
+/* The pinned scene keeps a screen of its own height after the pin lets go.
+   Swallowing all of it put the contact panel straight over the line the hand
+   turns into, so the line was drawn and then immediately covered; leaving
+   about a third of that screen gives it somewhere to be read before the
+   leather widens. */
+#path.is-watch { margin-bottom: -66vh; }
 
 .path-orbit { display: none; }
 .path-orbit.is-live {
@@ -1129,7 +1102,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
    off the geometry be placed straight into element coordinates. */
 .path-svg {
   position: absolute;
-  height: min(94vh, 46rem);
+  height: min(99vh, 48rem);
   aspect-ratio: 1000 / 1400;
   overflow: visible;
 }

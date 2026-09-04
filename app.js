@@ -1207,7 +1207,7 @@
        has to extend from its own top edge rather than sketch itself in — and
        the lower one then grows down out of the case the same way, which is
        the move the outro picks up again at the other end. */
-    var STRAP_HEAD = 6;
+    var STRAP_HEAD = 0;   /* the strap starts at the very top of the frame */
     straps.forEach(function (el) { el.setAttribute('transform', 'translate(0 ' + STRAP_HEAD + ') scale(1 0)'); });
 
     function growStrap(el, top, k) {
@@ -1758,7 +1758,7 @@
 
         if (tail) {
           var tl = tail.getTotalLength();
-          var tp = ramp(raw, HOME + 0.10, HOME + 0.19);
+          var tp = ramp(raw, HOME + 0.08, HOME + 0.15);
           tail.style.strokeDashoffset = tl * (1 - tp);
           tail.style.opacity = tp > 0.001 ? '0.9' : '0';
         }
@@ -1785,7 +1785,11 @@
     if (after) {
       ScrollTrigger.create({
         trigger: after,
-        start: 'top 65%',
+        /* Late on purpose. At 65% this fired while the pin was still running —
+           the contact panel's top crosses that line before the scroll reaches
+           the end of the pin — so the watch was being hidden in the middle of
+           coming apart. It only has to catch what the outro leaves behind. */
+        start: 'top 20%',
         onEnter: function () { clearScene(); orbit.style.visibility = 'hidden'; },
         onLeaveBack: function () { cleared = false; orbit.style.visibility = ''; }
       });
