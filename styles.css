@@ -1467,6 +1467,28 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   opacity: 0;
   pointer-events: none;
 }
+/* ---- the certificates, wound round the watch ---------------------------
+   The list itself is a point at the middle of the dial and nothing else: no
+   size, no flow, just the origin every chip is placed against. Without this
+   the chips are measured from wherever the list happened to land in the
+   layout, which put the whole coil off the side of the watch entirely.
+
+   The perspective on the wrapper is what gives the coil its depth. It does
+   not give it occlusion: an <svg> is a replaced element and the browser will
+   not sort HTML siblings against the shapes inside it however transform-style
+   is set. Being hidden behind the watch is worked out in app.js instead, from
+   where the chip actually is, and applied as opacity. */
+.path-orbit.is-live .path-orbit-in { perspective: 1200px; }
+.path-orbit.is-live .path-certs {
+  position: absolute;
+  top: 50%; left: 50%;
+  display: block;
+  width: 0; height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  transform-style: preserve-3d;
+}
 .path-orbit.is-live .path-certs li {
   position: absolute;
   left: 0; top: 0;
