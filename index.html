@@ -94,6 +94,12 @@
         <span class="cue-pill">Drag to spin &middot; Scroll to explore <span class="cue-arrow">&#8595;</span></span>
       </div>
 
+      <!-- The end of the strap, showing above the fold. It is the first
+           thing the watch is: a tab at the bottom of the screen that gets
+           longer as the hero is scrolled away, and hands over to the strap
+           the timeline draws. -->
+      <span class="hero-strap" aria-hidden="true"><span class="hs-tab"></span></span>
+
       <!-- Fades in as the path arrives, so the spiral reads as sinking
            behind it. -->
       <span class="hero-veil" aria-hidden="true"></span>
@@ -479,10 +485,7 @@
     <div class="slab-inner">
 
       <div class="wrap">
-        <div class="section-head" data-reveal>
-          <h2 id="eras-heading">How I got here</h2>
-          <p class="section-note">Three turns, so far</p>
-        </div>
+        <h2 id="eras-heading" class="vh">How I got here</h2>
       </div>
 
       <div class="era-scenes">
@@ -654,7 +657,7 @@
           <!-- Not a build log. app.js stacks these into one pile beside the
                dial when the watch is running; here they are just the photos
                that go with the year. -->
-          <p class="pile-note">I still have fun, though</p>
+          <p class="media-label pile-label">Highlights</p>
           <ul class="pile" role="list" aria-label="Photographs from the same stretch">
 
             <li class="pcard" style="--rot: -5.5deg">
@@ -692,7 +695,7 @@
           </ul>
 
           <div class="era-media" data-parallax="-56" data-reveal>
-            <p class="media-label">Vibe coded &amp; shipped</p>
+            <p class="media-label">Projects</p>
             <div class="era-media-pair">
               <a class="ship" href="https://jeffrey-hamilton-tools.vercel.app/" target="_blank" rel="noopener">
                 <span class="ship-shot"><img src="assets/shots/tools.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Privacy-First Web Tools"></span>
@@ -724,7 +727,7 @@
            the last era, where the dial never showed them; they belong at Now,
            which is the moment the page is claiming they are current. -->
       <div class="path-picks">
-        <p class="pp-kicker">The ones I keep coming back to</p>
+        <p class="pp-kicker">Still running, still mine</p>
         <div class="pp-grid">
           <a class="app-card pick" href="https://jeffrey-hamilton-tools.vercel.app/" target="_blank" rel="noopener" data-reveal>
             <span class="app-shot"><img src="assets/shots/tools.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Privacy-First Web Tools"></span>

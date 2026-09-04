@@ -945,6 +945,15 @@
         }
       });
       tl.to(inner, { scale: 0.9, ease: 'none' }, 0);
+      /* The strap begins here, as a tab above the fold, and gets longer as
+         the hero is scrolled away — so by the time the timeline draws the
+         rest of it the leather is already something you have seen. */
+      var strap = hero.querySelector('.hero-strap');
+      if (strap) {
+        tl.fromTo(strap,
+          { '--hs': '2.75rem' },
+          { '--hs': '17rem', ease: 'none' }, 0);
+      }
       if (veil) tl.to(veil, { opacity: 0.92, ease: 'none' }, 0);
       pin = tl;
 
@@ -1211,6 +1220,13 @@
     eras.forEach(function (era, i) {
       era.classList.add('is-live-era');
       era.classList.add(i < eras.length / 2 ? 'side-right' : 'side-left');
+      /* An era carrying its own footage gets both sides of the case rather
+         than one narrow column: words against one edge, cards against the
+         other. The ones that are only words stay on a single side, where a
+         full-width panel would just be a short line in a lot of space. */
+      if (era.querySelector('.era-media') && !era.querySelector('.pile')) {
+        era.classList.add('is-split');
+      }
       inner.appendChild(era);
     });
     if (now) inner.appendChild(now);
@@ -1586,10 +1602,24 @@
           else if (local > 0.84) vis = (1 - local) / 0.16;
           else vis = 1;
           vis = clamp01(vis) * (1 - b);
-          var dir = era.classList.contains('side-left') ? -1 : 1;
           era.style.opacity = vis.toFixed(3);
-          era.style.transform =
-            'translateY(-50%) translateX(' + (dir * (1 - vis) * 70).toFixed(1) + 'px)';
+
+          if (era.classList.contains('is-split')) {
+            /* The panel spans the screen, so sliding it as one block would
+               carry both halves the same way. Each half comes in off its own
+               edge instead, and the panel itself only holds the vertical
+               centring. */
+            var off = (1 - vis) * 70;
+            era.style.transform = 'translateY(-50%)';
+            var copy = era.querySelector('.era-copy');
+            var media = era.querySelector('.era-media');
+            if (copy) copy.style.transform = 'translateY(-50%) translateX(' + (-off).toFixed(1) + 'px)';
+            if (media) media.style.transform = 'translateY(-50%) translateX(' + off.toFixed(1) + 'px)';
+          } else {
+            var dir = era.classList.contains('side-left') ? -1 : 1;
+            era.style.transform =
+              'translateY(-50%) translateX(' + (dir * (1 - vis) * 70).toFixed(1) + 'px)';
+          }
           /* The panel is pointer-events:none in the stylesheet so a faded one
              never swallows a click meant for the dial. Nothing was ever
              turning it back on, which is why the videos in here could not be
@@ -1762,9 +1792,14 @@
         if (stop > 0) line.style.setProperty('--ll', (stop * clamp(p / 0.72)).toFixed(0) + 'px');
       }
       if (mail) {
-        var m = clamp((p - 0.62) / 0.3);
-        mail.style.opacity = m.toFixed(3);
-        mail.style.transform = 'translateY(' + ((1 - m) * 14).toFixed(1) + 'px)';
+        /* The address is not faded in underneath the line — it is what the
+           line turns into. It opens outward from the middle, where the line
+           lands, so the stroke reads as spreading into the characters rather
+           than stopping above them and handing over to something else. */
+        var m = clamp((p - 0.66) / 0.28);
+        var e = 1 - Math.pow(1 - m, 3);
+        mail.style.opacity = m > 0 ? '1' : '0';
+        mail.style.setProperty('--cut', ((1 - e) * 50).toFixed(2) + '%');
       }
     }
     function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
@@ -1781,12 +1816,18 @@
       return y;
     }
 
+    contact.classList.add('is-drawn');
     paint(0);
 
     ScrollTrigger.create({
       trigger: contact,
       start: 'top bottom',
-      end: 'top 18%',
+      /* Its own bottom edge, not a line partway up the screen: this is the
+         last section on the page, and on a short one there is not enough
+         scroll left below it to ever reach 'top 18%' — the address stayed
+         half-drawn at the very end of the document. The bottom reaching the
+         bottom is always reachable, because it is where the page stops. */
+      end: 'bottom bottom',
       scrub: 0.6,
       invalidateOnRefresh: true,
       onUpdate: function (self) { paint(self.progress); }

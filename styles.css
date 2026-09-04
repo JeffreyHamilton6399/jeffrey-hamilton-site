@@ -658,6 +658,43 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 /* Flat colour over the top rather than a fade on the stage: opacity on an
    ancestor of a preserve-3d subtree flattens it, and the cards would stop
    sorting. */
+/* The end of the strap, showing above the fold.
+
+   It is drawn from the bottom edge upward, so growing it is growing its
+   height and nothing has to be re-centred. The rounded end is on top,
+   because that is the end you can see — the other one runs off the screen
+   and into the section below, where the timeline draws the rest of it. */
+.hero-strap {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: 4;
+  width: clamp(9rem, 14vw, 12.5rem);
+  height: var(--hs, 2.75rem);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.hs-tab {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--rule);
+  border-bottom: 0;
+  border-radius: clamp(.75rem, 2vw, 1.25rem) clamp(.75rem, 2vw, 1.25rem) 0 0;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+/* the stitching, the same two runs the strap has on the watch */
+.hs-tab::before, .hs-tab::after {
+  content: "";
+  position: absolute;
+  top: clamp(.5rem, 1.4vw, .875rem);
+  bottom: 0;
+  width: 0;
+  border-left: 2px dashed color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.hs-tab::before { left: 18%; }
+.hs-tab::after  { right: 18%; }
+.hero:not(.is-spiral) .hero-strap { display: none; }
+
 .hero-veil {
   position: absolute;
   inset: 0;
@@ -853,6 +890,16 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 /* A label sitting directly over a set of cards, in place of the section
    heading that used to float above the whole era. The year it used to
    repeat is on the watch face now. */
+.vh {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 .media-label {
   margin: 0 0 .875rem;
   font-family: var(--mono);
@@ -862,6 +909,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   color: var(--ink-faint);
 }
 .on-dark .media-label { color: var(--haze); }
+.pile-label { margin-top: clamp(1.5rem, 4vw, 2.25rem); }
 
 .era-media-pair { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.75rem, 2vw, 1.25rem); }
 
@@ -1450,6 +1498,13 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   transition: background-size .5s var(--ease), color .4s var(--ease);
 }
 .contact-mail:hover, .contact-mail:focus-visible { background-size: 100% 2px; color: var(--glow); }
+/* Hidden only once app.js has taken it on. The address is the point of this
+   section, and a rule that hides it unconditionally hides it for good on
+   every path where the script that opens it never runs. */
+.contact.is-drawn .contact-mail {
+  opacity: 0;
+  clip-path: inset(0 var(--cut, 50%) 0 var(--cut, 50%));
+}
 
 /* ---- the eras, riding the sides of the dial --------------------------- */
 .path-orbit.is-live ~ .slab-inner .era-scenes { position: relative; }
@@ -1463,6 +1518,39 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 }
 .is-live-era.side-left  { left: clamp(1rem, 4vw, 4rem); }
 .is-live-era.side-right { right: clamp(1rem, 4vw, 4rem); }
+
+/* An era with enough in it to want both sides of the case: the words take
+   one, the footage takes the other, and the panel itself spans the screen so
+   the two halves can be placed against opposite edges. They slide in from
+   their own side rather than as one block — see app.js, which drives the
+   halves and leaves the panel alone. */
+.is-live-era.is-split {
+  left: 0; right: 0;
+  width: auto;
+  max-height: none;
+}
+.is-live-era.is-split .era-copy,
+.is-live-era.is-split .era-media {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  max-height: 86vh;
+}
+.is-live-era.is-split .era-copy {
+  left: clamp(1rem, 4vw, 4rem);
+  width: min(26vw, 22rem);
+}
+.is-live-era.is-split .era-media {
+  right: clamp(1rem, 4vw, 4rem);
+  width: min(30vw, 26rem);
+  margin-top: 0;
+}
+/* Six tiles in two columns is taller than the screen. Three columns is the
+   same six on one panel that fits, and at this size the thumbnail is doing
+   the work anyway — the caption underneath is the label. */
+.is-live-era.is-split .era-media-quad { grid-template-columns: repeat(3, 1fr); }
+.is-live-era.is-split .vid-title { font-size: .625rem; }
+.is-live-era.is-split .vid-kind { font-size: .5rem; }
 .is-live-era .era-grid { display: block; padding: 0; }
 .is-live-era .era-media { margin-top: 1rem; }
 .is-live-era .era-media-quad,
