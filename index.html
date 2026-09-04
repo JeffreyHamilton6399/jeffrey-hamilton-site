@@ -15,7 +15,25 @@
      plain files with no build step behind them, so nothing in their URLs
      ever changes when their contents do, and a browser holding an old
      copy has no way to know. Bump it whenever either one changes. -->
-<link rel="stylesheet" href="styles.css?v=20260904c">
+<link rel="stylesheet" href="styles.css?v=20260904d">
+<script>
+  /* Runs before the first paint, which is the whole point of it.
+
+     app.js is deferred, so between the body painting and that script running
+     there is a frame or two where the name and the changing line are both up:
+     the loading screen has not been raised yet and the line has not been told
+     to wait its turn. On a warm cache that gap is invisible; on a cold one it
+     showed as WEB APPLICATIONS sitting under the name.
+
+     app.js takes this off in its first statement, before it does anything
+     else, so nothing is ever painted with it half handled. The timer is only
+     for the case where app.js never arrives at all. */
+  (function () {
+    var d = document.documentElement;
+    d.classList.add('pre');
+    setTimeout(function () { d.classList.remove('pre'); }, 3000);
+  })();
+</script>
 </head>
 <body>
 
@@ -88,7 +106,6 @@
            itself into the travelling dot, and is gone. -->
       <div class="hero-center" data-intro>
         <h1 class="hero-title" id="hero-heading"><span class="hw">Jeffrey</span> <span class="hw">Hamilton</span></h1>
-        <span class="hero-rule" aria-hidden="true"></span>
       </div>
 
       <!-- The glowing dot the name becomes, and the line it draws. Both are
@@ -286,17 +303,17 @@
       <li class="spiral-card">
         <a href="https://drive.google.com/drive/folders/1O0zvlk09MEzY3aKWY9ww-3gbG3ieK3HN" target="_blank" rel="noopener">
           <span class="card-shot cycle">
-            <video src="assets/animations/TimpviewLogo.mp4" data-hold="5900" poster="assets/animations/poster.jpg"
+            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo.mp4" data-hold="5900" poster="assets/animations/poster.jpg"
                    width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video src="assets/animations/TimpviewLogo2.mp4" data-hold="5500"
+            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo2.mp4" data-hold="5500"
                    width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video src="assets/animations/TimpviewLogo3.mp4" data-hold="5210"
+            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo3.mp4" data-hold="5210"
                    width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video src="assets/animations/TimpviewLogo4.mp4" data-hold="4050"
+            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo4.mp4" data-hold="4050"
                    width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video src="assets/animations/TimpviewLogo5.mp4" data-hold="3730"
+            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo5.mp4" data-hold="3730"
                    width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video src="assets/animations/TimpviewLogo6TBirdTV.mp4" data-hold="5970"
+            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo6TBirdTV.mp4" data-hold="5970"
                    width="1920" height="1080" muted playsinline preload="metadata"></video>
           </span>
           <span class="card-body">
@@ -797,7 +814,7 @@
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <script src="assets/vendor/lenis.min.js" defer></script>
-<script src="app.js?v=20260904c" defer></script>
+<script src="app.js?v=20260904d" defer></script>
 
 </body>
 </html>

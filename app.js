@@ -12,6 +12,12 @@
    ========================================================================== */
 
 (function () {
+  /* First, before anything is measured or decided: the head marked the
+     document while the opening was still unarranged. Everything below runs
+     in this one task, so nothing is painted between here and the boot
+     putting the line back where it belongs. */
+  document.documentElement.classList.remove('pre');
+
   'use strict';
 
   var doc     = document.documentElement;
