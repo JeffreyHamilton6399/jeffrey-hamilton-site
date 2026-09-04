@@ -668,36 +668,38 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   /* Anchored by its top, not its bottom: a strap hangs down off the end of
      the screen, and anchoring the other edge would have it growing upward
      into the page instead. Only the tip shows at rest. */
-  top: calc(100% - 6.5rem);
+  /* app.js keeps this on the edge of the panel climbing over the hero; the
+     calc is where it rests before that runs. */
+  top: calc(100% - 5rem);
   z-index: 4;
   /* the same width the strap has on the watch, so the one becomes the other
      rather than stepping up in size at the seam */
   /* app.js overrides this with the strap's measured width; the clamp is what
      shows if it never runs */
   width: var(--tab-w, clamp(3.25rem, 4.4vw, 4.25rem));
-  height: var(--hs, 6.5rem);
+  height: var(--hs, 5rem);
   transform: translateX(-50%);
   pointer-events: none;
 }
 .hs-tab {
   position: absolute;
   inset: 0;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--frame);
   border-bottom: 0;
   /* A strap tip, not a box: the top is a half-round the width of the band,
      which is the shape that reads as the end of a watch strap rather than as
      a panel someone slid up from the bottom of the screen. */
   border-radius: 50% 50% 0 0 / 46% 46% 0 0;
-  /* Solid, in the page's own colour. A tinted panel showed whatever was
-     passing behind it and stopped reading as a piece of leather lying on the
-     page; the outline and the stitching are what draw the shape. */
-  background: var(--paper);
+  /* Solid, and darker than the page it lies on. In the page's own colour it
+     was only an outline, and an outline that thin against that ground is not
+     something you notice at the bottom of a screen full of cards. */
+  background: color-mix(in srgb, var(--ink) 11%, var(--paper));
 }
 /* the stitching, the same two runs the strap has on the watch */
 .hs-tab::before, .hs-tab::after {
   content: "";
   position: absolute;
-  top: 1.75rem;
+  top: 1.5rem;
   bottom: 0;
   width: 0;
   border-left: 2px dashed color-mix(in srgb, var(--ink) 9%, transparent);

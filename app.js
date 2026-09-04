@@ -941,23 +941,38 @@
              was keyed to where contact sat before two pins pushed it down,
              and washed the panel out while it was still being read. */
           refreshPriority: 3,
-          onUpdate: function (self) { scrolled = self.progress * SCROLL; }
+          onUpdate: function (self) {
+            scrolled = self.progress * SCROLL;
+            rideTheBevel();
+          }
         }
       });
       tl.to(inner, { scale: 0.9, ease: 'none' }, 0);
-      /* The strap begins here, as a tab above the fold, and gets longer as
-         the hero is scrolled away — so by the time the timeline draws the
-         rest of it the leather is already something you have seen. */
+      /* The strap begins here, as a tab above the fold.
+
+         It rides the top edge of the panel that climbs over the hero rather
+         than staying where it was drawn. The hero is pinned, so a tab left at
+         a fixed height simply got covered as that edge went past it, and from
+         then on the leather at the top of the timeline had nothing visibly
+         feeding it: it looked like a piece that started there. Tracking the
+         edge, the tip is always just above the bevel, entering it, and the
+         leather below the bevel is obviously the same strap. */
       var strap = hero.querySelector('.hero-strap');
+      var next = hero.nextElementSibling;
       if (strap) {
         /* the tab is the strap, so it is the strap's width — worked out the
            same way rather than guessed at in a clamp */
         var sh = Math.min(window.innerHeight * 0.99, 48 * 16);
         strap.style.setProperty('--tab-w', (123 * (sh * 1000 / 1400) / 1000).toFixed(1) + 'px');
-        tl.fromTo(strap,
-          { '--hs': '4.5rem' },
-          { '--hs': '26rem', ease: 'none' }, 0);
       }
+
+      function rideTheBevel() {
+        if (!strap || !next) return;
+        var stageTop = stage.getBoundingClientRect().top;
+        var edge = next.getBoundingClientRect().top - stageTop;
+        strap.style.top = (edge - 48) + 'px';
+      }
+      rideTheBevel();
       if (veil) tl.to(veil, { opacity: 0.92, ease: 'none' }, 0);
       pin = tl;
 
@@ -1219,11 +1234,10 @@
     var STRAP_HEAD = 0;   /* the strap starts at the very top of the frame */
     straps.forEach(function (el) { el.setAttribute('transform', 'translate(0 ' + STRAP_HEAD + ') scale(1 0)'); });
 
-    /* The lead is not built — it is already there. It is the strap that came
-       down out of the hero, so it has to be at the top edge of this section
-       from the moment the section has a top edge. Growing it over the
-       approach meant the leather only reached the top a fifth of the way in,
-       which is precisely the join this was added to close. */
+    /* The lead is not built. It is the strap that came down out of the hero,
+       so it is at the top edge of this section from the moment the section
+       has a top edge; what makes that read is the tab tracking the same edge
+       from above. See the hero pin. */
     if (lead) lead.style.setProperty('--lead-k', '1');
 
     function growStrap(el, top, k) {
