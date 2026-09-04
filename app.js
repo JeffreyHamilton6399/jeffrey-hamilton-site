@@ -1139,7 +1139,6 @@
     var year  = orbit.querySelector('.path-year');
     var yearOut = year && year.querySelector('.py-now');
     var hand2 = orbit.querySelector('.path-hand-sm');
-    var tail  = orbit.querySelector('.path-tail');
     var core  = orbit.querySelector('.watch-core');
     var lead = orbit.querySelector('.path-lead');
     var straps = [].slice.call(orbit.querySelectorAll('.watch-strap'));
@@ -1210,6 +1209,13 @@
        the move the outro picks up again at the other end. */
     var STRAP_HEAD = 0;   /* the strap starts at the very top of the frame */
     straps.forEach(function (el) { el.setAttribute('transform', 'translate(0 ' + STRAP_HEAD + ') scale(1 0)'); });
+
+    /* The lead is not built — it is already there. It is the strap that came
+       down out of the hero, so it has to be at the top edge of this section
+       from the moment the section has a top edge. Growing it over the
+       approach meant the leather only reached the top a fifth of the way in,
+       which is precisely the join this was added to close. */
+    if (lead) lead.style.setProperty('--lead-k', '1');
 
     function growStrap(el, top, k) {
       el.setAttribute('transform',
@@ -1432,7 +1438,6 @@
       }
 
       layoutNow();
-      drawTail();
 
     }
 
@@ -1511,22 +1516,6 @@
       }
     }
 
-    /* Where the hand goes when it stops being a hand: off the hub, out to
-       the left, and then down the middle of the strap and off the bottom of
-       the frame — which is where the contact panel picks the line up. */
-    function drawTail() {
-      if (!tail) return;
-      tail.setAttribute('d',
-        'M ' + CX + ' ' + CY +
-        ' C ' + (CX - 150) + ' ' + CY + ', ' + (CX - 220) + ' ' + (CY + 140) +
-        ', ' + (CX - 130) + ' ' + (CY + 300) +
-        ' C ' + (CX - 50) + ' ' + (CY + 440) + ', ' + CX + ' ' + (CY + 470) +
-        ', ' + CX + ' 1400');
-      var tl = tail.getTotalLength();
-      tail.style.strokeDasharray = tl;
-      tail.style.strokeDashoffset = tl;
-    }
-
     function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
     function ramp(v, a, b) { return clamp01((v - a) / (b - a)); }
 
@@ -1549,8 +1538,7 @@
 
         /* the leather comes down first, out of the tab, and the watch is
            made on the end of it */
-        if (lead) lead.style.setProperty('--lead-k', ramp(p, 0.02, 0.20).toFixed(3));
-        growStrap(straps[0], STRAP_HEAD, ramp(p, 0.16, 0.48));
+        growStrap(straps[0], STRAP_HEAD, ramp(p, 0.10, 0.46));
         growStrap(straps[1], STRAP_TOP, ramp(p, 0.56, 0.82));
 
         /* then the rest, part after part */
@@ -1768,13 +1756,6 @@
         }
         if (o > 0 && mark) mark.style.opacity = '0';
 
-        if (tail) {
-          var tl = tail.getTotalLength();
-          var tp = ramp(raw, HOME + 0.08, HOME + 0.15);
-          tail.style.strokeDashoffset = tl * (1 - tp);
-          tail.style.opacity = tp > 0.001 ? '0.9' : '0';
-        }
-
         if (now && o > 0) now.style.opacity = String((1 - o) * (+now.style.opacity || 0));
         if (picks && o > 0) picks.style.opacity = String((1 - o) * (+picks.style.opacity || 0));
         if (right && o > 0) right.style.opacity = String((1 - o) * (+right.style.opacity || 0));
@@ -1889,7 +1870,6 @@
 
   (function () {
     var panel = document.querySelector('.contact-leather');
-    var line  = document.querySelector('.contact-line');
     var mail  = document.querySelector('.contact-mail');
     var contact = document.querySelector('#contact');
     if (!panel || !contact || reduced || !hasGsap) return;
@@ -1905,19 +1885,10 @@
       wide = wide * wide * (3 - 2 * wide);
       var w = NARROW + (Math.min(window.innerWidth * 0.92, 1100) - NARROW) * wide;
       panel.style.setProperty('--lw', w.toFixed(0) + 'px');
-      /* The line stops at the address rather than running past it — it is
-         travelling to something, and a line that carries on through its own
-         destination is just a rule down the middle of the page. */
-      if (line && mail) {
-        var stop = offsetWithin(mail, contact);
-        if (stop > 0) line.style.setProperty('--ll', (stop * clamp(p / 0.72)).toFixed(0) + 'px');
-      }
       if (mail) {
-        /* The address is not faded in underneath the line — it is what the
-           line turns into. It opens outward from the middle, where the line
-           lands, so the stroke reads as spreading into the characters rather
-           than stopping above them and handing over to something else. */
-        var m = clamp((p - 0.66) / 0.28);
+        /* The address opens outward from the middle, in step with the
+           leather widening under it — the same move at a smaller scale. */
+        var m = clamp((p - 0.62) / 0.3);
         var e = 1 - Math.pow(1 - m, 3);
         mail.style.opacity = m > 0 ? '1' : '0';
         mail.style.setProperty('--cut', ((1 - e) * 50).toFixed(2) + '%');
@@ -1925,19 +1896,6 @@
     }
     function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
 
-    /* How far down the section the address sits, in layout terms.
-
-       Rectangles are the wrong tool here: the whole block is being lifted
-       into place by [data-rise] at the same time, so a measured rect says
-       wherever the rise has got to and the line was overshooting by exactly
-       that. Offsets ignore transforms, which is the point. */
-    function offsetWithin(el, root) {
-      var y = 0;
-      while (el && el !== root) { y += el.offsetTop; el = el.offsetParent; }
-      return y;
-    }
-
-    contact.classList.add('is-drawn');
     paint(0);
 
     ScrollTrigger.create({

@@ -1179,13 +1179,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   opacity: .75;
 }
 .path-hub { fill: var(--glow); }
-.path-tail {
-  stroke: var(--glow);
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: .9;
-}
 
 /* the numbers are part of the watch, so they arrive with it */
 .path-dial, .path-ticks { opacity: 0; }
@@ -1436,8 +1429,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 /* ---- where the strap goes ----------------------------------------------
    The leather does not stop at the bottom of the watch. As the contact panel
    arrives it squares off into the sheet the last section is written on, with
-   the same stitching running round the inside of it, and the line that used
-   to be the watch hand comes down the middle of it to the address.
+   the same stitching running round the inside of it.
 
    It is behind the copy and marked hidden, because it is the same thing said
    twice: the panel is a picture of a strap, and the words on top of it are
@@ -1472,20 +1464,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   border: 2px dashed color-mix(in srgb, var(--on-dark) 9%, transparent);
   border-top: 0;
   border-radius: 0 0 clamp(.75rem, 2vw, 1.5rem) clamp(.75rem, 2vw, 1.5rem);
-}
-.contact-line {
-  position: absolute;
-  left: 0; top: 0;
-  width: 100%;
-  height: var(--ll, 0px);
-  overflow: visible;
-}
-.contact-line path {
-  fill: none;
-  stroke: var(--glow);
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
-  stroke-linecap: round;
 }
 
 /* The last section is not a new page arriving over the timeline — it is
