@@ -1160,7 +1160,7 @@
        because a trigger can fire its first update while it is still being
        created */
     var certDrift = 0, certLit = 0, certPull = 0, spinning = false;
-    var parts = [].slice.call(orbit.querySelectorAll('.watch-strap, .watch-crown, .watch-case'));
+    var parts = [].slice.call(orbit.querySelectorAll('.watch-crown, .watch-case'));
     var stitching = orbit.querySelector('.watch-stitching');
     if (!svg || !eras.length) return;
 
@@ -1202,6 +1202,19 @@
        with a dashoffset. The stitching is left out of that: its dashes are
        its dasharray, and walking a path on needs the dasharray for the walk.
        It fades up once the strap it belongs to is closed instead. */
+    /* The straps are not walked on like the rest: they grow. The leather
+       comes down out of the tab left at the foot of the hero, so the top one
+       has to extend from its own top edge rather than sketch itself in — and
+       the lower one then grows down out of the case the same way, which is
+       the move the outro picks up again at the other end. */
+    var STRAP_HEAD = 6;
+    straps.forEach(function (el) { el.setAttribute('transform', 'translate(0 ' + STRAP_HEAD + ') scale(1 0)'); });
+
+    function growStrap(el, top, k) {
+      el.setAttribute('transform',
+        'translate(0 ' + (top * (1 - k)).toFixed(2) + ') scale(1 ' + Math.max(k, 0.0001).toFixed(4) + ')');
+    }
+
     var built = parts.map(function (el) {
       var len = el.getTotalLength ? el.getTotalLength() : 0;
       if (!len) return null;
@@ -1524,8 +1537,13 @@
       onUpdate: function (self) {
         var p = self.progress;
 
-        /* the watch draws itself, part after part */
-        var bp = ramp(p, 0.18, 0.80);
+        /* the leather comes down first, out of the tab, and the watch is
+           made on the end of it */
+        growStrap(straps[0], STRAP_HEAD, ramp(p, 0.04, 0.44));
+        growStrap(straps[1], STRAP_TOP, ramp(p, 0.56, 0.82));
+
+        /* then the rest, part after part */
+        var bp = ramp(p, 0.44, 0.86);
         built.forEach(function (part, i) {
           var slice = 1 / built.length;
           var k = clamp01((bp - i * slice * 0.72) / slice);
@@ -1541,8 +1559,8 @@
           }
         });
 
-        if (stitching) stitching.style.opacity = String(ramp(p, 0.34, 0.56));
-        ticks.style.opacity = String(ramp(p, 0.68, 0.86));
+        if (stitching) stitching.style.opacity = String(ramp(p, 0.46, 0.68));
+        ticks.style.opacity = String(ramp(p, 0.72, 0.88));
         if (hand) hand.style.opacity = String(ramp(p, 0.84, 0.98) * 0.9);
         if (hub) hub.style.opacity = String(ramp(p, 0.84, 0.98));
         if (year) year.style.opacity = String(ramp(p, 0.86, 1));
@@ -1561,6 +1579,12 @@
       invalidateOnRefresh: true,
       refreshPriority: 2,
       onRefresh: measure,
+      /* The scene keeps its own screen after the pin lets go, and the section
+         below is pulled up over it — so anything still carrying opacity from
+         the last frame shows through the contact panel. The scrub can stop
+         anywhere; this makes sure the end state is the end state. */
+      onLeave: function () { clearScene(); },
+      onEnterBack: function () { cleared = false; },
       onUpdate: function (self) {
         var raw = self.progress;
         /* Everything from here to the outro is in revolution time: the whole
@@ -1705,15 +1729,10 @@
         }
 
         var part = ramp(raw, HOME + 0.02, HOME + 0.20);
-        straps.forEach(function (el, i) {
-          if (i === 0) {
-            el.setAttribute('transform', 'translate(0 ' + (-part * 420).toFixed(1) + ')');
-          } else {
-            var g = 1 + part * 1.9;
-            el.setAttribute('transform',
-              'translate(0 ' + (STRAP_TOP * (1 - g)).toFixed(1) + ') scale(1 ' + g.toFixed(4) + ')');
-          }
-        });
+        /* the top strap draws back up out of the frame; the bottom one keeps
+           growing the way it grew in, on down past where the case was */
+        growStrap(straps[0], STRAP_HEAD, 1 - part);
+        growStrap(straps[1], STRAP_TOP, 1 + part * 1.9);
         stitchRuns.forEach(function (el, i) {
           if (i < 2) el.setAttribute('transform', 'translate(0 ' + (-part * 420).toFixed(1) + ')');
           else el.style.opacity = String(1 - part);
@@ -1753,6 +1772,39 @@
     /* The coil keeps turning after the scroll stops. Only while it is worth
        looking at — there is no reason to run a ticker for something faded
        out — and only ever adding to what the scroll already set. */
+    /* And the scene is taken off the screen outright once the last section is
+       properly up.
+
+       Relying on the outro's own last frame is not enough: it is scrubbed, it
+       can stop anywhere, and the section below is pulled up over the screen
+       the pin leaves behind — so a card still carrying a tenth of its opacity
+       reads as text sitting behind the contact panel. This is the backstop,
+       and it is keyed to the panel being up rather than to the pin ending, so
+       the strap still has the whole handover to itself. */
+    var after = document.querySelector('#contact');
+    if (after) {
+      ScrollTrigger.create({
+        trigger: after,
+        start: 'top 65%',
+        onEnter: function () { clearScene(); orbit.style.visibility = 'hidden'; },
+        onLeaveBack: function () { cleared = false; orbit.style.visibility = ''; }
+      });
+    }
+
+    /* Everything the scene put on the screen, taken back off it. */
+    var cleared = false;
+
+    function clearScene() {
+      if (cleared) return;
+      cleared = true;
+      [now, picks, right, year, dial, mark].forEach(function (el) {
+        if (el) el.style.opacity = '0';
+      });
+      dialBits.forEach(function (el) { el.style.opacity = '0'; });
+      certItems.forEach(function (el) { el.style.opacity = '0'; });
+      eras.forEach(function (era) { era.style.opacity = '0'; era.style.pointerEvents = 'none'; });
+    }
+
     /* A notch at Now. The hand coming home is the one moment on this page
        worth stopping at, so the scroll is held for a beat as it crosses —
        once, forwards only, and never long enough to read as a hang. Skipped

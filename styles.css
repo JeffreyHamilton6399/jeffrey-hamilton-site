@@ -688,7 +688,10 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
      which is the shape that reads as the end of a watch strap rather than as
      a panel someone slid up from the bottom of the screen. */
   border-radius: 50% 50% 0 0 / 46% 46% 0 0;
-  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  /* Solid, in the page's own colour. A tinted panel showed whatever was
+     passing behind it and stopped reading as a piece of leather lying on the
+     page; the outline and the stitching are what draw the shape. */
+  background: var(--paper);
 }
 /* the stitching, the same two runs the strap has on the watch */
 .hs-tab::before, .hs-tab::after {
