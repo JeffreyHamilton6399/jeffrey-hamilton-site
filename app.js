@@ -1994,9 +1994,13 @@
      back to the same pair; a slow uniform hold spent the card's whole time on
      screen on two of them; and frames that had not finished loading were
      faded to anyway, showing nothing. So: a fresh shuffle each time the
-     section comes back, per-frame holds taken from the video's own duration,
-     frames that are not decoded yet skipped rather than shown, and every
-     ident restarted from zero so it never opens halfway through.
+     section comes back, frames that are not decoded yet skipped rather than
+     shown, and a per-frame hold.
+
+     The video branches below are not dead by accident. Every card is stills
+     now, but this is the facade the whole spiral runs on and it takes either;
+     the animations card was moved to frames because a browser draws its own
+     hover controls over a playing video and no attribute turns them off.
      ========================================================================== */
 
   /* Warm every card image once the page itself is done. They are lazy

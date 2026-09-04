@@ -15,7 +15,7 @@
      plain files with no build step behind them, so nothing in their URLs
      ever changes when their contents do, and a browser holding an old
      copy has no way to know. Bump it whenever either one changes. -->
-<link rel="stylesheet" href="styles.css?v=20260904d">
+<link rel="stylesheet" href="styles.css?v=20260904e">
 <script>
   /* Runs before the first paint, which is the whole point of it.
 
@@ -302,19 +302,24 @@
 
       <li class="spiral-card">
         <a href="https://drive.google.com/drive/folders/1O0zvlk09MEzY3aKWY9ww-3gbG3ieK3HN" target="_blank" rel="noopener">
+          <!-- Frames rather than the clips themselves. Six autoplaying
+               videos in a 280px card on a moving spiral is motion nobody
+               can read, and a browser puts its own hover controls over a
+               playing video that no attribute can turn off. The animations
+               are one click away in the folder this card opens. -->
           <span class="card-shot cycle">
-            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo.mp4" data-hold="5900" poster="assets/animations/poster.jpg"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo2.mp4" data-hold="5500"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo3.mp4" data-hold="5210"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo4.mp4" data-hold="4050"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo5.mp4" data-hold="3730"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
-            <video disablepictureinpicture disableremoteplayback src="assets/animations/TimpviewLogo6TBirdTV.mp4" data-hold="5970"
-                   width="1920" height="1080" muted playsinline preload="metadata"></video>
+            <img src="assets/animations/still-01.jpg" alt="Timpview logo ident" width="1000" height="562"
+                 loading="lazy" decoding="async">
+            <img src="assets/animations/still-02.jpg" alt="Timpview T ident" width="1000" height="562"
+                 loading="lazy" decoding="async">
+            <img src="assets/animations/still-03.jpg" alt="Timpview T over a ball" width="1000" height="562"
+                 loading="lazy" decoding="async">
+            <img src="assets/animations/still-04.jpg" alt="A logo ident in progress" width="1000" height="562"
+                 loading="lazy" decoding="async">
+            <img src="assets/animations/still-05.jpg" alt="The Timpview Thunderbirds roundel" width="1000" height="562"
+                 loading="lazy" decoding="async">
+            <img src="assets/animations/still-06.jpg" alt="The TBird TV ident" width="1000" height="562"
+                 loading="lazy" decoding="async">
           </span>
           <span class="card-body">
             <span class="card-title">School Animations</span>
@@ -814,7 +819,7 @@
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <script src="assets/vendor/lenis.min.js" defer></script>
-<script src="app.js?v=20260904d" defer></script>
+<script src="app.js?v=20260904e" defer></script>
 
 </body>
 </html>
