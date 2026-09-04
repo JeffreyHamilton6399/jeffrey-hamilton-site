@@ -1924,8 +1924,10 @@
       /* It stays a strap while the section is still coming up, and only
          widens once it is in place. Widening on the way in reads as a box
          being pushed onto the screen; widening after it has arrived reads as
-         the leather it is. */
-      var wide = clamp((p - 0.34) / 0.5);
+         the leather it is. The section is a full screen tall now, so this
+         ramp has somewhere to happen: before, the whole of it was over by
+         the time the panel had finished rising. */
+      var wide = clamp((p - 0.50) / 0.45);
       wide = wide * wide * (3 - 2 * wide);
       var narrow = strapWidth();
       var w = narrow + (Math.min(window.innerWidth * 0.92, 1100) - narrow) * wide;

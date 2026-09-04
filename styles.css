@@ -931,33 +931,22 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 }
 .is-live-era .era-note { font-size: .8125rem; line-height: 1.45; }
 
-/* Footage and words thrown down on a board rather than filed into a grid.
+/* Footage and words in one column, the way 2025 and Now are set.
 
-   In the flow it is a plain column — a scattered layout needs a fixed board
-   to be scattered on, and there is no such thing in a document that has to
-   reflow. On the dial there is: the panel is a known size, so each piece can
-   be given a place on it, a width, and a few degrees of turn.
+   Two goes at making these years less static both made them worse: a grid
+   read as a contact sheet, and scattering them read as a mess next to the two
+   panels either side of it that are simply well set. What makes those two
+   work is that they are ordinary columns with a heading and a rhythm, so
+   these are as well. The variety comes from the mix, words and footage and
+   channels alternating down the column, rather than from the placement.
 
-   They overlap on purpose. A grid of the same nine things reads as a contact
-   sheet; the same nine at different sizes and angles, some corner over
-   corner, reads as a year someone actually had. */
-.era-scatter { display: grid; gap: clamp(.75rem, 2vw, 1.25rem); }
+   Videos pair up, so two of them cost one row. */
+.era-stack { display: grid; gap: clamp(.75rem, 2vw, 1.25rem); }
+.era-row { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.5rem, 1.4vw, .875rem); }
+.is-live-era .era-stack { gap: .625rem; }
+.is-live-era .era-row { gap: .5rem; }
+.is-live-era .vid-frame { box-shadow: 0 12px 28px color-mix(in srgb, var(--void) 42%, transparent); }
 
-.is-live-era .era-scatter {
-  display: block;
-  position: relative;
-  width: 100%;
-  aspect-ratio: 3 / 4.1;
-}
-.is-live-era .era-scatter > * {
-  position: absolute;
-  left: var(--sx, 50%);
-  top: var(--sy, 50%);
-  width: var(--sw, 46%);
-  margin: 0;
-  transform: translate(-50%, -50%) rotate(var(--sr, 0deg));
-}
-.is-live-era .era-scatter .vid-frame { box-shadow: 0 14px 34px color-mix(in srgb, var(--void) 46%, transparent); }
 /* a channel, shown as itself */
 .chan {
   display: flex;
@@ -975,8 +964,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .chan svg { flex: none; width: 1.125rem; height: 1.125rem; fill: var(--ember); }
 .chan-name { display: block; font-family: var(--mono); font-size: .625rem; letter-spacing: .08em; }
 .chan-what { display: block; font-size: .6875rem; color: var(--on-dark-soft); }
-/* whatever is under the pointer comes to the top of the heap */
-.is-live-era .era-scatter > *:hover { z-index: 3; }
 
 .era-media-pair { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.75rem, 2vw, 1.25rem); }
 
@@ -1557,6 +1544,14 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .contact {
   position: relative;
   z-index: 2;
+  display: grid;
+  align-items: center;
+  /* A screen of its own. It was six hundred pixels tall and the last thing on
+     the page, so the whole of its arrival happened inside six hundred pixels
+     of scroll and the leather had finished opening out before the section was
+     even up. Given a screen, the band has room to be a band first. */
+  min-height: 100vh;
+  min-height: 100svh;
   background: var(--void);
   color: var(--on-dark);
 }
