@@ -928,15 +928,36 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 }
 .is-live-era .era-note { padding: .5rem .625rem; font-size: .6875rem; line-height: 1.35; }
 
-/* Footage and words in the same grid, so a year with only two videos in it
-   is still something being talked about rather than two thumbnails in a
-   line. */
-.era-media-mix {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(.75rem, 2vw, 1.25rem);
+/* Footage and words thrown down on a board rather than filed into a grid.
+
+   In the flow it is a plain column — a scattered layout needs a fixed board
+   to be scattered on, and there is no such thing in a document that has to
+   reflow. On the dial there is: the panel is a known size, so each piece can
+   be given a place on it, a width, and a few degrees of turn.
+
+   They overlap on purpose. A grid of the same nine things reads as a contact
+   sheet; the same nine at different sizes and angles, some corner over
+   corner, reads as a year someone actually had. */
+.era-scatter { display: grid; gap: clamp(.75rem, 2vw, 1.25rem); }
+
+.is-live-era .era-scatter {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4.1;
 }
-.is-live-era .era-media-mix { gap: .5rem; }
+.is-live-era .era-scatter > * {
+  position: absolute;
+  left: var(--sx, 50%);
+  top: var(--sy, 50%);
+  width: var(--sw, 46%);
+  margin: 0;
+  transform: translate(-50%, -50%) rotate(var(--sr, 0deg));
+}
+.is-live-era .era-scatter .vid-frame { box-shadow: 0 14px 34px color-mix(in srgb, var(--void) 46%, transparent); }
+.is-live-era .era-scatter .era-note { background: color-mix(in srgb, var(--void) 86%, transparent); }
+/* whatever is under the pointer comes to the top of the heap */
+.is-live-era .era-scatter > *:hover { z-index: 3; }
 
 .era-media-pair { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.75rem, 2vw, 1.25rem); }
 
@@ -1598,21 +1619,13 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 }
 .is-live-era.is-split .era-media {
   right: clamp(1rem, 4vw, 4rem);
-  width: min(30vw, 26rem);
+  width: min(34vw, 30rem);
   margin-top: 0;
 }
-/* Six tiles in two columns is taller than the screen. Three columns is the
-   same six on one panel that fits, and at this size the thumbnail is doing
-   the work anyway — the caption underneath is the label. */
-.is-live-era.is-split .era-media-quad { grid-template-columns: repeat(3, 1fr); }
-/* Two videos side by side in a column this wide leaves most of it empty.
-   One above the other fills the same space with the same two, larger. */
-.is-live-era.is-split .era-media-pair { grid-template-columns: 1fr; }
 .is-live-era.is-split .vid-title { font-size: .625rem; }
 .is-live-era.is-split .vid-kind { font-size: .5rem; }
 .is-live-era .era-grid { display: block; padding: 0; }
 .is-live-era .era-media { margin-top: 1rem; }
-.is-live-era .era-media-quad,
 .is-live-era .era-media-pair { gap: .5rem; }
 /* The panel has one screen and no scrollbar of its own, so it is capped and
    its type steps down rather than being allowed to run off both ends. */
@@ -1685,9 +1698,8 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 }
 
 .era-media { display: grid; gap: clamp(.75rem, 2vw, 1.25rem); }
-/* These used to be the media column itself, which is a grid — now they are
-   a group inside it with a label above, so they have to lay themselves out. */
-.era-media-quad,
+/* This used to be the media column itself, which is a grid — now it is a
+   group inside it with a heading above, so it has to lay itself out. */
 .era-media-pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1846,7 +1858,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 @media (max-width: 680px) {
   /* Two columns of video is one column of video and one of overflow at this
      width — the captions are what spill, not the frames. */
-  .era-media-quad,
   .era-media-pair { grid-template-columns: 1fr; }
   .vid-cap { flex-wrap: wrap; }
   .contact-leather { width: min(var(--lw, 12rem), 94vw) !important; }
