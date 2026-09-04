@@ -1279,17 +1279,18 @@
 
     /* The projects and the photographs are the same year's right-hand side,
        so they go into one column and arrive as one thing. */
-    var right = null, ships = null;
+    var right = null;
     if (pile) {
-      var lastEra = eras[eras.length - 1];
-      ships = lastEra && lastEra.querySelector('.era-ships');
       right = document.createElement('div');
       right.className = 'path-right';
-      if (ships) { stopDrift(ships); right.appendChild(ships); }
-      /* the label belongs to the pile, so it travels with it — left behind
-         it ends up captioning the copy on the other side of the case */
-      var pileLabel = document.querySelector('.pile-label');
-      if (pileLabel) right.appendChild(pileLabel);
+      /* the label and its line belong to the pile, so they travel with it —
+         left behind they end up captioning the copy on the other side of the
+         case. The projects stay put: they belong under the words that
+         introduce them. */
+      ['.pile-label', '.pile-note'].forEach(function (sel) {
+        var el = document.querySelector(sel);
+        if (el) right.appendChild(el);
+      });
       right.appendChild(pile);
       inner.appendChild(right);
       stackPile();

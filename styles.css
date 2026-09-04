@@ -888,7 +888,8 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   color: var(--ink-faint);
 }
 .on-dark .media-label { color: var(--haze); }
-.pile-label { margin-top: clamp(1.5rem, 4vw, 2.25rem); }
+.pile-label { margin-top: clamp(1.5rem, 4vw, 2.25rem); margin-bottom: .25rem; }
+.pile-note { margin: 0 0 1rem; font-size: .8125rem; color: var(--on-dark-soft); }
 
 .era-media-pair { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.75rem, 2vw, 1.25rem); }
 
@@ -962,12 +963,20 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   padding: 0;
   display: flex;
   flex-wrap: wrap;
+  /* Each card is the shape of its own photograph; stretching them to the
+     tallest in the row — which is what a flex row does by default — hands
+     them all the same height again and throws that away. */
+  align-items: flex-start;
   gap: .75rem;
 }
 .pcard {
   position: relative;
-  width: clamp(8rem, 13vw, 12rem);
-  aspect-ratio: 4 / 3;
+  width: clamp(7rem, 11vw, 10rem);
+  /* Each one keeps the shape of the photograph in it. They were all cropped
+     to the same landscape box, which took the top off most of them — these
+     are phone pictures, so nearly all of them are taller than they are
+     wide. */
+  aspect-ratio: var(--ar, 3 / 4);
   border-radius: 6px;
   overflow: hidden;
   background: var(--shell);
@@ -980,9 +989,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* most of these are portrait shots in a landscape card, so the crop has to
-     favour the top third — dead centre cuts the heads off */
-  object-position: center 32%;
+  object-position: center;
 }
 
 /* ---- stacked, once app.js is running -------------------------------- */
@@ -998,29 +1005,37 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   opacity: 0;
   pointer-events: none;
 }
-.path-orbit.is-live .path-right .era-ships { margin: 0 0 1rem; }
-.path-orbit.is-live .path-right .pile-label { margin: 0 0 .625rem; }
-.path-orbit.is-live .path-right .era-media-pair { grid-template-columns: 1fr 1fr; gap: .5rem; }
-.path-orbit.is-live .path-right .ship-body { padding: .4375rem .5rem .5rem; }
-.path-orbit.is-live .path-right .ship-title { font-size: .75rem; margin: 0; }
-.path-orbit.is-live .path-right .ship-desc { display: none; }
+.path-orbit.is-live .path-right .pile-label { margin: 0 0 .25rem; }
+.path-orbit.is-live .path-right .pile-note { margin: 0 0 .75rem; }
+
+/* the projects belong under the words that introduce them */
+.is-live-era .era-ships { margin-top: 1rem; }
+.is-live-era .era-ships .era-media-pair { grid-template-columns: 1fr 1fr; gap: .5rem; }
+.is-live-era .ship-body { padding: .4375rem .5rem .5rem; }
+.is-live-era .ship-title { font-size: .75rem; margin: 0; }
 
 .path-orbit.is-live .pile {
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 4;
   margin: 0;
   touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;
 }
+/* Centred on the heap rather than stretched to fill it, so a card can be its
+   own width and its own height and the pile reads as a handful of prints
+   rather than a stack of identical rectangles. */
 .path-orbit.is-live .pile .pcard {
   position: absolute;
-  inset: 0;
-  width: auto;
+  top: 50%;
+  left: 50%;
+  width: var(--pw, 100%);
+  height: auto;
   cursor: grab;
   transform:
+    translate(-50%, -50%)
     translate(var(--dx, 0px), var(--dy, 0px))
     rotate(calc(var(--rot, 0deg) + var(--spin, 0deg)));
   will-change: transform;
