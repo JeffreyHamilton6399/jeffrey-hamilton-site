@@ -1121,14 +1121,20 @@
 
     var inner = orbit.querySelector('.path-orbit-in');
     var svg   = orbit.querySelector('.path-svg');
-    var sweep = orbit.querySelector('.path-sweep');
+    var knurl = orbit.querySelector('.watch-knurl');
     var ticks = orbit.querySelector('.path-ticks');
     var hand  = orbit.querySelector('.path-hand');
     var hub   = orbit.querySelector('.path-hub');
     var mark  = orbit.querySelector('.path-mark');
     var feed  = orbit.querySelector('.path-feed');
     var feedPath = feed && feed.querySelector('path');
-    var intro = orbit.querySelector('.path-intro');
+    var year  = orbit.querySelector('.path-year');
+    var yearOut = year && year.querySelector('.py-now');
+    var hand2 = orbit.querySelector('.path-hand-sm');
+    var tail  = orbit.querySelector('.path-tail');
+    var core  = orbit.querySelector('.watch-core');
+    var dialBits = [].slice.call(orbit.querySelectorAll(
+      '.watch-core, .watch-crown, .watch-knurl'));
     var dial  = orbit.querySelector('.path-dial');
     var years = [].slice.call(orbit.querySelectorAll('.path-dial li'));
     var eras  = [].slice.call(document.querySelectorAll('.era-scenes .era'));
@@ -1140,13 +1146,13 @@
     var certs = document.querySelector('.path-certs');
     var certItems = certs ? [].slice.call(certs.children) : [];
 
-    /* the coil's turn: what the scroll set, what the ticker has added
-       since, and how lit it is — declared here because a trigger can fire
-       its first update while it is still being created */
-    var certBase = 0, certDrift = 0, certLit = 0, spinning = false;
+    /* how far the coil has turned, and how lit it is — declared here
+       because a trigger can fire its first update while it is still being
+       created */
+    var certDrift = 0, certLit = 0, certPull = 0, spinning = false;
     var parts = [].slice.call(orbit.querySelectorAll('.watch-strap, .watch-crown, .watch-case'));
     var stitching = orbit.querySelector('.watch-stitching');
-    if (!svg || !sweep || !eras.length) return;
+    if (!svg || !eras.length) return;
 
     orbit.classList.add('is-live');
 
@@ -1166,18 +1172,17 @@
     }
     ticks.innerHTML = tickMarkup;
 
-    /* ---- the arc the hand covers ---------------------------------------- */
-    var STEPS = 360, d = '';
-    for (var i = 0; i <= STEPS; i++) {
-      var ang = (i / STEPS) * Math.PI * 2 - Math.PI / 2;
-      d += (i ? ' L ' : 'M ') +
-           (CX + Math.cos(ang) * R_TRACK).toFixed(2) + ' ' +
-           (CY + Math.sin(ang) * R_TRACK).toFixed(2);
+    /* ---- the crown --------------------------------------------------------
+       A ladder of notches inside the crown box, twice as long as the box is
+       tall and clipped to it, so sliding it by one notch and wrapping reads
+       as a knob being turned. */
+    var KNURL = 16, KN_TOP = 678, KN_H = 44;
+    var knurlMarkup = '';
+    for (var k = 0; k < KNURL * 2; k++) {
+      var ky = KN_TOP - KN_H + (k / KNURL) * KN_H;
+      knurlMarkup += '<line x1="792" y1="' + ky.toFixed(1) + '" x2="828" y2="' + ky.toFixed(1) + '"/>';
     }
-    sweep.setAttribute('d', d);
-    var L = sweep.getTotalLength();
-    sweep.style.strokeDasharray = L;
-    sweep.style.strokeDashoffset = L;
+    if (knurl) knurl.innerHTML = knurlMarkup;
 
     /* ---- the parts that get drawn on -------------------------------------
        Strap, crown and case are all strokes, so each one can be walked on
@@ -1196,21 +1201,8 @@
     if (hand) hand.style.opacity = '0';
     if (hub) hub.style.opacity = '0';
 
-    /* The note in the middle of the face is written by both triggers — it
-       fades up as the watch is built and out again as the hand sets off —
-       and they run in the same update. Whichever wrote last would win, and
-       the build trigger sits at progress 1 for the whole of the sweep, so it
-       kept putting the note back on top of the hand. Each one owns its own
-       end of the fade instead, and the note is painted from both. */
-    var introIn = 0, introOut = 0;
-
-    function paintIntro() {
-      if (!intro) return;
-      var v = introIn * (1 - introOut);
-      intro.style.opacity = v.toFixed(3);
-      intro.style.transform = 'translate(-50%,-50%) scale(' + (1 - introOut * 0.12) + ')';
-    }
-    paintIntro();
+    if (year) year.style.opacity = '0';
+    var yearIn = 0;
 
     /* ---- the eras take the sides ----------------------------------------
        The side is the half of the dial the hand is in over that era's
@@ -1309,6 +1301,29 @@
        reaches its own marker on the quarter and holds most of the way to the
        next; the last one is cut short so the arrival back at twelve has room
        to itself. */
+    /* What the face says at each quarter, and at the end. The hand standing
+       on a marker is the only thing that changes it. */
+    var YEARS = years.map(function (el) {
+      var then = el.querySelector('.then');
+      return (then || el).textContent.trim();
+    });
+    var shown = -1;
+
+    function sayYear(i) {
+      if (!yearOut || i === shown) return;
+      shown = i;
+      year.classList.add('is-turning');
+      setTimeout(function () {
+        yearOut.textContent = i >= YEARS.length ? 'Now' : YEARS[i];
+        year.classList.remove('is-turning');
+      }, 190);
+    }
+
+    /* The revolution is over by HOME. What is left of the pin after that is
+       the outro, where the watch comes apart and the line carries on down the
+       strap — so everything below reads the progress as revolution time, and
+       only the outro reads the raw scroll. */
+    var HOME = 0.80;
     var NOW = 0.88;                     /* the hand closes on twelve         */
     var OPEN = 0.06;                    /* the note in the middle clears     */
     var HOLD = 0.20;                    /* how long a panel stays up         */
@@ -1331,12 +1346,13 @@
         el.style.top  = (oy + CY * unit + Math.sin(a) * r) + 'px';
       });
 
-      if (intro) {
-        intro.style.left = (ox + CX * unit) + 'px';
-        intro.style.top  = (oy + CY * unit) + 'px';
+      if (year) {
+        year.style.left = (ox + CX * unit) + 'px';
+        year.style.top  = (oy + CY * unit) + 'px';
       }
 
       layoutNow();
+      drawTail();
 
       drawFeed();
     }
@@ -1379,20 +1395,40 @@
         var a = (u * CERT_TURNS + i / N) * Math.PI * 2;
         var ca = Math.cos(a), sa = Math.sin(a);
 
+        /* certPull draws the whole coil back into the middle of the face
+           and pushes it out behind the dial as the watch comes apart */
+        var pull = 1 - certPull;
         var el = certItems[i];
-        el.style.setProperty('--x', (ca * certR).toFixed(1) + 'px');
-        el.style.setProperty('--y', y.toFixed(1) + 'px');
-        el.style.setProperty('--z', (sa * certR).toFixed(1) + 'px');
+        el.style.setProperty('--x', (ca * certR * pull).toFixed(1) + 'px');
+        el.style.setProperty('--y', (y * pull).toFixed(1) + 'px');
+        el.style.setProperty('--z', (sa * certR * pull - certPull * 280).toFixed(1) + 'px');
         /* turned to face the axis, so it lies on the surface of the coil */
         el.style.setProperty('--rx', (-Math.cos(a) * 8).toFixed(1) + 'deg');
 
-        /* dimmer round the back, and both ends of the travel faded so the
-           wrap is never seen */
+        /* Dimmer round the back, both ends of the travel faded so the wrap
+           is never seen, and — on the far side only — hidden by the case it
+           is passing behind. That last one is done here rather than left to
+           the 3D sort because the case is inside an <svg>, and the browser
+           will not sort HTML against the shapes in one at any depth.
+
+           It is a fade rather than a cut, taken from how far the chip is
+           from the middle of the face: right behind the dial it is gone, and
+           it comes back as it swings out past the rim. */
         var edge = Math.min(u, 1 - u) / 0.16;
         var ends = edge >= 1 ? 1 : edge * edge * (3 - 2 * edge);
         var depth = 0.34 + 0.66 * ((sa + 1) / 2);
-        el.style.opacity = (lit * depth * ends).toFixed(3);
-        el.style.pointerEvents = lit * depth * ends > 0.5 ? 'auto' : 'none';
+
+        var hid = 1;
+        if (sa < 0) {
+          var dist = Math.sqrt(ca * certR * ca * certR + y * y);
+          var rIn = R_CASE * unit * 0.42, rOut = R_CASE * unit * 1.02;
+          var q = clamp01((dist - rIn) / Math.max(rOut - rIn, 1));
+          hid = q * q * (3 - 2 * q);
+        }
+
+        var lit2 = lit * depth * ends * hid * (1 - certPull);
+        el.style.opacity = lit2.toFixed(3);
+        el.style.pointerEvents = lit2 > 0.5 ? 'auto' : 'none';
       }
     }
 
@@ -1415,6 +1451,22 @@
       var fl = feedPath.getTotalLength();
       feedPath.style.strokeDasharray = fl;
       feedPath.style.strokeDashoffset = fl;
+    }
+
+    /* Where the hand goes when it stops being a hand: off the hub, out to
+       the left, and then down the middle of the strap and off the bottom of
+       the frame — which is where the contact panel picks the line up. */
+    function drawTail() {
+      if (!tail) return;
+      tail.setAttribute('d',
+        'M ' + CX + ' ' + CY +
+        ' C ' + (CX - 150) + ' ' + CY + ', ' + (CX - 220) + ' ' + (CY + 140) +
+        ', ' + (CX - 130) + ' ' + (CY + 300) +
+        ' C ' + (CX - 50) + ' ' + (CY + 440) + ', ' + CX + ' ' + (CY + 470) +
+        ', ' + CX + ' 1400');
+      var tl = tail.getTotalLength();
+      tail.style.strokeDasharray = tl;
+      tail.style.strokeDashoffset = tl;
     }
 
     function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
@@ -1466,8 +1518,8 @@
         if (dial) dial.style.opacity = String(ramp(p, 0.76, 0.94));
         if (hand) hand.style.opacity = String(ramp(p, 0.84, 0.98) * 0.9);
         if (hub) hub.style.opacity = String(ramp(p, 0.84, 0.98));
-        introIn = ramp(p, 0.88, 1);
-        paintIntro();
+        if (year) year.style.opacity = String(ramp(p, 0.86, 1));
+        yearIn = ramp(p, 0.86, 1);
       }
     });
 
@@ -1475,7 +1527,7 @@
     ScrollTrigger.create({
       trigger: orbit,
       start: 'top top',
-      end: '+=520%',
+      end: '+=640%',
       pin: true,
       pinSpacing: true,
       scrub: 0.6,
@@ -1483,16 +1535,26 @@
       refreshPriority: 2,
       onRefresh: measure,
       onUpdate: function (self) {
-        var p = self.progress;
+        var raw = self.progress;
+        /* Everything from here to the outro is in revolution time: the whole
+           schedule was written against a progress that ended when the hand
+           came home, and it still is. */
+        var p = clamp01(raw / HOME);
+        detent(p, self.direction);
 
-        /* the note in the middle of the face clears as the hand sets off */
-        introOut = ramp(p, 0, OPEN);
-        paintIntro();
-
-        /* one revolution, twelve back round to twelve */
+        /* One revolution, twelve back round to twelve. The short hand runs
+           two turns in the same span, so both of them come home together on
+           the last marker rather than one arriving alone. */
         var deg = p * 360;
         if (hand) hand.setAttribute('transform', 'rotate(' + deg.toFixed(2) + ' ' + CX + ' ' + CY + ')');
-        sweep.style.strokeDashoffset = L * (1 - p);
+        if (hand2) hand2.setAttribute('transform', 'rotate(' + (deg * 2).toFixed(2) + ' ' + CX + ' ' + CY + ')');
+
+        /* and the crown turns with them */
+        if (knurl) {
+          var step = KN_H / KNURL;
+          knurl.setAttribute('transform',
+            'translate(0 ' + ((p * 360 / (360 / KNURL / 2)) % 1 * step).toFixed(2) + ')');
+        }
 
         var a = deg * Math.PI / 180 - Math.PI / 2;
         mark.style.transform = 'translate(' +
@@ -1500,10 +1562,15 @@
           (oy + (CY + Math.sin(a) * R_TRACK) * unit) + 'px)';
         mark.style.opacity = p > 0.005 && p < 0.995 ? '1' : '0';
 
-        /* a year lights as the hand reaches its marker */
+        /* a year lights as the hand reaches its marker, and the face says
+           which one it is standing on */
+        var on = 0;
         years.forEach(function (el, i) {
-          el.classList.toggle('is-now', p >= i / years.length - 0.01);
+          var passed = p >= i / years.length - 0.01;
+          el.classList.toggle('is-now', passed);
+          if (passed) on = i;
         });
+        sayYear(p >= NOW - 0.02 ? YEARS.length : on);
 
         /* each era opens on its own marker and holds the side the hand is
            on, and all of them are out of the way by the time Now arrives */
@@ -1523,6 +1590,11 @@
           era.style.opacity = vis.toFixed(3);
           era.style.transform =
             'translateY(-50%) translateX(' + (dir * (1 - vis) * 70).toFixed(1) + 'px)';
+          /* The panel is pointer-events:none in the stylesheet so a faded one
+             never swallows a click meant for the dial. Nothing was ever
+             turning it back on, which is why the videos in here could not be
+             played at all. */
+          era.style.pointerEvents = vis > 0.9 ? 'auto' : 'none';
 
           /* the photographs belong to one year, so they come and go with it,
              on the opposite side of the case to the panel */
@@ -1558,19 +1630,75 @@
 
         /* The coil turns with the scroll and keeps turning on its own, so
            it is alive while you read it. drift is added by the ticker. */
+        /* Only how lit it is comes from the scroll. Adding a scrolled offset
+           to the turn as well made the coil stall and jump: scrolling down
+           pushed it forward faster than the drift and scrolling up cancelled
+           the drift outright, so it read as stopping. The turn is the
+           ticker's alone. */
         certLit = ramp(p, NOW + 0.02, NOW + 0.10);
-        certBase = (p - NOW) * 0.9;
-        windCerts(certBase + certDrift, certLit);
+
+        /* ---- the outro ---------------------------------------------------
+           Past HOME the watch stops being a watch. The certificates are
+           drawn back into the middle of the face and pushed out behind it,
+           the case and both hands shrink into that same point, and the line
+           that was the hand runs on down the strap and off the bottom of the
+           frame — where the contact panel takes it up. The strap is the one
+           thing that does not go, because it is what carries on. */
+        var o = ramp(raw, HOME, 1);
+        certPull = o;
+        windCerts(certDrift, certLit);
+
+        var shrink = ramp(raw, HOME + 0.03, HOME + 0.15);
+        dialBits.forEach(function (el) { el.style.opacity = String(1 - shrink); });
+        if (core) {
+          var k = 1 - shrink * 0.92;
+          core.setAttribute('transform',
+            'translate(' + (CX * (1 - k)).toFixed(2) + ' ' + (CY * (1 - k)).toFixed(2) +
+            ') scale(' + k.toFixed(4) + ')');
+        }
+        if (year) year.style.opacity = String(yearIn * (1 - ramp(raw, HOME, HOME + 0.3)));
+        if (o > 0 && mark) mark.style.opacity = '0';
+
+        if (tail) {
+          var tl = tail.getTotalLength();
+          var tp = ramp(raw, HOME + 0.10, HOME + 0.19);
+          tail.style.strokeDashoffset = tl * (1 - tp);
+          tail.style.opacity = tp > 0.001 ? '0.9' : '0';
+        }
+
+        if (now && o > 0) now.style.opacity = String((1 - o) * (+now.style.opacity || 0));
+        if (picks && o > 0) picks.style.opacity = String((1 - o) * (+picks.style.opacity || 0));
+        if (pile && o > 0) pile.style.opacity = String((1 - o) * (+pile.style.opacity || 0));
       }
     });
 
     /* The coil keeps turning after the scroll stops. Only while it is worth
        looking at — there is no reason to run a ticker for something faded
        out — and only ever adding to what the scroll already set. */
+    /* A notch at Now. The hand coming home is the one moment on this page
+       worth stopping at, so the scroll is held for a beat as it crosses —
+       once, forwards only, and never long enough to read as a hang. Skipped
+       entirely without Lenis: taking the native scroll away from someone
+       mid-gesture is a worse thing than not having the detent at all. */
+    var notched = false;
+
+    function detent(q, dir) {
+      if (!lenis || notched || dir < 0) return;
+      if (q < NOW || q > NOW + 0.06) return;
+      notched = true;
+      lenis.stop();
+      setTimeout(function () { lenis.start(); }, 420);
+    }
+
+    /* The ticker runs for as long as the scene is on screen and simply does
+       nothing while the coil is faded out. Stopping it when the coil was dark
+       was the bug: the trigger only starts it once, on the way in, when the
+       coil is always dark — so it stopped immediately and never came back,
+       and from then on the chips only moved while the scroll was moving. */
     function spin(time, deltaMs) {
-      if (certLit < 0.01) { stopSpin(); return; }
+      if (certLit < 0.01) return;
       certDrift += Math.min(deltaMs, 50) / 1000 / 26;
-      windCerts(certBase + certDrift, certLit);
+      windCerts(certDrift, certLit);
     }
     function startSpin() { if (!spinning) { spinning = true; gsap.ticker.add(spin); } }
     function stopSpin()  { if (spinning) { spinning = false; gsap.ticker.remove(spin); } }
@@ -1598,6 +1726,70 @@
     window.addEventListener('resize', function () {
       clearTimeout(rt);
       rt = setTimeout(measure, 180);
+    });
+  })();
+
+  /* ---------------------------------------------------------- The strap ends
+
+     The leather runs off the bottom of the watch and squares off into the
+     sheet the last section is written on: a band the width of the strap that
+     opens out to the width of the panel as the section arrives, with the
+     line that used to be the watch hand coming down the middle of it to the
+     address at the end.
+
+     Both are written as custom properties rather than transforms, because a
+     scaled band would take its stitching and its corner radius with it and
+     arrive as a stretched picture of a strap rather than as a wider one. */
+
+  (function () {
+    var panel = document.querySelector('.contact-leather');
+    var line  = document.querySelector('.contact-line');
+    var mail  = document.querySelector('.contact-mail');
+    var contact = document.querySelector('#contact');
+    if (!panel || !contact || reduced || !hasGsap) return;
+
+    var NARROW = 200;   /* about the width the strap is on screen */
+
+    function paint(p) {
+      var w = NARROW + (Math.min(window.innerWidth * 0.92, 1100) - NARROW) * p;
+      panel.style.setProperty('--lw', w.toFixed(0) + 'px');
+      panel.style.setProperty('--lh', (30 + 70 * p).toFixed(1) + '%');
+      /* The line stops at the address rather than running past it — it is
+         travelling to something, and a line that carries on through its own
+         destination is just a rule down the middle of the page. */
+      if (line && mail) {
+        var stop = offsetWithin(mail, contact);
+        if (stop > 0) line.style.setProperty('--ll', (stop * clamp(p / 0.72)).toFixed(0) + 'px');
+      }
+      if (mail) {
+        var m = clamp((p - 0.62) / 0.3);
+        mail.style.opacity = m.toFixed(3);
+        mail.style.transform = 'translateY(' + ((1 - m) * 14).toFixed(1) + 'px)';
+      }
+    }
+    function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+    /* How far down the section the address sits, in layout terms.
+
+       Rectangles are the wrong tool here: the whole block is being lifted
+       into place by [data-rise] at the same time, so a measured rect says
+       wherever the rise has got to and the line was overshooting by exactly
+       that. Offsets ignore transforms, which is the point. */
+    function offsetWithin(el, root) {
+      var y = 0;
+      while (el && el !== root) { y += el.offsetTop; el = el.offsetParent; }
+      return y;
+    }
+
+    paint(0);
+
+    ScrollTrigger.create({
+      trigger: contact,
+      start: 'top bottom',
+      end: 'top 18%',
+      scrub: 0.6,
+      invalidateOnRefresh: true,
+      onUpdate: function (self) { paint(self.progress); }
     });
   })();
 

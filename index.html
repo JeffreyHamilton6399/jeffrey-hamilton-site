@@ -436,12 +436,27 @@
             <path class="watch-stitch" d="M 440 1360 L 440 1150 L 424 948"/>
             <path class="watch-stitch" d="M 560 1360 L 560 1150 L 576 948"/>
           </g>
-          <path class="watch-crown" d="M 790 680 L 828 680 L 828 720 L 790 720"/>
-          <circle class="watch-case" cx="500" cy="700" r="292"/>
-          <g class="path-ticks"></g>
-          <path class="path-sweep" fill="none"/>
-          <line class="path-hand" x1="500" y1="736" x2="500" y2="452"/>
-          <circle class="path-hub" cx="500" cy="700" r="7"/>
+          <!-- The crown is a box with a set of notches inside it, clipped to
+               the box and slid along as the hand turns, so the knob reads as
+               being physically wound rather than as decoration. -->
+          <clipPath id="crown-clip"><rect x="790" y="678" width="40" height="44"/></clipPath>
+          <path class="watch-crown" d="M 790 678 L 830 678 L 830 722 L 790 722 Z"/>
+          <g class="watch-knurl" clip-path="url(#crown-clip)"></g>
+
+          <!-- Everything that collapses at the end is one group, so it can
+               be compressed into the middle with a single transform while
+               the hands keep their own rotation inside it. -->
+          <g class="watch-core">
+            <circle class="watch-case" cx="500" cy="700" r="292"/>
+            <g class="path-ticks"></g>
+            <line class="path-hand" x1="500" y1="736" x2="500" y2="452"/>
+            <line class="path-hand-sm" x1="500" y1="722" x2="500" y2="560"/>
+            <circle class="path-hub" cx="500" cy="700" r="7"/>
+          </g>
+
+          <!-- What the hand becomes once it has nowhere left to point: it
+               runs off the hub, out to the left and down the strap. -->
+          <path class="path-tail" fill="none"/>
         </svg>
         <!-- Four markers on the quarters. The first one carries both labels:
              the hand comes back round to it at the end of its revolution, and
@@ -450,11 +465,8 @@
           <li class="is-origin"><span class="dy then">2018</span><span class="dy now">Now</span></li>
           <li>2022</li><li>2024</li><li>2025</li>
         </ol>
-        <div class="path-intro" aria-hidden="true">
-          <span class="pi-kicker">How I got here</span>
-          <span class="pi-title">2018 &rarr; now</span>
-          <span class="pi-note">Three turns, so far</span>
-        </div>
+        <!-- The year the hand is standing on, read straight off the dial. -->
+        <div class="path-year" aria-hidden="true"><span class="py-now">2018</span></div>
         <span class="path-mark"></span>
       </div>
     </div>
@@ -478,7 +490,6 @@
       <article class="era era-plain">
         <div class="wrap era-grid">
           <div class="era-copy" data-stagger="0.08" data-rise>
-            <p class="era-index" data-reveal>01 &middot; 2018</p>
             <h3 class="era-title" data-reveal>The egg business</h3>
             <p class="era-text" data-reveal>
               The first thing I ever ran was selling eggs. That was the whole enterprise, and it
@@ -496,48 +507,88 @@
       <article class="era">
         <div class="wrap era-grid">
           <div class="era-copy" data-stagger="0.08" data-rise>
-            <p class="era-index" data-reveal>02 &middot; 2022 &middot; where it started</p>
-            <h3 class="era-title" data-reveal>Making things move</h3>
             <p class="era-text" data-reveal>
               Before any of the apps it was games, edits and 3D. I taught myself Blender, cut
-              videos for YouTube, and built little games for the plain fun of getting something on
-              screen to move the way I meant it to.
+              videos for YouTube, and built little games for the plain fun of getting something
+              on screen to move the way I meant it to.
             </p>
             <p class="era-text" data-reveal>
-              None of it was for anyone. It was just where I learned to finish a thing and put it
-              out.
+              For a good stretch YouTube was the whole point, across two channels at once:
+              <a class="ulink" href="https://www.youtube.com/@Jeffrey_Creates/videos" target="_blank" rel="noopener">Jeffrey_Creates</a>
+              for the animation and game work, and
+              <a class="ulink" href="https://www.youtube.com/@JeffreyVR6399/videos" target="_blank" rel="noopener">JeffreyVR6399</a>
+              for everything I was building in VR.
+            </p>
+            <p class="era-text" data-reveal>
+              None of it was for anyone. It was just where I learned to finish a thing and put
+              it out.
             </p>
           </div>
 
-          <div class="era-media era-media-quad" data-parallax="-40" data-reveal>
-            <a class="vid" href="https://www.youtube.com/watch?v=7Kh8Nz7sL3g" data-yt="7Kh8Nz7sL3g" target="_blank" rel="noopener" aria-label="Play a game development video on YouTube">
-              <span class="vid-frame">
-                <img src="https://i.ytimg.com/vi/7Kh8Nz7sL3g/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/7Kh8Nz7sL3g/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
-                <span class="vid-play" aria-hidden="true"></span>
-              </span>
-              <span class="vid-cap"><span class="vid-title">A game I built</span><span class="vid-kind">Game dev</span></span>
-            </a>
-            <a class="vid" href="https://www.youtube.com/watch?v=wgRcht-aRic" data-yt="wgRcht-aRic" target="_blank" rel="noopener" aria-label="Play a YouTube edit on YouTube">
-              <span class="vid-frame">
-                <img src="https://i.ytimg.com/vi/wgRcht-aRic/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/wgRcht-aRic/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
-                <span class="vid-play" aria-hidden="true"></span>
-              </span>
-              <span class="vid-cap"><span class="vid-title">An edit</span><span class="vid-kind">YouTube</span></span>
-            </a>
-            <a class="vid" href="https://www.youtube.com/watch?v=O1i1TQkx9b8" data-yt="O1i1TQkx9b8" target="_blank" rel="noopener" aria-label="Play a Blender video on YouTube">
-              <span class="vid-frame">
-                <img src="https://i.ytimg.com/vi/O1i1TQkx9b8/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/O1i1TQkx9b8/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
-                <span class="vid-play" aria-hidden="true"></span>
-              </span>
-              <span class="vid-cap"><span class="vid-title">3D in Blender</span><span class="vid-kind">Blender</span></span>
-            </a>
-            <a class="vid" href="https://www.youtube.com/watch?v=rYwJTA4PRdY" data-yt="rYwJTA4PRdY" target="_blank" rel="noopener" aria-label="Play another Blender video on YouTube">
-              <span class="vid-frame">
-                <img src="https://i.ytimg.com/vi/rYwJTA4PRdY/sddefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/rYwJTA4PRdY/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
-                <span class="vid-play" aria-hidden="true"></span>
-              </span>
-              <span class="vid-cap"><span class="vid-title">More Blender</span><span class="vid-kind">Blender</span></span>
-            </a>
+          <div class="era-media" data-parallax="-40" data-reveal>
+            <p class="media-label">Games, edits and 3D</p>
+            <div class="era-media-quad">
+              <a class="vid" href="https://www.youtube.com/watch?v=pZhBZBH4NhU" data-yt="pZhBZBH4NhU"
+                 target="_blank" rel="noopener" aria-label="Play the VR parkour game video on YouTube">
+                <span class="vid-frame">
+                  <img src="https://i.ytimg.com/vi/pZhBZBH4NhU/maxresdefault.jpg"
+                       onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/pZhBZBH4NhU/hqdefault.jpg'"
+                       loading="lazy" decoding="async" alt="">
+                  <span class="vid-play" aria-hidden="true"></span>
+                </span>
+                <span class="vid-cap"><span class="vid-title">First version of a parkour game</span><span class="vid-kind">VR</span></span>
+              </a>
+              <a class="vid" href="https://www.youtube.com/watch?v=7Kh8Nz7sL3g" data-yt="7Kh8Nz7sL3g"
+                 target="_blank" rel="noopener" aria-label="Play a game development video on YouTube">
+                <span class="vid-frame">
+                  <img src="https://i.ytimg.com/vi/7Kh8Nz7sL3g/maxresdefault.jpg"
+                       onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/7Kh8Nz7sL3g/hqdefault.jpg'"
+                       loading="lazy" decoding="async" alt="">
+                  <span class="vid-play" aria-hidden="true"></span>
+                </span>
+                <span class="vid-cap"><span class="vid-title">A game I built</span><span class="vid-kind">Game dev</span></span>
+              </a>
+              <a class="vid" href="https://www.youtube.com/watch?v=oZsMCpaTb0Q" data-yt="oZsMCpaTb0Q"
+                 target="_blank" rel="noopener" aria-label="Play the hair test animation on YouTube">
+                <span class="vid-frame">
+                  <img src="https://i.ytimg.com/vi/oZsMCpaTb0Q/maxresdefault.jpg"
+                       onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/oZsMCpaTb0Q/hqdefault.jpg'"
+                       loading="lazy" decoding="async" alt="">
+                  <span class="vid-play" aria-hidden="true"></span>
+                </span>
+                <span class="vid-cap"><span class="vid-title">Hair test</span><span class="vid-kind">Animation</span></span>
+              </a>
+              <a class="vid" href="https://www.youtube.com/watch?v=O1i1TQkx9b8" data-yt="O1i1TQkx9b8"
+                 target="_blank" rel="noopener" aria-label="Play a Blender video on YouTube">
+                <span class="vid-frame">
+                  <img src="https://i.ytimg.com/vi/O1i1TQkx9b8/maxresdefault.jpg"
+                       onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/O1i1TQkx9b8/hqdefault.jpg'"
+                       loading="lazy" decoding="async" alt="">
+                  <span class="vid-play" aria-hidden="true"></span>
+                </span>
+                <span class="vid-cap"><span class="vid-title">3D in Blender</span><span class="vid-kind">Blender</span></span>
+              </a>
+              <a class="vid" href="https://www.youtube.com/watch?v=wgRcht-aRic" data-yt="wgRcht-aRic"
+                 target="_blank" rel="noopener" aria-label="Play a YouTube edit on YouTube">
+                <span class="vid-frame">
+                  <img src="https://i.ytimg.com/vi/wgRcht-aRic/maxresdefault.jpg"
+                       onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/wgRcht-aRic/hqdefault.jpg'"
+                       loading="lazy" decoding="async" alt="">
+                  <span class="vid-play" aria-hidden="true"></span>
+                </span>
+                <span class="vid-cap"><span class="vid-title">An edit</span><span class="vid-kind">YouTube</span></span>
+              </a>
+              <a class="vid" href="https://www.youtube.com/watch?v=rYwJTA4PRdY" data-yt="rYwJTA4PRdY"
+                 target="_blank" rel="noopener" aria-label="Play another Blender video on YouTube">
+                <span class="vid-frame">
+                  <img src="https://i.ytimg.com/vi/rYwJTA4PRdY/sddefault.jpg"
+                       onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/rYwJTA4PRdY/hqdefault.jpg'"
+                       loading="lazy" decoding="async" alt="">
+                  <span class="vid-play" aria-hidden="true"></span>
+                </span>
+                <span class="vid-cap"><span class="vid-title">More Blender</span><span class="vid-kind">Blender</span></span>
+              </a>
+            </div>
           </div>
         </div>
       </article>
@@ -546,26 +597,41 @@
       <article class="era era-flip">
         <div class="wrap era-grid">
           <div class="era-copy" data-stagger="0.08" data-rise>
-            <p class="era-index" data-reveal>03 &middot; 2024 &middot; the switch</p>
-            <h3 class="era-title" data-reveal>Teaching the machine</h3>
             <p class="era-text" data-reveal>
-              Then I started leaning on AI to build things faster than I could alone, and the first
-              real target was Minecraft mods &mdash; small tools for a game I already knew inside out.
+              Then I started leaning on AI to build things faster than I could alone, and the
+              first real target was Minecraft mods &mdash; small tools for a game I already knew
+              inside out, including one that put a language model in the chat box.
             </p>
             <p class="era-text" data-reveal>
-              It was the first time code stopped being homework and started being the fastest way
-              to get an idea out of my head.
+              It was the first time code stopped being homework and started being the fastest
+              way to get an idea out of my head.
             </p>
           </div>
 
-          <div class="era-media era-media-solo" data-parallax="-56" data-reveal>
-            <a class="vid" href="https://www.youtube.com/watch?v=DubOQRZzKdw" data-yt="DubOQRZzKdw" target="_blank" rel="noopener" aria-label="Play a Minecraft modding video on YouTube">
-              <span class="vid-frame">
-                <img src="https://i.ytimg.com/vi/DubOQRZzKdw/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/DubOQRZzKdw/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
-                <span class="vid-play" aria-hidden="true"></span>
-              </span>
-              <span class="vid-cap"><span class="vid-title">Modding with AI</span><span class="vid-kind">Minecraft &middot; Fabric</span></span>
-            </a>
+          <div class="era-media" data-parallax="-56" data-reveal>
+            <p class="media-label">Mods, and a model in the chat box</p>
+            <div class="era-media-pair">
+              <a class="vid" href="https://www.youtube.com/watch?v=Z1okSp9PBjM" data-yt="Z1okSp9PBjM"
+                 target="_blank" rel="noopener" aria-label="Play the SmartChat build video on YouTube">
+                <span class="vid-frame">
+                  <img src="https://i.ytimg.com/vi/Z1okSp9PBjM/maxresdefault.jpg"
+                       onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/Z1okSp9PBjM/hqdefault.jpg'"
+                       loading="lazy" decoding="async" alt="">
+                  <span class="vid-play" aria-hidden="true"></span>
+                </span>
+                <span class="vid-cap"><span class="vid-title">The creation of SmartChat</span><span class="vid-kind">Minecraft</span></span>
+              </a>
+              <a class="vid" href="https://www.youtube.com/watch?v=DubOQRZzKdw" data-yt="DubOQRZzKdw"
+                 target="_blank" rel="noopener" aria-label="Play a Minecraft modding video on YouTube">
+                <span class="vid-frame">
+                  <img src="https://i.ytimg.com/vi/DubOQRZzKdw/maxresdefault.jpg"
+                       onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/DubOQRZzKdw/hqdefault.jpg'"
+                       loading="lazy" decoding="async" alt="">
+                  <span class="vid-play" aria-hidden="true"></span>
+                </span>
+                <span class="vid-cap"><span class="vid-title">Modding with AI</span><span class="vid-kind">Minecraft &middot; Fabric</span></span>
+              </a>
+            </div>
           </div>
         </div>
       </article>
@@ -574,12 +640,10 @@
       <article class="era">
         <div class="wrap era-grid">
           <div class="era-copy" data-stagger="0.08" data-rise>
-            <p class="era-index" data-reveal>04 &middot; 2025 &middot; shipping</p>
             <h3 class="era-title" data-reveal>Vibe-coded and shipped</h3>
             <p class="era-text" data-reveal>
               Now it is real apps, built fast and for fun, and actually put in front of people.
-              Everything in the spiral up top came out of this stretch. Three of them are the ones
-              I keep coming back to.
+              Everything in the spiral up top came out of this stretch.
             </p>
             <ul class="era-now" role="list" data-reveal>
               <li><strong>Software Engineering</strong><span>Provo CAPS</span></li>
@@ -590,6 +654,7 @@
           <!-- Not a build log. app.js stacks these into one pile beside the
                dial when the watch is running; here they are just the photos
                that go with the year. -->
+          <p class="pile-note">I still have fun, though</p>
           <ul class="pile" role="list" aria-label="Photographs from the same stretch">
 
             <li class="pcard" style="--rot: -5.5deg">
@@ -626,14 +691,26 @@
             </li>
           </ul>
 
-          <div class="era-media era-media-solo" data-parallax="-56" data-reveal>
-            <a class="vid" href="https://www.youtube.com/watch?v=a01ObVZSNiI" data-yt="a01ObVZSNiI" target="_blank" rel="noopener" aria-label="Play a video about the apps on YouTube">
-              <span class="vid-frame">
-                <img src="https://i.ytimg.com/vi/a01ObVZSNiI/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/a01ObVZSNiI/hqdefault.jpg'" loading="lazy" decoding="async" alt="">
-                <span class="vid-play" aria-hidden="true"></span>
-              </span>
-              <span class="vid-cap"><span class="vid-title">Vibe coding, and fun</span><span class="vid-kind">The apps</span></span>
-            </a>
+          <div class="era-media" data-parallax="-56" data-reveal>
+            <p class="media-label">Vibe coded &amp; shipped</p>
+            <div class="era-media-pair">
+              <a class="ship" href="https://jeffrey-hamilton-tools.vercel.app/" target="_blank" rel="noopener">
+                <span class="ship-shot"><img src="assets/shots/tools.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Privacy-First Web Tools"></span>
+                <span class="ship-body">
+                  <span class="ship-title">Privacy Tools</span>
+                  <span class="ship-desc">Sixteen tools that run in the tab, so your files never leave your machine.</span>
+                  <span class="ship-tag">Vibe coded &amp; shipped</span>
+                </span>
+              </a>
+              <a class="ship" href="https://jeffreyhamilton6399.github.io/buddy-desktop" target="_blank" rel="noopener">
+                <span class="ship-shot"><img src="assets/shots/buddy.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Buddy"></span>
+                <span class="ship-body">
+                  <span class="ship-title">Buddy</span>
+                  <span class="ship-desc">A desktop AI orb with the model, voice and speech bundled in. Works with the wifi off.</span>
+                  <span class="ship-tag">Vibe coded &amp; shipped</span>
+                </span>
+              </a>
+            </div>
           </div>
         </div>
 
@@ -647,7 +724,7 @@
            the last era, where the dial never showed them; they belong at Now,
            which is the moment the page is claiming they are current. -->
       <div class="path-picks">
-        <p class="pp-kicker">The three I keep coming back to</p>
+        <p class="pp-kicker">The ones I keep coming back to</p>
         <div class="pp-grid">
           <a class="app-card pick" href="https://jeffrey-hamilton-tools.vercel.app/" target="_blank" rel="noopener" data-reveal>
             <span class="app-shot"><img src="assets/shots/tools.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Privacy-First Web Tools"></span>
@@ -665,24 +742,24 @@
               <span class="app-go">Download Buddy <span aria-hidden="true">&#8594;</span></span>
             </span>
           </a>
-          <a class="app-card pick" href="https://jeffreyhamilton6399.github.io/vela/" target="_blank" rel="noopener" data-reveal>
-            <span class="app-shot"><img src="assets/shots/vela.png" width="2880" height="1800" loading="lazy" decoding="async" alt="Vela"></span>
-            <span class="app-body">
-              <span class="app-title">Vela</span>
-              <span class="app-desc">A browser with the tracking taken out and a local assistant in the sidebar.</span>
-              <span class="app-go">Download Vela <span aria-hidden="true">&#8594;</span></span>
-            </span>
-          </a>
         </div>
       </div>
 
       <div class="path-now">
         <p class="pn-kicker">Now</p>
         <h3 class="pn-title">Where the hand is</h3>
+        <p class="pn-about">
+          Egg money to shipped software in seven years, most of it self-taught: Blender and game
+          engines first, then Minecraft mods with a language model wired into them, and now web
+          and desktop apps people actually use. TypeScript and Next.js day to day, Electron when
+          it needs to be a real program, Java for the mods, and enough Blender and Revit left over
+          to be useful. Next I want to build the on-device kind &mdash; software that runs the model
+          on your own machine, so the useful part happens without anything leaving it.
+        </p>
         <ul class="pn-list" role="list">
           <li><strong>Software Engineering</strong><span>Provo CAPS</span></li>
           <li><strong>Intern</strong><span>Doing Business Intelligently</span></li>
-          <li><strong>Seventeen shipped</strong><span>Apps, tools and mods, all public</span></li>
+          <li><strong>Timpview High School</strong><span>Graduating 2027</span></li>
         </ul>
       </div>
 
@@ -702,48 +779,17 @@
   </section>
 
 
-  <!-- ── Who ──────────────────────────────────────────────── -->
-  <!-- This was two acts crossing over, personal then professional. The
-       personal half went to live beside the year it belongs to, on the dial,
-       so what is left is the one statement — and one statement does not need
-       a pinned scene to arrive in. -->
-  <section id="who" class="slab who" aria-labelledby="who-heading">
-    <span class="panel-veil" data-veil="dusk" aria-hidden="true"></span>
-
-    <div class="slab-inner">
-      <div class="wrap">
-        <h2 id="who-heading" class="vh">On and off the clock</h2>
-
-        <div class="reel">
-          <article class="act" data-act="on">
-            <p class="act-kicker">On the clock</p>
-            <h3 class="act-title">What I work in</h3>
-            <p class="act-note">
-              Looking for software engineering work &mdash; or anything that has me writing
-              code all day.
-            </p>
-            <ul class="act-tools" role="list">
-          <li class="tchip">TypeScript</li>
-          <li class="tchip">Next.js</li>
-          <li class="tchip">React</li>
-          <li class="tchip">Electron</li>
-          <li class="tchip">Java &middot; Fabric</li>
-          <li class="tchip">WebAssembly</li>
-          <li class="tchip">llama.cpp</li>
-          <li class="tchip">Yjs &middot; WebRTC</li>
-          <li class="tchip">Prisma</li>
-          <li class="tchip">Canvas</li>
-          <li class="tchip">Blender</li>
-          <li class="tchip">Revit</li>
-            </ul>
-          </article>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- ── Contact ──────────────────────────────────────────── -->
   <section id="contact" class="slab contact on-dark" aria-labelledby="contact-heading">
+    <!-- The strap runs on off the bottom of the watch and squares off into
+         the panel this section sits on. app.js opens it out as the section
+         arrives; with no script it is simply the shape it ends at. -->
+    <div class="contact-hide" aria-hidden="true">
+      <div class="contact-leather">
+        <svg class="contact-line" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 50 0 L 50 100"/></svg>
+      </div>
+    </div>
+
     <div class="slab-inner">
       <div class="wrap" data-stagger="0.09" data-rise>
         <h2 id="contact-heading">
@@ -751,15 +797,12 @@
           <span class="line"><span>together?</span></span>
         </h2>
         <p class="contact-note" data-reveal>
-          I'm always up for a good project. Email is the fastest way to reach me.
+          I'm looking for software engineering work, or anything that has me writing code all
+          day. The line has to end somewhere, so it ends here:
         </p>
         <a class="contact-mail" href="mailto:jeffreyscotthamilton6399@gmail.com" data-reveal>
           jeffreyscotthamilton6399@gmail.com
         </a>
-        <ul class="links contact-links" role="list" data-reveal>
-          <li><a class="ulink" href="https://www.linkedin.com/in/jeffrey-s-hamilton/" target="_blank" rel="noopener">LinkedIn</a></li>
-          <li><a class="ulink" href="https://github.com/JeffreyHamilton6399" target="_blank" rel="noopener">GitHub</a></li>
-        </ul>
       </div>
     </div>
   </section>

@@ -850,73 +850,72 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .spiral-fallback .spiral-card { position: static; transform: none; width: auto; will-change: auto; }
 .spiral-fallback .card-desc { -webkit-line-clamp: 4; }
 
-/* --------------------------------------------------------- On the clock */
-
-.vh {
-  position: absolute;
-  width: 1px; height: 1px;
-  margin: -1px; padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* One statement, one screen. Short of that the panel's own bottom edge is
-   already above the fold the moment it arrives, so the wash that carries the
-   next panel over it would start before this one had been read. */
-.who .slab-inner {
-  display: flex;
-  align-items: center;
-  min-height: 100vh;
-  min-height: 100svh;
-  padding: clamp(4rem, 10vw, 7rem) 0 clamp(5rem, 12vw, 8rem);
-}
-.who .wrap { width: 100%; }
-
-.act-kicker {
+/* A label sitting directly over a set of cards, in place of the section
+   heading that used to float above the whole era. The year it used to
+   repeat is on the watch face now. */
+.media-label {
+  margin: 0 0 .875rem;
   font-family: var(--mono);
   font-size: .625rem;
   letter-spacing: .18em;
   text-transform: uppercase;
-  color: var(--iris);
-  margin: 0 0 .625rem;
+  color: var(--ink-faint);
 }
-.act-title {
+.on-dark .media-label { color: var(--haze); }
+
+.era-media-pair { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.75rem, 2vw, 1.25rem); }
+
+/* ---- a shipped thing, shown as itself rather than as a video ---------- */
+.ship {
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color .4s var(--ease), transform .4s var(--ease);
+}
+.on-dark .ship { background: color-mix(in srgb, var(--on-dark) 5%, transparent); border-color: var(--rule-dark); color: var(--on-dark); }
+.ship:hover, .ship:focus-visible { border-color: var(--iris-lo); transform: translateY(-3px); }
+.ship-shot { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: var(--shell); }
+.ship-shot img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.ship-body { display: block; padding: .875rem 1rem 1rem; }
+.ship-title { display: block; font-weight: 600; font-size: 1rem; margin-bottom: .25rem; }
+.ship-desc { display: block; font-size: .8125rem; line-height: 1.5; color: var(--ink-soft); }
+.on-dark .ship-desc { color: var(--on-dark-soft); }
+.ship-tag {
+  display: inline-block;
+  margin-top: .625rem;
+  padding: .25rem .5rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--glow) 45%, transparent);
+  font-family: var(--mono);
+  font-size: .5rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--glow);
+}
+
+/* what Now actually says about me */
+.pn-about {
+  margin: 1rem 0 0;
+  padding-top: .875rem;
+  border-top: 1px solid var(--rule-dark);
+  font-size: .8125rem;
+  line-height: 1.6;
+  color: var(--on-dark-soft);
+}
+
+/* the line over the photographs */
+.pile-note {
+  margin: clamp(1.5rem, 4vw, 2.25rem) 0 .75rem;
   font-family: var(--display);
   font-weight: 400;
-  font-size: clamp(2rem, 6vw, 4.5rem);
-  line-height: .95;
-  letter-spacing: -.01em;
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
+  line-height: 1;
   text-transform: uppercase;
-  color: var(--void);
-  margin: 0 0 .75rem;
-}
-.act-note {
-  max-width: 34rem;
-  margin: 0 0 clamp(1.75rem, 4vw, 2.75rem);
-  font-size: 1rem;
-  color: var(--ink-soft);
-}
-.act-tools {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: .5rem;
-}
-.tchip {
-  padding: .5rem .875rem;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: var(--card);
-  font-family: var(--mono);
-  font-size: .6875rem;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  white-space: nowrap;
+  color: var(--on-dark);
 }
 
 /* --------------------------------------------------------- The pile
@@ -1077,18 +1076,12 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   stroke-dasharray: 9 11;
   stroke-linecap: round;
 }
-.watch-crown { fill: none; stroke: var(--rule-dark); stroke-width: 3; stroke-linejoin: round; }
+.watch-crown { fill: var(--void); stroke: var(--rule-dark); stroke-width: 3; stroke-linejoin: round; }
+.watch-knurl line { stroke: var(--rule-dark); stroke-width: 2; }
 .watch-case {
   fill: var(--void);
   stroke: var(--haze);
   stroke-width: 3;
-}
-/* how far round the hand has come, drawn on the dial behind it */
-.path-sweep {
-  stroke: var(--iris-lo);
-  stroke-width: 3;
-  stroke-linecap: round;
-  opacity: .6;
 }
 .path-tick  { stroke: var(--on-dark-faint); stroke-width: 1.5; }
 .path-tick.is-major { stroke: var(--haze); stroke-width: 2.5; }
@@ -1098,13 +1091,28 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   stroke-linecap: round;
   opacity: .9;
 }
+/* The short one. It is in place from the moment the dial is drawn — a hand
+   that fades up out of nothing is the one thing a watch never does. */
+.path-hand-sm {
+  stroke: var(--haze);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  opacity: .75;
+}
 .path-hub { fill: var(--glow); }
+.path-tail {
+  stroke: var(--glow);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .9;
+}
 
 /* the numbers are part of the watch, so they arrive with it */
 .path-dial, .path-ticks { opacity: 0; }
 
-/* What the face says before the hand starts moving. */
-.path-intro {
+/* The year the hand is standing on. */
+.path-year {
   position: absolute;
   left: 0; top: 0;
   width: min(18rem, 40vw);
@@ -1115,21 +1123,17 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
-.pi-kicker {
-  font-family: var(--mono);
-  font-size: .625rem;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: var(--haze);
-}
-.pi-title {
+.py-now {
+  display: block;
   font-family: var(--display);
-  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-size: clamp(2rem, 4.4vw, 3.5rem);
   line-height: 1;
+  letter-spacing: .01em;
   text-transform: uppercase;
   color: var(--on-dark);
+  transition: opacity .28s var(--ease-out), transform .28s var(--ease-out);
 }
-.pi-note { font-size: .8125rem; color: var(--on-dark-soft); }
+.path-year.is-turning .py-now { opacity: 0; transform: translateY(-.35em); }
 
 /* the years around the bezel */
 .path-dial { position: absolute; inset: 0; list-style: none; margin: 0; padding: 0; }
@@ -1329,6 +1333,12 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
    chip may set opacity: any of those would flatten the subtree and the
    certificates would all composite in front of, or behind, the watch as a
    single sheet. The fade is on each chip for exactly that reason. */
+/* The perspective is what gives the coil its depth. It does not give it
+   occlusion: an <svg> is a replaced element, its contents are 2D, and the
+   browser will not sort HTML siblings against the shapes inside it however
+   the transform-style is set — the chips stayed on top of the case at every
+   depth. So being hidden behind the watch is worked out in app.js from where
+   the chip actually is, and applied as opacity. */
 .path-orbit.is-live .path-orbit-in { perspective: 1200px; }
 .path-orbit.is-live .path-certs {
   position: absolute;
@@ -1373,6 +1383,74 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .panel-veil[data-veil="violet"] { background: color-mix(in srgb, var(--iris) 52%, var(--void)); }
 .panel-veil[data-veil="dusk"]   { background: color-mix(in srgb, var(--void) 88%, var(--iris)); }
 
+/* ---- where the strap goes ----------------------------------------------
+   The leather does not stop at the bottom of the watch. As the contact panel
+   arrives it squares off into the sheet the last section is written on, with
+   the same stitching running round the inside of it, and the line that used
+   to be the watch hand comes down the middle of it to the address.
+
+   It is behind the copy and marked hidden, because it is the same thing said
+   twice: the panel is a picture of a strap, and the words on top of it are
+   the content. */
+.contact-hide {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: var(--slab-r) var(--slab-r) 0 0;
+}
+.contact-leather {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: var(--lw, 12rem);
+  height: var(--lh, 100%);
+  transform: translateX(-50%);
+  border-radius: 0 0 clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 2rem);
+  background: color-mix(in srgb, var(--on-dark) 4%, transparent);
+  border: 1px solid var(--rule-dark);
+  border-top: 0;
+}
+.contact-leather::after {
+  content: "";
+  position: absolute;
+  inset: 0 clamp(.75rem, 2vw, 1.5rem) clamp(.75rem, 2vw, 1.5rem);
+  border: 2px dashed color-mix(in srgb, var(--on-dark) 9%, transparent);
+  border-top: 0;
+  border-radius: 0 0 clamp(.75rem, 2vw, 1.5rem) clamp(.75rem, 2vw, 1.5rem);
+}
+.contact-line {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%;
+  height: var(--ll, 0px);
+  overflow: visible;
+}
+.contact-line path {
+  fill: none;
+  stroke: var(--glow);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+}
+
+.contact .slab-inner { position: relative; z-index: 1; }
+.contact-mail {
+  display: inline-block;
+  margin-top: clamp(1.5rem, 4vw, 2.25rem);
+  font-family: var(--mono);
+  font-size: clamp(.8125rem, 1.6vw, 1.0625rem);
+  letter-spacing: .02em;
+  color: var(--on-dark);
+  text-decoration: none;
+  background-image: linear-gradient(var(--glow), var(--glow));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 2px;
+  transition: background-size .5s var(--ease), color .4s var(--ease);
+}
+.contact-mail:hover, .contact-mail:focus-visible { background-size: 100% 2px; color: var(--glow); }
+
 /* ---- the eras, riding the sides of the dial --------------------------- */
 .path-orbit.is-live ~ .slab-inner .era-scenes { position: relative; }
 .is-live-era {
@@ -1386,8 +1464,19 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .is-live-era.side-left  { left: clamp(1rem, 4vw, 4rem); }
 .is-live-era.side-right { right: clamp(1rem, 4vw, 4rem); }
 .is-live-era .era-grid { display: block; padding: 0; }
-.is-live-era .era-media { margin-top: 1.25rem; }
-.is-live-era .era-media-quad { grid-template-columns: 1fr 1fr; gap: .625rem; }
+.is-live-era .era-media { margin-top: 1rem; }
+.is-live-era .era-media-quad,
+.is-live-era .era-media-pair { gap: .5rem; }
+/* The panel has one screen and no scrollbar of its own, so it is capped and
+   its type steps down rather than being allowed to run off both ends. */
+.is-live-era { max-height: 86vh; }
+.is-live-era .media-label { margin-bottom: .5rem; }
+.is-live-era .era-text { margin-bottom: .625rem; }
+.is-live-era .ship-body { padding: .5rem .625rem .625rem; }
+.is-live-era .ship-title { font-size: .8125rem; }
+.is-live-era .ship-desc { display: none; }
+.is-live-era .ship-tag { margin-top: .375rem; }
+.is-live-era .pn-about { display: none; }
 .is-live-era .era-text { font-size: .9375rem; }
 .is-live-era .era-title { font-size: clamp(1.25rem, 2.4vw, 2rem); }
 .is-live-era .vid-cap { margin-top: .375rem; }
@@ -1462,8 +1551,14 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 }
 
 .era-media { display: grid; gap: clamp(.75rem, 2vw, 1.25rem); }
-.era-media-quad { grid-template-columns: 1fr 1fr; }
-.era-media-solo { grid-template-columns: 1fr; }
+/* These used to be the media column itself, which is a grid — now they are
+   a group inside it with a label above, so they have to lay themselves out. */
+.era-media-quad,
+.era-media-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(.75rem, 2vw, 1.25rem);
+}
 
 /* A video facade. The frame holds the thumbnail (or, once clicked, the
    iframe); the play badge sits over it; the caption rides underneath. */
@@ -1588,23 +1683,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .contact h2 .line + .line { margin-top: -.15em; }
 .contact-note { max-width: 46ch; margin-inline: auto; color: var(--on-dark-soft); }
 
-.contact-mail {
-  display: inline-block;
-  margin-top: clamp(2rem, 5vw, 3rem);
-  font-size: clamp(1rem, 2.6vw, 1.5rem);
-  font-weight: 500;
-  text-decoration: none;
-  color: var(--on-dark);
-  background-image: linear-gradient(var(--iris-lo), var(--iris-lo));
-  background-repeat: no-repeat;
-  background-position: 0 100%;
-  background-size: 100% 1px;
-  transition: background-size .5s var(--ease-out), color .3s var(--ease);
-  overflow-wrap: anywhere;
-}
-.contact-mail:hover { background-size: 100% 3px; color: var(--haze); }
 
-.contact-links { justify-content: center; margin-top: clamp(2rem, 5vw, 2.75rem); }
 
 /* --------------------------------------------------------- Footer */
 
@@ -1631,6 +1710,13 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 }
 
 @media (max-width: 680px) {
+  /* Two columns of video is one column of video and one of overflow at this
+     width — the captions are what spill, not the frames. */
+  .era-media-quad,
+  .era-media-pair { grid-template-columns: 1fr; }
+  .vid-cap { flex-wrap: wrap; }
+  .contact-leather { width: min(var(--lw, 12rem), 94vw) !important; }
+
   :root { --slab-lift: 1.25rem; }
 
   .head-inner { grid-template-columns: auto 1fr; }
