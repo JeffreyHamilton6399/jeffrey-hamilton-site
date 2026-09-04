@@ -1094,7 +1094,7 @@
      only reason a watch is worth using as the diagram.
 
      The years sit on the quarters, and each era owns the quarter that starts
-     at its own marker: 2018 at twelve, 2022 at three, 2024 at six, 2025 at
+     at its own marker: 2018 at twelve, 2023 at three, 2024 at six, 2025 at
      nine. The panel takes whichever side of the case the hand is on, so the
      eye follows the hand to the words rather than hunting for them.
 
@@ -1505,9 +1505,16 @@
 
         var hid = 1;
         if (sa < 0) {
+          /* Measured off the chip's own edge, not its middle. A chip is as
+             wide as the case is across, so one whose centre has just cleared
+             the rim is still lying over most of the dial — going by the
+             centre left half of it showing through the watch it is meant to
+             be behind. It is fully out of sight until its near edge is clear
+             of the rim, and only then does it come back. */
           var dist = Math.sqrt(ca * certR * ca * certR + y * y);
-          var rIn = R_CASE * unit * 0.42, rOut = R_CASE * unit * 1.02;
-          var q = clamp01((dist - rIn) / Math.max(rOut - rIn, 1));
+          var edge = dist - (el.offsetWidth || 120) / 2;
+          var rc = R_CASE * unit;
+          var q = clamp01((edge - rc * 0.55) / (rc * 0.45));
           hid = q * q * (3 - 2 * q);
         }
 
@@ -1875,7 +1882,15 @@
     var contact = document.querySelector('#contact');
     if (!panel || !contact || reduced || !hasGsap) return;
 
-    var NARROW = 66;    /* the width the strap has on screen */
+    /* The width the strap has on screen, worked out the same way the watch
+       works it out — the drawing is 1000 units wide across a box whose height
+       is min(99vh, 48rem) at a 1000:1400 ratio, and the strap is 120 of those
+       units. Hard-coding a number here had the leather changing width at the
+       join on every viewport but the one it was measured on. */
+    function strapWidth() {
+      var h = Math.min(window.innerHeight * 0.99, 48 * 16);
+      return 120 * (h * 1000 / 1400) / 1000;
+    }
 
     function paint(p) {
       /* It stays a strap while the section is still coming up, and only
@@ -1884,7 +1899,8 @@
          the leather it is. */
       var wide = clamp((p - 0.34) / 0.5);
       wide = wide * wide * (3 - 2 * wide);
-      var w = NARROW + (Math.min(window.innerWidth * 0.92, 1100) - NARROW) * wide;
+      var narrow = strapWidth();
+      var w = narrow + (Math.min(window.innerWidth * 0.92, 1100) - narrow) * wide;
       panel.style.setProperty('--lw', w.toFixed(0) + 'px');
       if (mail) {
         /* The address opens outward from the middle, in step with the

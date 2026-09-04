@@ -891,6 +891,23 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .pile-label { margin-top: clamp(1.5rem, 4vw, 2.25rem); margin-bottom: .25rem; }
 .pile-note { margin: 0 0 1rem; font-size: .8125rem; color: var(--on-dark-soft); }
 
+/* A block of words in the middle of a grid of footage, so the year reads as
+   something being talked about rather than a column of text with a column of
+   thumbnails beside it. */
+.era-note {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: .75rem .875rem;
+  border: 1px solid var(--rule-dark);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--on-dark) 3%, transparent);
+  font-size: .8125rem;
+  line-height: 1.45;
+  color: var(--on-dark-soft);
+}
+.is-live-era .era-note { padding: .5rem .625rem; font-size: .6875rem; line-height: 1.35; }
+
 .era-media-pair { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.75rem, 2vw, 1.25rem); }
 
 /* ---- a shipped thing, shown as itself rather than as a video ---------- */
@@ -1459,6 +1476,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   position: absolute;
   left: 50%;
   top: 0;
+  /* the same edge the strap has: three pixels, not one */
   width: var(--lw, 12rem);
   /* Full height from the start. Growing the height as well made this arrive
      as a box unfolding upward while the section it is in was still sliding
@@ -1469,7 +1487,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   transform: translateX(-50%);
   border-radius: 0 0 clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 2rem);
   background: color-mix(in srgb, var(--on-dark) 4%, transparent);
-  border: 1px solid var(--rule-dark);
+  border: 3px solid var(--rule-dark);
   border-top: 0;
 }
 .contact-leather::after {
