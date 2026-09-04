@@ -1106,6 +1106,33 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   aspect-ratio: 1000 / 1400;
   overflow: visible;
 }
+/* The run of leather above the drawing, in the same hand as the strap it
+   continues. It grows from its own top edge, so it comes down the screen
+   rather than unrolling from the middle. */
+.path-lead {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--lead-w, 4rem);
+  height: var(--lead-h, 0px);
+  margin-left: calc(var(--lead-w, 4rem) / -2);
+  transform: scaleY(var(--lead-k, 0));
+  transform-origin: 50% 0;
+  border-left: 3px solid var(--rule-dark);
+  border-right: 3px solid var(--rule-dark);
+  background: color-mix(in srgb, var(--on-dark) 4%, transparent);
+  pointer-events: none;
+}
+.path-lead::before, .path-lead::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 0;
+  border-left: 2px dashed color-mix(in srgb, var(--on-dark) 9%, transparent);
+}
+.path-lead::before { left: 13%; }
+.path-lead::after  { right: 13%; }
+
 .watch-strap,
 .watch-stitch,
 .watch-crown,
@@ -1417,16 +1444,21 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
    the content. */
 .contact-hide {
   position: absolute;
-  inset: -6rem 0 0 0;
+  inset: 0;
   overflow: hidden;
   pointer-events: none;
 }
 .contact-leather {
   position: absolute;
   left: 50%;
-  top: -6rem;
+  top: 0;
   width: var(--lw, 12rem);
-  height: var(--lh, 100%);
+  /* Full height from the start. Growing the height as well made this arrive
+     as a box unfolding upward while the section it is in was still sliding
+     up — two motions at once, neither of them the one that matters. The band
+     is simply there, running the length of the panel, and the only thing
+     that changes is how wide it is. */
+  height: 100%;
   transform: translateX(-50%);
   border-radius: 0 0 clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 2rem);
   background: color-mix(in srgb, var(--on-dark) 4%, transparent);

@@ -1141,6 +1141,7 @@
     var hand2 = orbit.querySelector('.path-hand-sm');
     var tail  = orbit.querySelector('.path-tail');
     var core  = orbit.querySelector('.watch-core');
+    var lead = orbit.querySelector('.path-lead');
     var straps = [].slice.call(orbit.querySelectorAll('.watch-strap'));
     var stitchRuns = [].slice.call(orbit.querySelectorAll('.watch-stitch'));
     var dialBits = [].slice.call(orbit.querySelectorAll(
@@ -1409,6 +1410,15 @@
       ox = sb.left - ob.left;
       oy = sb.top - ob.top;
 
+      /* The gap above the drawing, which is what the lead has to fill: from
+         the top of the section down to where the strap in the drawing starts.
+         Both edges are measured, so it closes exactly at any height. */
+      if (lead) {
+        var ob = orbit.getBoundingClientRect();
+        lead.style.setProperty('--lead-w', (120 * unit).toFixed(1) + 'px');
+        lead.style.setProperty('--lead-h', Math.max(sb.top - ob.top + 1, 0).toFixed(1) + 'px');
+      }
+
       years.forEach(function (el, i) {
         var a = (i / years.length) * Math.PI * 2 - Math.PI / 2;
         var r = (R_CASE - 54) * unit;
@@ -1539,7 +1549,8 @@
 
         /* the leather comes down first, out of the tab, and the watch is
            made on the end of it */
-        growStrap(straps[0], STRAP_HEAD, ramp(p, 0.04, 0.44));
+        if (lead) lead.style.setProperty('--lead-k', ramp(p, 0.02, 0.20).toFixed(3));
+        growStrap(straps[0], STRAP_HEAD, ramp(p, 0.16, 0.48));
         growStrap(straps[1], STRAP_TOP, ramp(p, 0.56, 0.82));
 
         /* then the rest, part after part */
@@ -1731,6 +1742,7 @@
         var part = ramp(raw, HOME + 0.02, HOME + 0.20);
         /* the top strap draws back up out of the frame; the bottom one keeps
            growing the way it grew in, on down past where the case was */
+        if (lead) lead.style.setProperty('--lead-k', (1 - part).toFixed(3));
         growStrap(straps[0], STRAP_HEAD, 1 - part);
         growStrap(straps[1], STRAP_TOP, 1 + part * 1.9);
         stitchRuns.forEach(function (el, i) {
@@ -1882,12 +1894,17 @@
     var contact = document.querySelector('#contact');
     if (!panel || !contact || reduced || !hasGsap) return;
 
-    var NARROW = 200;   /* about the width the strap is on screen */
+    var NARROW = 66;    /* the width the strap has on screen */
 
     function paint(p) {
-      var w = NARROW + (Math.min(window.innerWidth * 0.92, 1100) - NARROW) * p;
+      /* It stays a strap while the section is still coming up, and only
+         widens once it is in place. Widening on the way in reads as a box
+         being pushed onto the screen; widening after it has arrived reads as
+         the leather it is. */
+      var wide = clamp((p - 0.34) / 0.5);
+      wide = wide * wide * (3 - 2 * wide);
+      var w = NARROW + (Math.min(window.innerWidth * 0.92, 1100) - NARROW) * wide;
       panel.style.setProperty('--lw', w.toFixed(0) + 'px');
-      panel.style.setProperty('--lh', (30 + 70 * p).toFixed(1) + '%');
       /* The line stops at the address rather than running past it — it is
          travelling to something, and a line that carries on through its own
          destination is just a rule down the middle of the page. */
