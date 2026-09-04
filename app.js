@@ -1287,10 +1287,8 @@
          left behind they end up captioning the copy on the other side of the
          case. The projects stay put: they belong under the words that
          introduce them. */
-      ['.pile-label', '.pile-note'].forEach(function (sel) {
-        var el = document.querySelector(sel);
-        if (el) right.appendChild(el);
-      });
+      var pileNote = document.querySelector('.pile-note');
+      if (pileNote) right.appendChild(pileNote);
       right.appendChild(pile);
       inner.appendChild(right);
       stackPile();
