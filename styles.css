@@ -872,6 +872,56 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .spiral-fallback .spiral-card { position: static; transform: none; width: auto; will-change: auto; }
 .spiral-fallback .card-desc { -webkit-line-clamp: 4; }
 
+/* ---- the same set, where the tube will not fit -------------------------
+   Below the width the cylinder needs, the seventeen cards are a grid. That
+   is the only honest answer on a phone, but it does not have to be a
+   different design: the card itself is the same object it is on the tube,
+   the shot with its name laid over the foot of it, rather than a screenshot
+   with a paragraph under it.
+
+   It reads as the same set of things, and it is a fifth of the height. As a
+   column of full-bleed cards with their descriptions the hero alone ran to
+   six and a half thousand pixels before the timeline even started. */
+@media (max-width: 900px) {
+  .spiral-fallback {
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: .75rem;
+    padding-top: clamp(1.5rem, 6vw, 3rem);
+  }
+  .spiral-fallback .spiral-card > a { position: relative; border-radius: 6px; }
+  .spiral-fallback .card-shot { aspect-ratio: 4 / 3; }
+  .spiral-fallback .card-body {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: .1875rem;
+    padding: 2.25rem .625rem .5rem;
+    border-top: 0;
+    background: linear-gradient(to top,
+      color-mix(in srgb, var(--void) 88%, transparent),
+      color-mix(in srgb, var(--void) 48%, transparent) 52%,
+      transparent);
+  }
+  .spiral-fallback .card-title {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: .9375rem;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: #fff;
+    margin: 0;
+  }
+  .spiral-fallback .card-desc { display: none; }
+  .spiral-fallback .card-tech {
+    margin: 0;
+    font-size: .4375rem;
+    color: color-mix(in srgb, #fff 70%, transparent);
+  }
+}
+
 /* A label sitting directly over a set of cards, in place of the section
    heading that used to float above the whole era. The year it used to
    repeat is on the watch face now. */
@@ -1177,6 +1227,39 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 #path.is-watch { margin-bottom: -66vh; }
 
 .path-orbit { display: none; }
+
+/* The still watch, at the head of the timeline on a narrow screen. Same
+   drawing, nothing driving it: the strap runs the height of the block and
+   the case sits in the middle of it, so the section opens on the object it
+   is about rather than on a heading. */
+.path-orbit.is-still {
+  display: block;
+  position: relative;
+  height: clamp(15rem, 52vw, 22rem);
+  margin-bottom: clamp(2rem, 7vw, 3.5rem);
+  overflow: hidden;
+  pointer-events: none;
+}
+.path-orbit.is-still .path-orbit-in {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.path-orbit.is-still .path-svg {
+  position: absolute;
+  height: 168%;
+  aspect-ratio: 1000 / 1400;
+}
+.path-orbit.is-still .watch-case { fill-opacity: 1; }
+.path-orbit.is-still .path-dial,
+.path-orbit.is-still .path-year,
+.path-orbit.is-still .path-certs,
+.path-orbit.is-still .path-now,
+.path-orbit.is-still .path-picks,
+.path-orbit.is-still .pile,
+.path-orbit.is-still .pile-note,
+.path-orbit.is-still .path-mark { display: none; }
 .path-orbit.is-live {
   display: block;
   height: 100vh;
@@ -1832,7 +1915,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 
   .hero-stage { padding-top: 6.5rem; }
   .hero-title { font-size: clamp(2.75rem, 17vw, 5rem); }
-  .spiral-fallback { grid-template-columns: 1fr; }
   .foot-inner { justify-content: flex-start; }
 }
 

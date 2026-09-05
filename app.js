@@ -1149,10 +1149,47 @@
      content — nothing here is load-bearing.
      ========================================================================== */
 
+  /* Below the width the scene needs, the watch is still drawn: complete,
+     still, and sitting at the head of the section as the thing the section
+     is about. Losing the whole motif on a phone would leave the timeline as
+     four articles in a column with nothing tying them to the rest of the
+     page, and the drawing is the tie.
+
+     Only the parts that do not depend on being pinned: strap, case, ticks,
+     hands at twelve. No sweep, no eras on the sides, no coil. */
+  function drawStillWatch(orbit) {
+    var svg = orbit.querySelector('.path-svg');
+    var ticks = orbit.querySelector('.path-ticks');
+    if (!svg || !ticks) return;
+
+    orbit.classList.add('is-still');
+
+    var CX = 500, CY = 700, R = 292, N = 60, out = '';
+    for (var t = 0; t < N; t++) {
+      var a = (t / N) * Math.PI * 2 - Math.PI / 2;
+      var major = t % 5 === 0;
+      var r1 = R - (major ? 26 : 14);
+      out += '<line class="path-tick' + (major ? ' is-major' : '') + '" ' +
+        'x1="' + (CX + Math.cos(a) * r1).toFixed(1) + '" y1="' + (CY + Math.sin(a) * r1).toFixed(1) + '" ' +
+        'x2="' + (CX + Math.cos(a) * R).toFixed(1) + '" y2="' + (CY + Math.sin(a) * R).toFixed(1) + '"/>';
+    }
+    ticks.innerHTML = out;
+
+    var knurl = orbit.querySelector('.watch-knurl');
+    if (knurl) {
+      var k = '';
+      for (var i = 0; i < 16; i++) {
+        var y = 678 + (i / 16) * 44;
+        k += '<line x1="792" y1="' + y.toFixed(1) + '" x2="828" y2="' + y.toFixed(1) + '"/>';
+      }
+      knurl.innerHTML = k;
+    }
+  }
+
   (function () {
     var orbit = document.querySelector('.path-orbit');
     if (!orbit || reduced || !hasGsap) return;
-    if (window.innerWidth < 1000) return;
+    if (window.innerWidth < 1000) { drawStillWatch(orbit); return; }
 
     var inner = orbit.querySelector('.path-orbit-in');
     var svg   = orbit.querySelector('.path-svg');
