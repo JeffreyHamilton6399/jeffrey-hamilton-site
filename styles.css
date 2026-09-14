@@ -2146,12 +2146,23 @@ html.sides-ready .side-switch {
 html.pre .side-switch,
 html.booting .side-switch { opacity: 0; transform: translateY(12px); pointer-events: none; }
 
+/* The knob only ever travels to the right: to Fun it slides across, and
+   back to Pro it carries on out of the right-hand end and comes round in
+   from the left (fun.js). The track is what it disappears into — the pill
+   itself cannot clip, or it would clip the sparkle hanging off its corner. */
+.ss-track {
+  position: absolute;
+  inset: .25rem;
+  border-radius: 999px;
+  overflow: hidden;
+  pointer-events: none;
+}
 .ss-knob {
   position: absolute;
-  top: .25rem;
-  bottom: .25rem;
-  left: .25rem;
-  width: calc(50% - .25rem);
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 50%;
   border-radius: 999px;
   background: var(--paper);
   transition: transform .5s cubic-bezier(.6, 0, .2, 1), background-color .4s var(--ease);

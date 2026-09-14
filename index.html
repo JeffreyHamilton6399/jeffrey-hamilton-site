@@ -15,7 +15,7 @@
      plain files with no build step behind them, so nothing in their URLs
      ever changes when their contents do, and a browser holding an old
      copy has no way to know. Bump it whenever either one changes. -->
-<link rel="stylesheet" href="styles.css?v=20260914h">
+<link rel="stylesheet" href="styles.css?v=20260914i">
 <script>
   /* Runs before the first paint, which is the whole point of it.
 
@@ -105,7 +105,7 @@
      it and shows it; without that script there is only the one side, so it
      stays hidden. -->
 <div class="side-switch" role="group" aria-label="Which side of me to show">
-  <span class="ss-knob" aria-hidden="true"></span>
+  <span class="ss-track" aria-hidden="true"><span class="ss-knob"></span></span>
   <button type="button" data-side-set="pro" aria-pressed="true">Pro</button>
   <button type="button" data-side-set="fun" aria-pressed="false">Fun</button>
   <span class="ss-spark" aria-hidden="true"></span>
@@ -1238,7 +1238,7 @@
 <script src="app.js?v=20260914e" defer></script>
 <!-- A module, so it runs after app.js, once the watch has lifted the eras
      onto the dial. -->
-<script type="module" src="fun.js?v=20260914j"></script>
+<script type="module" src="fun.js?v=20260914k"></script>
 
 </body>
 </html>

@@ -693,6 +693,29 @@ function stagger() {
 }
 
 const buttons = switcher ? [].slice.call(switcher.querySelectorAll('[data-side-set]')) : [];
+
+/* The knob only ever moves to the right. To Fun is the stylesheet's own
+   slide across; back to Pro, rather than sliding back, it keeps going — out
+   of the right-hand end of the track and round in from the left into its
+   place. The two halves take the same time over the same distance, and the
+   curve out ends as fast as the curve in begins, so the wrap reads as one
+   unbroken move with no pause at the edge. */
+const knob = switcher && switcher.querySelector('.ss-knob');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const WRAP_MS = 600;
+let knobRun = null;
+
+function slideKnob(next) {
+  if (knobRun) { knobRun.cancel(); knobRun = null; }
+  if (!knob || reduced || next !== 'pro' || typeof knob.animate !== 'function') return;
+  knobRun = knob.animate([
+    { transform: 'translateX(100%)', easing: 'cubic-bezier(.5, 0, .9, .6)' },
+    { transform: 'translateX(200%)', offset: 0.5 },
+    { transform: 'translateX(-100%)', offset: 0.5, easing: 'cubic-bezier(.1, .4, .5, 1)' },
+    { transform: 'translateX(0)' },
+  ], { duration: WRAP_MS });
+  knobRun.onfinish = () => { knobRun = null; };
+}
 const skillsLine = document.querySelector('.hero-skills');
 /* The certificates are the work side's alone. On the fun side the coil fades
    out of the watch (app.js), and the spiral cards with no fun face fade out
@@ -736,6 +759,7 @@ function setSide(next) {
   left = setTimeout(() => doc.removeAttribute('data-leaving'), OUT + STAGGER_MAX + 80);
   side = next;
   doc.setAttribute('data-side', next);
+  slideKnob(next);
   try { localStorage.setItem(KEY, next); } catch (e) {}
   sync();
 
