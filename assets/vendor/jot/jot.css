@@ -1,0 +1,335 @@
+/* jot — brush-pen ink for real HTML. Theme with custom properties:
+   --jot-ink, --jot-fill, --jot-paper, --jot-width, --jot-marker, --jot-note,
+   --jot-tape, --jot-error, --jot-success. Class names here are API. */
+
+.jot-host {
+  --jot-ease: cubic-bezier(0.2, 0, 0, 1);
+  position: relative;
+  isolation: isolate;
+}
+
+.jot-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.jot-over {
+  z-index: 1;
+}
+
+/* placed on <body> in document coordinates by the attacher */
+.jot-arrow {
+  inset: auto;
+  z-index: 1;
+}
+
+[data-jot-ink="hidden"] {
+  visibility: hidden;
+}
+
+/* the ink: a brush stroke is a filled shape; the fineliner and plain lines are strokes */
+
+.jot-brush {
+  fill: var(--jot-ink, #24211d);
+  stroke: none;
+}
+
+.jot-fine,
+.jot-plain {
+  fill: none;
+  stroke: var(--jot-ink, #24211d);
+  stroke-width: var(--jot-width, 1.8px);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* the line swept through a brush stroke's mask to draw it on */
+.jot-reveal {
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.jot-blob {
+  fill: var(--jot-fill, var(--jot-ink, #24211d));
+  stroke: var(--jot-fill, var(--jot-ink, #24211d));
+  stroke-width: 3px;
+}
+
+/* shading and highlighters: stroke-opacity so the text stays legible */
+
+.jot-shade {
+  stroke-width: 1.2px;
+  stroke-opacity: 0.55;
+}
+
+.jot-wash {
+  stroke: var(--jot-marker, #ffd84a);
+  stroke-width: 6px;
+  stroke-opacity: 0.55;
+}
+
+.jot-marker {
+  stroke: var(--jot-marker, #ffd84a);
+  stroke-opacity: 0.6;
+}
+
+.jot-note-fill {
+  fill: var(--jot-note, #ffe58f);
+  stroke: var(--jot-note, #ffe58f);
+  stroke-width: 3px;
+}
+
+.jot-tape {
+  stroke: var(--jot-tape, #b9ae97);
+  stroke-width: 2px;
+  stroke-opacity: 0.7;
+}
+
+/* focus */
+
+.jot-focus {
+  visibility: hidden;
+}
+
+.jot-host:is(:focus-visible, :has(:focus-visible)) .jot-focus {
+  visibility: visible;
+}
+
+/* buttons */
+
+.jot-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--jot-ink, #24211d);
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  transition:
+    translate 160ms var(--jot-ease),
+    scale 160ms var(--jot-ease),
+    rotate 160ms var(--jot-ease);
+}
+
+/* a hovered button tips a little, as if nudged on the page; the brush re-inks itself */
+@media (hover: hover) {
+  .jot-button:hover:not(:disabled, :active) {
+    rotate: -1deg;
+  }
+}
+
+.jot-button:active:not(:disabled) {
+  scale: 0.97;
+  rotate: 0deg;
+}
+
+.jot-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.jot-button--filled {
+  color: var(--jot-paper, #fff);
+}
+
+.jot-button--underline {
+  padding-inline: 10px;
+}
+
+.jot-button--muted {
+  --jot-ink: #7a736a;
+}
+
+.jot-button--danger,
+.jot-button[data-state="error"] {
+  --jot-ink: var(--jot-error, #d9432a);
+}
+
+.jot-button[data-state="success"] {
+  --jot-ink: var(--jot-success, #2f8a4a);
+}
+
+.jot-button[data-state="loading"] {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+/* checkbox, radio, toggle: the real input sits on top, invisible */
+
+.jot-checkbox,
+.jot-radio {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  vertical-align: middle;
+}
+
+.jot-toggle {
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  vertical-align: middle;
+}
+
+:is(.jot-checkbox, .jot-radio, .jot-toggle) input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.jot-check {
+  visibility: hidden;
+}
+
+.jot-checkbox[data-checked] .jot-check {
+  visibility: visible;
+}
+
+.jot-dot {
+  transform: scale(0);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 180ms var(--jot-ease);
+}
+
+.jot-radio[data-checked] .jot-dot {
+  transform: scale(1);
+}
+
+.jot-knob {
+  transition: transform 200ms var(--jot-ease);
+}
+
+.jot-toggle[data-checked] .jot-knob {
+  transform: translateX(var(--jot-travel, 20px));
+}
+
+/* fields */
+
+.jot-field {
+  display: inline-block;
+}
+
+.jot-field :is(input, textarea) {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  outline: none;
+}
+
+.jot-field textarea {
+  resize: vertical;
+}
+
+/* containers and assets */
+
+.jot-card {
+  padding: 16px;
+}
+
+.jot-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  font:
+    500 12px/1.5 "Geist Mono",
+    ui-monospace,
+    monospace;
+  color: var(--jot-ink, #24211d);
+}
+
+.jot-badge--pill {
+  padding-inline: 11px;
+}
+
+.jot-divider {
+  display: block;
+  height: 12px;
+  margin: 0;
+  border: 0;
+}
+
+/* the left padding is the gutter the markers are drawn in */
+.jot-list {
+  list-style: none;
+  padding-left: 26px;
+}
+
+.jot-bubble {
+  display: inline-block;
+  padding: 10px 16px;
+}
+
+.jot-note {
+  display: block;
+  padding: 22px 20px 26px;
+}
+
+.jot-doodle {
+  display: inline-block;
+  width: 48px;
+  height: 48px;
+  vertical-align: middle;
+}
+
+.jot-tabs {
+  display: flex;
+  gap: 22px;
+}
+
+.jot-tabs > * {
+  cursor: pointer;
+}
+
+.jot-progress {
+  display: block;
+  height: 20px;
+}
+
+/* handwriting */
+
+.jot-word {
+  display: inline-block;
+  overflow: visible;
+}
+
+/* the real text, kept for screen readers, search and copy */
+.jot-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jot-dot,
+  .jot-knob,
+  .jot-button {
+    transition: none;
+  }
+}

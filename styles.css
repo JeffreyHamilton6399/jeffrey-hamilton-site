@@ -50,6 +50,18 @@
   --slab-lift: clamp(1.75rem, 5vw, 3.5rem);
 }
 
+/* The spiral and the certificate coil place every card by writing these on
+   it, every frame. Registered as not inherited, a write restyles that card
+   and nothing else. As ordinary custom properties they were inherited, so
+   every element inside every card was restyled with each write — sixty times
+   a second, for a card that only ever reads them on itself. */
+@property --x  { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --y  { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --z  { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --rx { syntax: '<angle>';  inherits: false; initial-value: 0deg; }
+@property --ry { syntax: '<angle>';  inherits: false; initial-value: 0deg; }
+@property --rz { syntax: '<angle>';  inherits: false; initial-value: 0deg; }
+
 /* --------------------------------------------------------- Reset / base */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -1924,6 +1936,405 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   .nav { gap: .125rem; font-size: .5625rem; }
   .nav a { padding: .25rem .375rem; }
   .mark { --face: 1.75rem; }   /* the ring reads the same custom property */
+}
+
+/* --------------------------------------------------------- Two sides
+
+   The toggle swaps what the page says, never where anything is. Each .duo
+   holds both versions in one grid cell, so its box is the larger of the two
+   whichever is showing, and nothing under it moves on a switch. The side
+   leaving fades and drifts one way; the side arriving comes in from the
+   other, a beat later, so the two read as one turning into the next. Only
+   opacity and transform move — the two things the compositor animates
+   without repainting; a blur on every block was one cost too many. fun.js
+   staggers the blocks on screen with --sd. */
+
+:root {
+  /* the sketchbook the fun side is drawn in — jot's own paper and ink */
+  --sketch-paper: #f7f3ea;
+  --sketch-dot:   #ddd5c4;
+  --sketch-ink:   #24211d;
+  --sketch-soft:  #5d5850;
+  --sketch-faint: #9d978c;
+}
+
+.duo { display: grid; }
+.duo > .side { grid-area: 1 / 1; min-width: 0; }
+
+/* The side arriving: a beat after the switch. */
+.side,
+.spiral-card .card-shot,
+.spiral-card .card-body,
+.card-fun {
+  transition:
+    opacity .55s var(--ease-out) calc(var(--sd, 0ms) + 260ms),
+    transform .7s var(--ease-out) calc(var(--sd, 0ms) + 260ms),
+    visibility 0s linear calc(var(--sd, 0ms) + 260ms);
+}
+
+/* The side leaving: straight away, quickly, and out of reach for good once
+   it has gone — hidden, so it cannot be clicked, tabbed to or read out. */
+html:not([data-side="fun"]) .side-fun,
+html:not([data-side="fun"]) .card-fun,
+html[data-side="fun"] .side-pro,
+html[data-side="fun"] .spiral-card:not(.fun-skip) .card-shot,
+html[data-side="fun"] .spiral-card:not(.fun-skip) .card-body {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity .34s cubic-bezier(.55, 0, .8, .2) var(--sd, 0ms),
+    transform .34s cubic-bezier(.55, 0, .8, .2) var(--sd, 0ms),
+    visibility 0s linear calc(var(--sd, 0ms) + 340ms);
+}
+/* Opposite ways, so going back reads as turning back: the work lifts out
+   and the fun side comes up from below, and the reverse on the way home. */
+html:not([data-side="fun"]) .side-fun { transform: translateY(14px); }
+html[data-side="fun"] .side-pro       { transform: translateY(-14px); }
+html:not([data-side="fun"]) .card-fun          { transform: scale(1.04); }
+html[data-side="fun"] .spiral-card:not(.fun-skip) .card-shot  { transform: scale(.97); }
+
+/* A card with no fun face keeps its work face while app.js fades it out of
+   the tube, rather than going blank first, and cannot be clicked while it
+   is going. In the grid on a phone it simply leaves the grid. */
+html[data-side="fun"] .spiral-card.fun-skip > a { pointer-events: none; }
+html[data-side="fun"] .spiral-fallback .fun-skip { display: none; }
+
+/* ---- the fun side's type -------------------------------------------------
+   Everything on the fun side is written by hand: Caveat Brush wherever the
+   page sets display type, Shantell Sans for everything else — the mono labels
+   included, since a typewriter face is exactly the thing that side is not.
+   Both are fetched by fun.js, not linked here.
+
+   Each side of a .duo keeps its own faces whichever side is showing, so a
+   cell is the same height both ways round and nothing moves on a switch.
+   The type that belongs to neither side follows data-font instead, which
+   fun.js flips while that type is dipped out. */
+:root {
+  --pro-display: "Anton", "Haettenschweiler", "Arial Narrow", Impact, sans-serif;
+  --pro-sans:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --pro-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --fun-display: "Caveat Brush", "Bradley Hand", "Segoe Print", cursive;
+  --fun-sans:    "Shantell Sans", "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
+}
+html[data-font="fun"], .side-fun, .card-fun {
+  --display: var(--fun-display);
+  --sans:    var(--fun-sans);
+  --mono:    var(--fun-sans);
+}
+.side-pro, .spiral-card .card-body {
+  --display: var(--pro-display);
+  --sans:    var(--pro-sans);
+  --mono:    var(--pro-mono);
+}
+/* A face set on an ancestor is inherited already worked out, so the sides
+   have to ask for theirs again. Most sit in running text; the duos in a
+   heading or a label say which they stand in for. */
+.side, .card-fun, .spiral-card .card-body { font-family: var(--sans); }
+.duo-display > .side { font-family: var(--display); }
+.duo-mono > .side    { font-family: var(--mono); }
+
+/* The shared type, out and back while its face changes. Opacity where
+   nothing else writes it; filter where app.js already owns the opacity. */
+.site-head .head-inner { transition: opacity .26s var(--ease-out); }
+.skills-type { transition: width .75s cubic-bezier(.6, 0, .2, 1), opacity .26s var(--ease-out); }
+.path-dial, .site-foot { transition: filter .26s var(--ease-out); }
+.path-year .py-now {
+  transition: opacity .28s var(--ease-out), transform .28s var(--ease-out), filter .26s var(--ease-out);
+}
+.contact-mail { transition: background-size .5s var(--ease), color .4s var(--ease), filter .26s var(--ease-out); }
+html.side-swap .site-head .head-inner,
+html.side-swap .skills-type { opacity: 0; }
+html.side-swap :is(.path-dial, .path-year .py-now, .contact-mail, .site-foot, .side-switch button) { filter: opacity(0); }
+
+/* ---- the watch, in pen ---------------------------------------------------
+   fun.js inks a second skin for the watch with jot's brush and puts each
+   stroke inside the part it traces, so everything app.js does to that part
+   carries the ink with it. The two skins trade places with the side: the
+   leather's fill stays, its lines go over to pen. */
+.fun-ink {
+  fill: color-mix(in srgb, var(--on-dark) 55%, transparent);
+  stroke: none;
+  stroke-dasharray: none;
+  transition: opacity .5s var(--ease-out);
+}
+html:not([data-side="fun"]) .fun-ink { opacity: 0; }
+.fun-ink.ink-case,
+.fun-ink.ink-tick.is-major { fill: var(--on-dark); }
+.fun-ink.ink-tick   { fill: color-mix(in srgb, var(--on-dark) 42%, transparent); }
+.fun-ink.ink-stitch { fill: color-mix(in srgb, var(--on-dark) 24%, transparent); }
+.fun-ink.ink-knurl  { fill: color-mix(in srgb, var(--on-dark) 40%, transparent); }
+.fun-ink.ink-hand   { fill: var(--glow); }
+.fun-ink.ink-hand-sm { fill: var(--haze); }
+
+.watch-strap > path, .watch-stitch > path, .path-tick, .watch-knurl line,
+.path-hand > line, .path-hand-sm > line { transition: stroke-opacity .5s var(--ease-out); }
+.watch-crown, .watch-case { transition: stroke .55s var(--ease-out), stroke-opacity .5s var(--ease-out); }
+html[data-side="fun"] :is(.watch-strap > path, .watch-stitch > path, .watch-crown, .watch-case,
+  .path-tick, .watch-knurl line, .path-hand > line, .path-hand-sm > line):not(.fun-ink) { stroke-opacity: 0; }
+
+/* The leather past the drawing is HTML and changes size every frame, so its
+   pen lines are tiles of brush stroke (fun.js) that repeat along it rather
+   than a picture that would stretch. Each edge tile is centred on the border
+   it replaces. */
+html[data-side="fun"] .path-lead {
+  border-color: transparent;
+  background-image: var(--ink-edge-v), var(--ink-edge-v);
+  background-repeat: repeat-y;
+  background-size: 8px 160px;
+  background-position: -2.5px 0, calc(100% + 2.5px) 0;
+  background-origin: border-box;
+}
+html[data-side="fun"] .contact-leather {
+  border-color: transparent;
+  border-radius: 0;
+  background-image: var(--ink-edge-v), var(--ink-edge-v), var(--ink-edge-h);
+  background-repeat: repeat-y, repeat-y, repeat-x;
+  background-size: 8px 160px, 8px 160px, 160px 8px;
+  background-position: -2.5px 0, calc(100% + 2.5px) 0, 0 calc(100% + 2.5px);
+  background-origin: border-box;
+}
+html[data-side="fun"] .contact-leather::after {
+  border-color: transparent;
+  border-radius: 0;
+  background-image: var(--ink-seam-v), var(--ink-seam-v), var(--ink-seam-h);
+  background-repeat: repeat-y, repeat-y, repeat-x;
+  background-size: 6px 22px, 6px 22px, 22px 6px;
+  background-position: -2px 0, calc(100% + 2px) 0, 0 calc(100% + 2px);
+  background-origin: border-box;
+}
+html[data-side="fun"] .hs-tab { border-color: transparent; }
+html[data-side="fun"] :is(.path-lead, .hs-tab)::before,
+html[data-side="fun"] :is(.path-lead, .hs-tab)::after {
+  width: 6px;
+  border-left-color: transparent;
+  background: var(--ink-seam-v) 0 0 / 6px 22px repeat-y;
+}
+html[data-side="fun"] .hs-tab::before,
+html[data-side="fun"] .hs-tab::after { background-image: var(--ink-seam-v-paper); }
+html[data-side="fun"] :is(.path-lead, .hs-tab)::before { transform: translateX(-3px); }
+html[data-side="fun"] :is(.path-lead, .hs-tab)::after  { transform: translateX(3px); }
+
+/* ---- the switch --------------------------------------------------------- */
+.side-switch { display: none; }
+html.sides-ready .side-switch {
+  position: fixed;
+  right: clamp(.875rem, 2.5vw, 1.5rem);
+  bottom: clamp(.875rem, 2.5vw, 1.5rem);
+  z-index: 70;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: .25rem;
+  border-radius: 999px;
+  background: var(--void);
+  box-shadow:
+    0 12px 32px color-mix(in srgb, var(--void) 30%, transparent),
+    inset 0 0 0 1px var(--rule-dark);
+  transition: opacity .6s var(--ease-out), transform .6s var(--ease-out);
+}
+/* Held back through the opening, like the header. */
+html.pre .side-switch,
+html.booting .side-switch { opacity: 0; transform: translateY(12px); pointer-events: none; }
+
+.ss-knob {
+  position: absolute;
+  top: .25rem;
+  bottom: .25rem;
+  left: .25rem;
+  width: calc(50% - .25rem);
+  border-radius: 999px;
+  background: var(--paper);
+  transition: transform .5s cubic-bezier(.6, 0, .2, 1), background-color .4s var(--ease);
+}
+html[data-side="fun"] .ss-knob { transform: translateX(100%); background: var(--glow); }
+
+.side-switch button {
+  position: relative;
+  z-index: 1;
+  min-width: 3.25rem;
+  padding: .5625rem .875rem;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font-family: var(--mono);
+  font-size: .625rem;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--on-dark-soft);
+  cursor: pointer;
+  transition: color .4s var(--ease), filter .26s var(--ease-out);
+}
+.side-switch button:hover { color: var(--on-dark); }
+.side-switch button[aria-pressed="true"] { color: var(--void); }
+.side-switch button:focus-visible { outline: 2px solid var(--haze); outline-offset: 2px; }
+
+/* Two classes deep on purpose: jot's stylesheet is linked after this one
+   (fun.js fetches it late), and its .jot-host would otherwise make this
+   relative and drop it into the pill. */
+.side-switch .ss-spark {
+  position: absolute;
+  top: -.625rem;
+  right: -.375rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  pointer-events: none;
+}
+
+/* ---- the sketchbook ------------------------------------------------------
+   Where a photo will go there is a page of jot's paper with a drawing of it
+   instead. Each one carries data-photo, so a real picture can replace the
+   drawing without touching anything around it. */
+.fun-paper {
+  background-color: var(--sketch-paper);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><circle cx='2' cy='2' r='.9' fill='%23ddd5c4'/></svg>");
+}
+.fun-art { display: block; }
+.fun-soon {
+  position: absolute;
+  top: .625rem;
+  left: .75rem;
+  font-family: var(--mono);
+  font-size: .5rem;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--sketch-faint);
+}
+
+/* the spiral's second face */
+.spiral-card > a { position: relative; }
+.card-fun {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  color: var(--sketch-ink);
+}
+.card-fun .fun-shot { position: relative; display: block; flex: 1 1 auto; min-height: 0; }
+.card-fun .fun-art {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 70%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+}
+.fun-body { display: block; padding: .75rem 1rem .875rem; }
+.fun-title { display: block; font-weight: 600; font-size: 1rem; letter-spacing: -.01em; }
+.fun-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: .3125rem;
+  font-size: .8125rem;
+  line-height: 1.5;
+  color: var(--sketch-soft);
+}
+.fun-tag {
+  display: block;
+  margin-top: .5rem;
+  font-family: var(--mono);
+  font-size: .5625rem;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+
+/* On the spiral the face is one landscape page: the drawing to the right,
+   the name set the way the work side sets it, over the bottom left. */
+.spiral-track .card-fun .fun-art { left: auto; right: 6%; top: 46%; height: 72%; transform: translateY(-50%); }
+.spiral-track .card-fun .fun-body {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: .25rem;
+  max-width: 58%;
+  padding: 0 .875rem .8125rem;
+}
+.spiral-track .fun-title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(1rem, 1.6vw, 1.5rem);
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.spiral-track .fun-desc { display: none; }
+.spiral-track .fun-tag { margin: 0; font-size: .5rem; }
+.spiral-card.is-far .fun-body { display: none; }
+
+/* In the phone grid the card is a 4:3 tile a hundred and twenty pixels
+   tall, and the work side already sets its name over the foot of it with no
+   description. The fun face does the same, or its words take the whole tile
+   and the drawing gets none of it. */
+@media (max-width: 900px) {
+  .spiral-fallback .card-fun .fun-art { left: auto; right: 8%; top: 42%; height: 62%; transform: translateY(-50%); }
+  .spiral-fallback .card-fun .fun-body {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: .1875rem;
+    max-width: 72%;
+    padding: 0 .625rem .5rem;
+  }
+  .spiral-fallback .fun-title {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: .9375rem;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .spiral-fallback .fun-desc { display: none; }
+  .spiral-fallback .fun-tag { margin: 0; font-size: .4375rem; }
+  .spiral-fallback .fun-soon { top: .5rem; left: .625rem; font-size: .4375rem; }
+}
+
+/* ---- the fun side of the eras ------------------------------------------- */
+.fun-doodles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .875rem 1.25rem;
+  margin-top: 1.5rem;
+}
+.fun-doodles .fun-art { width: 3rem; height: 3rem; }
+
+.fun-photo { margin: 0; }
+.fun-frame {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.fun-frame .fun-art,
+.fun-ship .fun-art {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 68%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+}
+.fun-ship .ship-shot { position: relative; }
+
+/* The pile's cards hold a picture for each side in the card's own frame, so
+   the pile — its shape, its order, the drag — is the same thing either way
+   round and only the photograph changes. */
+.pcard-duo {
+  position: absolute;
+  inset: 0;
+  grid-template: 100% / 100%;
 }
 
 /* --------------------------------------------------------- Reduced motion */

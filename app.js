@@ -279,9 +279,34 @@
     var dot    = document.querySelector('.boot-dot');
     var nav    = document.querySelector('.nav');
     var social = document.querySelector('.head-social');
-    var list;
-    try { list = JSON.parse(skills && skills.getAttribute('data-skills') || '[]'); }
-    catch (e) { list = []; }
+    /* One list per side of the page. The markup carries the work side's
+       first word; a visit that opens on the fun side starts on its own. */
+    var lists = { pro: [], fun: [] };
+    try {
+      lists.pro = JSON.parse(skills && skills.getAttribute('data-skills') || '[]');
+      lists.fun = JSON.parse(skills && skills.getAttribute('data-skills-fun') || '[]');
+    } catch (e) {}
+    function sideList() {
+      return doc.getAttribute('data-side') === 'fun' && lists.fun.length ? lists.fun : lists.pro;
+    }
+    var list = sideList();
+    if (out && list.length) out.textContent = list[0];
+
+    /* The toggle (fun.js) announces a switch. Before the cycle has started —
+       during the boot, or for good with reduced motion — the word is simply
+       swapped. Once it is running, whatever melt is under way is cut short
+       and the next word comes from the new list straight away; gen retires
+       the old chain so it does not carry on alongside the new one. */
+    var started = false, gen = 0, timer = 0;
+    document.addEventListener('sidechange', function () {
+      list = sideList();
+      if (!list.length || !out) return;
+      if (!started) { out.textContent = list[0]; wi = 0; return; }
+      gen++;
+      clearTimeout(timer);
+      wi = -1;
+      step();
+    });
 
     if (reduced || !list.length || !title || !face || !line) return;
 
@@ -623,16 +648,18 @@
     }
 
     function cycle() {
+      started = true;
       /* swap the flat markup word for the built one, then fill it in */
       var built = build(out.textContent);
       out.replaceWith(built);
       out = built;
       skills.style.width = measureWidth(out) + 'px';
       var span = sweep(out, true);
-      setTimeout(step, HOLD + span);
+      timer = setTimeout(step, HOLD + span);
     }
 
     function step() {
+      var g = gen;
       wi = (wi + 1) % list.length;
 
       var prev = out;
@@ -652,10 +679,12 @@
         prev.remove();
         next.style.opacity = '1';
         sweep(next, true);
-        setTimeout(step, HOLD);
+        timer = setTimeout(step, HOLD);
         return;
       }
 
+      /* a switch can land mid-melt, with this word still fading in */
+      gsap.killTweensOf(prev);
       gsap.to(prev, {
         opacity: 0,
         y: -14,
@@ -670,8 +699,9 @@
           duration: MELT / 1000,
           ease: 'power3.out',
           onComplete: function () {
+            if (g !== gen) return;
             var span = sweep(next, true);
-            setTimeout(step, HOLD + span);
+            timer = setTimeout(step, HOLD + span);
           }
         });
     }
@@ -712,6 +742,53 @@
     var dragging = false, moved = 0, lastX = 0, lastT = 0;
     var ticking = false, active = false, pin = null;
     var lastBase = -1, lastFocus = -1;
+
+    /* The fun side (fun.js) has fewer cards than the work side. A card marked
+       .fun-skip has no second face, so on that side it fades out and the
+       others close up round the tube to take its room. slot is where each
+       card sits along the tube, 0…1, and shown is how much of it is there.
+       A switch tweens both rather than setting them, so the tube re-spaces
+       itself instead of jumping. */
+    var slots = cards.map(function (c, i) { return i / N; });
+    var shown = cards.map(function () { return 1; });
+    var respace = null;
+
+    function spacing() {
+      var fun = doc.getAttribute('data-side') === 'fun';
+      var live = cards.filter(function (c) { return !(fun && c.classList.contains('fun-skip')); });
+      return cards.map(function (c) {
+        var r = live.indexOf(c);
+        /* a card that is going keeps its place; nobody sees it there */
+        return r < 0 ? { slot: null, shown: 0 } : { slot: r / live.length, shown: 1 };
+      });
+    }
+
+    function place(animate) {
+      var to = spacing();
+      if (respace) respace.kill();
+      if (!animate) {
+        to.forEach(function (t, i) { if (t.slot !== null) slots[i] = t.slot; shown[i] = t.shown; });
+        lastBase = -1;
+        return;
+      }
+      var s0 = slots.slice(), v0 = shown.slice(), k = { v: 0 };
+      respace = gsap.to(k, {
+        v: 1,
+        duration: 0.9,
+        ease: 'power2.inOut',
+        onUpdate: function () {
+          /* the leaving cards are gone well before the rest have closed up */
+          var f = Math.min(1, k.v * 1.8);
+          to.forEach(function (t, i) {
+            if (t.slot !== null) slots[i] = s0[i] + (t.slot - s0[i]) * k.v;
+            shown[i] = v0[i] + (t.shown - v0[i]) * f;
+          });
+          lastBase = -1;
+        }
+      });
+    }
+    place(false);
+    document.addEventListener('sidechange', function () { place(!reduced && hasGsap); });
 
     /* LEN is the length of the drum, a little wider than the frame so it
        reads as a cylinder carrying on past both edges rather than a row that
@@ -768,10 +845,10 @@
         /* Where it is along the tube, and — from the same number — where it
            is around it. Travel and spin off one parameter is what makes it a
            helix rather than a ring that happens to slide. */
-        var u = wrap01(base + i / N);
+        var u = wrap01(base + slots[i]);
         var x = (u - 0.5) * LEN;
 
-        var ang = (u * TURNS + i / N) * Math.PI * 2;
+        var ang = (u * TURNS + slots[i]) * Math.PI * 2;
         var ca  = Math.cos(ang);
         var sa  = Math.sin(ang);
 
@@ -792,12 +869,12 @@
         st.setProperty('--z',  z.toFixed(2) + 'px');
         st.setProperty('--ry', (ca * FACE).toFixed(2) + 'deg');
         st.setProperty('--rz', (sa * ROLL).toFixed(2) + 'deg');
-        st.opacity = (depth * ends).toFixed(3);
+        st.opacity = (depth * ends * shown[i]).toFixed(3);
 
         /* Round the back of the tube there is no room for the caption. */
         card.classList.toggle('is-far', sa < -0.4);
 
-        var score = depth * ends;
+        var score = depth * ends * shown[i];
         if (score > best) { best = score; focus = i; }
       }
 
@@ -887,6 +964,14 @@
       var el = document.elementFromPoint(e.clientX, e.clientY);
       var a = el && el.closest && el.closest('.spiral-card a[href]');
       if (!a) return;
+      /* On the fun side a card is a chapter of the story rather than a
+         project, so it takes you down to the story instead of out. */
+      if (doc.getAttribute('data-side') === 'fun') {
+        var story = document.getElementById('path');
+        if (story && lenis) lenis.scrollTo(story, { offset: -60, duration: 1.2 });
+        else if (story) story.scrollIntoView();
+        return;
+      }
       if (a.target === '_blank') window.open(a.href, '_blank', 'noopener');
       else window.location.href = a.href;
     }
@@ -1206,7 +1291,7 @@
     var straps = [].slice.call(orbit.querySelectorAll('.watch-strap'));
     var stitchRuns = [].slice.call(orbit.querySelectorAll('.watch-stitch'));
     var dialBits = [].slice.call(orbit.querySelectorAll(
-      '.watch-core, .watch-crown, .watch-knurl'));
+      '.watch-core, .watch-crown, .watch-knurl, .watch-crown-ink'));
     var dial  = orbit.querySelector('.path-dial');
     var years = [].slice.call(orbit.querySelectorAll('.path-dial li'));
     var eras  = [].slice.call(document.querySelectorAll('.era-scenes .era'));
@@ -1626,6 +1711,9 @@
           var slice = 1 / built.length;
           var k = clamp01((bp - i * slice * 0.72) / slice);
           part.el.style.strokeDashoffset = part.len * (1 - k);
+          /* the fun side's pen version of this part, if fun.js has drawn it,
+             walked on in step with this one */
+          if (part.el.jotInk) part.el.jotInk(k);
           if (part.el.classList.contains('watch-case')) part.el.style.fillOpacity = String(k);
           /* lit while it is being drawn, and cooling to its own colour once
              it lands — the shimmer is the line arriving, not a loop */

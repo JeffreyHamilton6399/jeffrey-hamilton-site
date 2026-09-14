@@ -43,6 +43,27 @@ measured a screen wide enough to hold it.
   can throw it left or right with the pointer. The maths, and why the spacing
   and depth curve are what they are, is written up above the module.
 
+## Two sides
+
+The pill in the bottom corner switches the page between the work and the
+rest of it. Nothing moves when it does: every block that changes is a `.duo`
+holding both versions in one grid cell, and the spiral's cards each carry a
+second face (`.card-fun`). The side leaving blurs out, the side arriving
+resolves in a beat later, and the choice is remembered in `localStorage`.
+
+`fun.js` owns the switch and draws the fun side with
+[jot](https://animation-library-ruby.vercel.app), vendored in
+`assets/vendor/jot/`: the doodles, the handwritten titles, and a brush-pen
+skin for the watch that rides inside the same parts app.js moves. The fun
+side's type is Caveat Brush and Shantell Sans from Google Fonts. Anything
+waiting on a real photo is a jot drawing on a page of sketchbook paper marked
+`data-photo="…"`; swap the drawing for an `<img>` and nothing around it has
+to change.
+
+A visit that stays on the work side pays for none of it up front. jot, its
+stylesheet and the fonts are fetched once the page has settled, and the
+drawings are only built when someone reaches for the switch.
+
 ## Deploying
 
 Hosted on Vercel. Every push to `main` deploys automatically.

@@ -15,7 +15,7 @@
      plain files with no build step behind them, so nothing in their URLs
      ever changes when their contents do, and a browser holding an old
      copy has no way to know. Bump it whenever either one changes. -->
-<link rel="stylesheet" href="styles.css?v=20260904f">
+<link rel="stylesheet" href="styles.css?v=20260914g">
 <script>
   /* Runs before the first paint, which is the whole point of it.
 
@@ -32,6 +32,28 @@
     var d = document.documentElement;
     d.classList.add('pre');
     setTimeout(function () { d.classList.remove('pre'); }, 3000);
+
+    /* Which side of the page to open on — the work or the fun one — set
+       before the first paint too, so a visit that left on the fun side does
+       not flash the other one first. fun.js owns the switch. */
+    var side = 'pro';
+    try { if (localStorage.getItem('side') === 'fun') side = 'fun'; } catch (e) {}
+    d.setAttribute('data-side', side);
+    d.setAttribute('data-font', side);
+
+    /* A visit on the work side gets the fun side's type and ink later, once
+       the page is quiet (fun.js). One that opens on the fun side needs them
+       for its first paint, so they are asked for here, with the same ids
+       fun.js looks for so nothing is fetched twice. */
+    if (side === 'fun') {
+      [['fun-fonts', 'stylesheet', 'https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Shantell+Sans:wght@400;500;600;700&display=swap'],
+       ['jot-css', 'stylesheet', 'assets/vendor/jot/jot.css?v=0.2.0'],
+       ['jot-js', 'modulepreload', 'assets/vendor/jot/jot.js']].forEach(function (l) {
+        var link = document.createElement('link');
+        link.id = l[0]; link.rel = l[1]; link.href = l[2];
+        document.head.appendChild(link);
+      });
+    }
   })();
 </script>
 </head>
@@ -56,9 +78,9 @@
     </a>
 
     <nav class="nav" aria-label="Primary">
-      <a href="#top">Work</a>
-      <a href="#path">The path</a>
-      <a href="#contact">Contact</a>
+      <a href="#top"><span class="duo duo-mono"><span class="side side-pro">Work</span><span class="side side-fun">Me</span></span></a>
+      <a href="#path"><span class="duo duo-mono"><span class="side side-pro">The path</span><span class="side side-fun">My story</span></span></a>
+      <a href="#contact"><span class="duo duo-mono"><span class="side side-pro">Contact</span><span class="side side-fun">Say hi</span></span></a>
     </nav>
 
     <!-- The third thing the name splits into. app.js lands a line on the
@@ -79,6 +101,16 @@
   </div>
 </header>
 
+<!-- The two sides of the page: the work, and the rest of it. fun.js wires
+     it and shows it; without that script there is only the one side, so it
+     stays hidden. -->
+<div class="side-switch" role="group" aria-label="Which side of me to show">
+  <span class="ss-knob" aria-hidden="true"></span>
+  <button type="button" data-side-set="pro" aria-pressed="true">Pro</button>
+  <button type="button" data-side-set="fun" aria-pressed="false">Fun</button>
+  <span class="ss-spark" aria-hidden="true"></span>
+</div>
+
 <main id="top">
 
   <!-- ── The spiral ───────────────────────────────────────── -->
@@ -93,8 +125,11 @@
       <div class="hero-inner"></div>
 
       <!-- The line, below the spiral rather than inside it. -->
-      <p class="hero-skills" aria-label="What I build: web applications, desktop software, developer tools, on-device AI, interface design, real-time 3D, motion graphics">
-        <span class="skills-type" aria-hidden="true" data-skills='["WEB APPLICATIONS","DESKTOP SOFTWARE","DEVELOPER TOOLS","ON-DEVICE AI","INTERFACE DESIGN","REAL-TIME 3D","MOTION GRAPHICS"]'><span class="type-out">WEB APPLICATIONS</span></span>
+      <p class="hero-skills" aria-label="What I build: web applications, desktop software, developer tools, on-device AI, interface design, real-time 3D, motion graphics"
+         data-label-pro="What I build: web applications, desktop software, developer tools, on-device AI, interface design, real-time 3D, motion graphics"
+         data-label-fun="What I do for fun: soccer, swimming, karate, Blender, game dev, YouTube, dances, and building ideas with AI">
+        <span class="skills-type" aria-hidden="true" data-skills='["WEB APPLICATIONS","DESKTOP SOFTWARE","DEVELOPER TOOLS","ON-DEVICE AI","INTERFACE DESIGN","REAL-TIME 3D","MOTION GRAPHICS"]'
+              data-skills-fun='["SOCCER","SWIMMING","KARATE","BLENDER","GAME DEV","YOUTUBE","DANCES","AI IDEAS"]'><span class="type-out">WEB APPLICATIONS</span></span>
       </p>
 
       <!-- Layer 8: the loading screen. Covers the spiral while the name is
@@ -141,6 +176,15 @@
             </span>
             <span class="card-tech">TypeScript &middot; WebAssembly</span>
           </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="cedar-hills">
+            <span class="fun-shot"><span class="fun-art" data-doodle="house"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Cedar Hills</span>
+              <span class="fun-desc">Where I lived in 2018, back when soccer was my sport.</span>
+              <span class="fun-tag">2018</span>
+            </span>
+          </span>
         </a>
       </li>
 
@@ -157,6 +201,15 @@
               recognition are bundled in, so it keeps working with the wifi off.
             </span>
             <span class="card-tech">Electron &middot; llama.cpp</span>
+          </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="soccer">
+            <span class="fun-shot"><span class="fun-art" data-doodle="soccer"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Soccer</span>
+              <span class="fun-desc">My main sport as a kid.</span>
+              <span class="fun-tag">2018</span>
+            </span>
           </span>
         </a>
       </li>
@@ -175,6 +228,15 @@
             </span>
             <span class="card-tech">Electron &middot; Chromium</span>
           </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="moving">
+            <span class="fun-shot"><span class="fun-art" data-doodle="truck"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Moving in COVID</span>
+              <span class="fun-desc">We moved to Lindon in the middle of it. New town, and nobody could go anywhere.</span>
+              <span class="fun-tag">2020</span>
+            </span>
+          </span>
         </a>
       </li>
 
@@ -191,6 +253,15 @@
               straight into your own site.
             </span>
             <span class="card-tech">Vanilla JS &middot; Canvas</span>
+          </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="disney-channel">
+            <span class="fun-shot"><span class="fun-art" data-doodle="tv"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Disney Channel</span>
+              <span class="fun-desc">Making friends after the move was hard, so I kept to myself and watched a lot of it.</span>
+              <span class="fun-tag">2020</span>
+            </span>
           </span>
         </a>
       </li>
@@ -209,10 +280,19 @@
             </span>
             <span class="card-tech">JavaScript &middot; Zero deps</span>
           </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="youtube-watching">
+            <span class="fun-shot"><span class="fun-art" data-doodle="play"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">YouTube</span>
+              <span class="fun-desc">Watched hours of it, then started my own channel in 2022.</span>
+              <span class="fun-tag">2020</span>
+            </span>
+          </span>
         </a>
       </li>
 
-      <li class="spiral-card">
+      <li class="spiral-card fun-skip">
         <a href="https://marketplace.visualstudio.com/items?itemName=jeffreyhamilton.violet-hour" target="_blank" rel="noopener">
           <span class="card-shot">
             <img src="assets/shots/violethour.png" width="1120" height="720" loading="lazy" decoding="async"
@@ -243,6 +323,15 @@
             </span>
             <span class="card-tech">Yjs &middot; WebRTC</span>
           </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="lindon-friends">
+            <span class="fun-shot"><span class="fun-art" data-doodle="friends"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Lindon friends</span>
+              <span class="fun-desc">Friends I made there and still have. I could text any of them and set up a hangout.</span>
+              <span class="fun-tag">2023</span>
+            </span>
+          </span>
         </a>
       </li>
 
@@ -259,6 +348,15 @@
               come in, then argue about it in the comments.
             </span>
             <span class="card-tech">Next.js &middot; Supabase</span>
+          </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="swimming">
+            <span class="fun-shot"><span class="fun-art" data-doodle="swim"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Swimming</span>
+              <span class="fun-desc">My main sport in 2023, mostly for the fun of it with friends.</span>
+              <span class="fun-tag">2023</span>
+            </span>
           </span>
         </a>
       </li>
@@ -281,6 +379,15 @@
             </span>
             <span class="card-tech">VEX &middot; Robotics</span>
           </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="blender">
+            <span class="fun-shot"><span class="fun-art" data-doodle="cube"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Blender</span>
+              <span class="fun-desc">I wanted to make things in 3D, so I started learning it.</span>
+              <span class="fun-tag">2023</span>
+            </span>
+          </span>
         </a>
       </li>
 
@@ -297,6 +404,15 @@
               wrote them. You host it yourself.
             </span>
             <span class="card-tech">TypeScript &middot; Gmail API</span>
+          </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="game-dev">
+            <span class="fun-shot"><span class="fun-art" data-doodle="controller"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Game dev</span>
+              <span class="fun-desc">I liked it a lot. Getting something on screen to move was the fun part.</span>
+              <span class="fun-tag">2023</span>
+            </span>
           </span>
         </a>
       </li>
@@ -315,6 +431,15 @@
             </span>
             <span class="card-tech">Next.js &middot; Prisma</span>
           </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="new-schools">
+            <span class="fun-shot"><span class="fun-art" data-doodle="school"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">New schools</span>
+              <span class="fun-desc">I switched schools a bunch of times around then.</span>
+              <span class="fun-tag">2023</span>
+            </span>
+          </span>
         </a>
       </li>
 
@@ -331,10 +456,19 @@
             </span>
             <span class="card-tech">Java &middot; Fabric</span>
           </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="provo">
+            <span class="fun-shot"><span class="fun-art" data-doodle="mountains"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Provo</span>
+              <span class="fun-desc">Moved into the house I still live in during middle school.</span>
+              <span class="fun-tag">2023</span>
+            </span>
+          </span>
         </a>
       </li>
 
-      <li class="spiral-card">
+      <li class="spiral-card fun-skip">
         <a href="https://drive.google.com/drive/folders/1O0zvlk09MEzY3aKWY9ww-3gbG3ieK3HN" target="_blank" rel="noopener">
           <!-- Frames rather than the clips themselves. Six autoplaying
                videos in a 280px card on a moving spiral is motion nobody
@@ -379,6 +513,15 @@
             </span>
             <span class="card-tech">On device ML</span>
           </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="karate">
+            <span class="fun-shot"><span class="fun-art" data-doodle="belt"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Karate</span>
+              <span class="fun-desc">A friend from Lindon got me into it. Still doing it, still learning.</span>
+              <span class="fun-tag">Since 2023</span>
+            </span>
+          </span>
         </a>
       </li>
 
@@ -395,6 +538,15 @@
               physics is all written by hand.
             </span>
             <span class="card-tech">Next.js &middot; Canvas</span>
+          </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="freshman">
+            <span class="fun-shot"><span class="fun-art" data-doodle="star"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Freshman year</span>
+              <span class="fun-desc">Found the friend group I still hang out with.</span>
+              <span class="fun-tag">2024</span>
+            </span>
           </span>
         </a>
       </li>
@@ -417,10 +569,19 @@
             </span>
             <span class="card-tech">Revit &middot; Architecture</span>
           </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="dances">
+            <span class="fun-shot"><span class="fun-art" data-doodle="notes"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Dances</span>
+              <span class="fun-desc">We go as a group.</span>
+              <span class="fun-tag">2024</span>
+            </span>
+          </span>
         </a>
       </li>
 
-      <li class="spiral-card">
+      <li class="spiral-card fun-skip">
         <a href="https://spellfall.vercel.app" target="_blank" rel="noopener">
           <span class="card-shot">
             <img src="assets/shots/spellfall.png" width="2880" height="1800" loading="lazy" decoding="async"
@@ -437,7 +598,7 @@
         </a>
       </li>
 
-      <li class="spiral-card">
+      <li class="spiral-card fun-skip">
         <a href="https://counterpoint-six.vercel.app/" target="_blank" rel="noopener">
           <span class="card-shot">
             <img src="assets/shots/counterpoint.png" width="1600" height="900" loading="lazy" decoding="async"
@@ -468,6 +629,15 @@
             </span>
             <span class="card-tech">WebSockets</span>
           </span>
+          <!-- the fun side's face for this card -->
+          <span class="card-fun fun-paper" data-photo="calisthenics">
+            <span class="fun-shot"><span class="fun-art" data-doodle="pullup"></span><span class="fun-soon">Photo soon</span></span>
+            <span class="fun-body">
+              <span class="fun-title">Calisthenics</span>
+              <span class="fun-desc">The next thing I want to learn.</span>
+              <span class="fun-tag">Next</span>
+            </span>
+          </span>
         </a>
       </li>
 
@@ -497,13 +667,17 @@
 
         <svg class="path-svg" viewBox="0 0 1000 1400">
           <!-- strap first: the case is filled and sits over the middle of it -->
-          <path class="watch-strap" d="M 440 0 L 440 250 L 424 470 L 576 470 L 560 250 L 560 0 Z"/>
-          <path class="watch-strap" d="M 440 1400 L 440 1150 L 424 930 L 576 930 L 560 1150 L 560 1400 Z"/>
+          <!-- Each moving part is a group, so the pen skin fun.js draws for
+               the fun side can sit inside it and go wherever app.js sends
+               the part. The stroke styles are set on the group and inherited
+               by the line inside. -->
+          <g class="watch-strap"><path d="M 440 0 L 440 250 L 424 470 L 576 470 L 560 250 L 560 0 Z"/></g>
+          <g class="watch-strap"><path d="M 440 1400 L 440 1150 L 424 930 L 576 930 L 560 1150 L 560 1400 Z"/></g>
           <g class="watch-stitching">
-            <path class="watch-stitch" d="M 456 30 L 456 250 L 442 452"/>
-            <path class="watch-stitch" d="M 544 30 L 544 250 L 558 452"/>
-            <path class="watch-stitch" d="M 456 1370 L 456 1150 L 442 948"/>
-            <path class="watch-stitch" d="M 544 1370 L 544 1150 L 558 948"/>
+            <g class="watch-stitch"><path d="M 456 30 L 456 250 L 442 452"/></g>
+            <g class="watch-stitch"><path d="M 544 30 L 544 250 L 558 452"/></g>
+            <g class="watch-stitch"><path d="M 456 1370 L 456 1150 L 442 948"/></g>
+            <g class="watch-stitch"><path d="M 544 1370 L 544 1150 L 558 948"/></g>
           </g>
           <!-- The crown is a box with a set of notches inside it, clipped to
                the box and slid along as the hand turns, so the knob reads as
@@ -511,15 +685,18 @@
           <clipPath id="crown-clip"><rect x="790" y="678" width="40" height="44"/></clipPath>
           <path class="watch-crown" d="M 790 678 L 830 678 L 830 722 L 790 722 Z"/>
           <g class="watch-knurl" clip-path="url(#crown-clip)"></g>
+          <!-- the crown and the case in pen; fun.js fills these in -->
+          <g class="watch-crown-ink"></g>
 
           <!-- Everything that collapses at the end is one group, so it can
                be compressed into the middle with a single transform while
                the hands keep their own rotation inside it. -->
           <g class="watch-core">
             <circle class="watch-case" cx="500" cy="700" r="292"/>
+            <g class="watch-case-ink"></g>
             <g class="path-ticks"></g>
-            <line class="path-hand" x1="500" y1="736" x2="500" y2="452"/>
-            <line class="path-hand-sm" x1="500" y1="722" x2="500" y2="560"/>
+            <g class="path-hand"><line x1="500" y1="736" x2="500" y2="452"/></g>
+            <g class="path-hand-sm"><line x1="500" y1="722" x2="500" y2="560"/></g>
             <circle class="path-hub" cx="500" cy="700" r="7"/>
           </g>
 
@@ -548,15 +725,38 @@
       <article class="era era-plain">
         <div class="wrap era-grid">
           <div class="era-copy" data-stagger="0.08" data-rise>
-            <h3 class="era-title" data-reveal>The egg business</h3>
-            <p class="era-text" data-reveal>
-              The first thing I ever ran was selling eggs. That was the whole enterprise, and it
-              is on here because it is honestly where the line starts.
-            </p>
-            <p class="era-text" data-reveal>
-              I hadn't built anything yet. Most of that stretch went on hanging out with friends.
-              Nothing on this page existed, and it would be four years before any of it did.
-            </p>
+            <div class="duo">
+              <div class="side side-pro">
+                <h3 class="era-title" data-reveal>The egg business</h3>
+                <p class="era-text" data-reveal>
+                  The first thing I ever ran was selling eggs. That was the whole enterprise, and it
+                  is on here because it is honestly where the line starts.
+                </p>
+                <p class="era-text" data-reveal>
+                  I hadn't built anything yet. Most of that stretch went on hanging out with friends.
+                  Nothing on this page existed, and it would be four years before any of it did.
+                </p>
+              </div>
+              <div class="side side-fun">
+                <h3 class="era-title fun-write" data-reveal>Cedar Hills</h3>
+                <p class="era-text" data-reveal>
+                  In 2018 I lived in Cedar Hills, and soccer was my sport. Then COVID hit, and we
+                  moved to Lindon in the middle of it.
+                </p>
+                <p class="era-text" data-reveal>
+                  Making friends after a move is hard as a kid, and harder when nobody can go
+                  anywhere. I kept to myself and watched a lot of Disney Channel and YouTube. In 2022
+                  I started a <span class="fun-mark">channel of my own</span>. I deleted most of
+                  those early videos. They were bad.
+                </p>
+                <div class="fun-doodles" aria-hidden="true" data-reveal>
+                  <span class="fun-art" data-doodle="house"></span>
+                  <span class="fun-art" data-doodle="soccer"></span>
+                  <span class="fun-art" data-doodle="truck"></span>
+                  <span class="fun-art" data-doodle="tv"></span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </article>
@@ -565,17 +765,35 @@
       <article class="era">
         <div class="wrap era-grid">
           <div class="era-copy" data-stagger="0.08" data-rise>
-            <p class="era-text" data-reveal>
-              I taught myself Blender, cut videos for YouTube, and built little games for the
-              plain fun of getting something on screen to move the way I meant it to.
-            </p>
-            <p class="era-text" data-reveal>
-              It is where I learned to finish a thing and put it out, which turned out to be the
-              part that mattered.
-            </p>
+            <div class="duo">
+              <div class="side side-pro">
+                <p class="era-text" data-reveal>
+                  I taught myself Blender, cut videos for YouTube, and built little games for the
+                  plain fun of getting something on screen to move the way I meant it to.
+                </p>
+                <p class="era-text" data-reveal>
+                  It is where I learned to finish a thing and put it out, which turned out to be the
+                  part that mattered.
+                </p>
+              </div>
+              <div class="side side-fun">
+                <h3 class="era-title fun-write" data-reveal>Lindon to Provo</h3>
+                <p class="era-text" data-reveal>
+                  Lindon is where things picked up. I made a lot of friends there, and
+                  <span class="fun-mark">I still have them</span>. We don't hang out much now, but I
+                  could message any of them and set something up.
+                </p>
+                <p class="era-text" data-reveal>
+                  Swimming was my main sport, mostly for the fun of it with friends. Out of the
+                  pool I got into game dev and wanted to make things in Blender.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div class="era-media" data-parallax="-40" data-reveal>
+            <div class="duo">
+            <div class="side side-pro">
             <p class="group-title">Games, edits and 3D</p>
             <div class="era-stack">
               <p class="era-note">None of it was for anyone, which turned out to be the point.</p>
@@ -626,6 +844,25 @@
               </a>
               </div>
             </div>
+            </div>
+            <div class="side side-fun">
+              <p class="group-title">Swimming, Blender and a lot of new schools</p>
+              <div class="era-stack">
+                <div class="era-row">
+                  <figure class="fun-photo" data-photo="swimming">
+                    <span class="fun-frame fun-paper"><span class="fun-art" data-doodle="swim"></span><span class="fun-soon">Photo soon</span></span>
+                    <figcaption class="vid-cap"><span class="vid-title">Swim team</span><span class="vid-kind">2023</span></figcaption>
+                  </figure>
+                  <figure class="fun-photo" data-photo="blender">
+                    <span class="fun-frame fun-paper"><span class="fun-art" data-doodle="cube"></span><span class="fun-soon">Photo soon</span></span>
+                    <figcaption class="vid-cap"><span class="vid-title">Blender and game dev</span><span class="vid-kind">2023</span></figcaption>
+                  </figure>
+                </div>
+                <p class="era-note">I switched schools a bunch of times around then.</p>
+                <p class="era-note">In middle school we moved to Provo, into the house I still live in.</p>
+              </div>
+            </div>
+            </div>
           </div>
         </div>
       </article>
@@ -634,18 +871,36 @@
       <article class="era era-flip">
         <div class="wrap era-grid">
           <div class="era-copy" data-stagger="0.08" data-rise>
-            <p class="era-text" data-reveal>
-              2024 is where it turned. I started leaning on AI to build faster than I could alone,
-              and the first real target was Minecraft mods: small tools for a game I already knew
-              inside out.
-            </p>
-            <p class="era-text" data-reveal>
-              It was the first time code stopped being homework and started being the fastest way
-              to get an idea out of my head.
-            </p>
+            <div class="duo">
+              <div class="side side-pro">
+                <p class="era-text" data-reveal>
+                  2024 is where it turned. I started leaning on AI to build faster than I could alone,
+                  and the first real target was Minecraft mods: small tools for a game I already knew
+                  inside out.
+                </p>
+                <p class="era-text" data-reveal>
+                  It was the first time code stopped being homework and started being the fastest way
+                  to get an idea out of my head.
+                </p>
+              </div>
+              <div class="side side-fun">
+                <h3 class="era-title fun-write" data-reveal>Growing out of it</h3>
+                <p class="era-text" data-reveal>
+                  Middle school in Provo was rough. I fell in with a friend group that wasn't a good
+                  influence, and I didn't always make the best choices.
+                </p>
+                <p class="era-text" data-reveal>
+                  Eventually I realized staying with them was a bad idea, and I
+                  <span class="fun-mark">grew out of it</span>. Around then a friend from Lindon got
+                  me into karate, and I'm still doing it.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div class="era-media" data-parallax="-56" data-reveal>
+            <div class="duo">
+            <div class="side side-pro">
             <p class="group-title">Mods, and a model in the chat box</p>
             <div class="era-stack">
               <p class="era-note">SmartChat put a language model inside the chat box.</p>
@@ -676,6 +931,26 @@
               <p class="era-note">A game I already knew inside out was the right place to learn
                 on. I could tell straight away when something was wrong.</p>
             </div>
+            </div>
+            <div class="side side-fun">
+              <p class="group-title">Karate, and freshman year</p>
+              <div class="era-stack">
+                <div class="era-row">
+                  <figure class="fun-photo" data-photo="karate">
+                    <span class="fun-frame fun-paper"><span class="fun-art" data-doodle="belt"></span><span class="fun-soon">Photo soon</span></span>
+                    <figcaption class="vid-cap"><span class="vid-title">Karate</span><span class="vid-kind">Since 2023</span></figcaption>
+                  </figure>
+                  <figure class="fun-photo" data-photo="freshman">
+                    <span class="fun-frame fun-paper"><span class="fun-art" data-doodle="star"></span><span class="fun-soon">Photo soon</span></span>
+                    <figcaption class="vid-cap"><span class="vid-title">Freshman year</span><span class="vid-kind">2024</span></figcaption>
+                  </figure>
+                </div>
+                <p class="era-note">In 2024 I started high school and found the friend group I still
+                  hang out with.</p>
+                <p class="era-note">I hadn't found my main sport yet. Karate is the closest so far.</p>
+              </div>
+            </div>
+            </div>
           </div>
         </div>
       </article>
@@ -684,18 +959,39 @@
       <article class="era">
         <div class="wrap era-grid">
           <div class="era-copy" data-stagger="0.08" data-rise>
-            <h3 class="era-title" data-reveal>Coded and shipped</h3>
-            <p class="era-text" data-reveal>
-              Now it is real apps, built fast and for fun, and actually put in front of people.
-              Everything in the spiral up top came out of this stretch.
-            </p>
-            <ul class="era-now" role="list" data-reveal>
-              <li><strong>Software Engineering</strong><span>Provo CAPS</span></li>
-              <li><strong>Intern</strong><span>Doing Business Intelligently</span></li>
-            </ul>
+            <div class="duo">
+              <div class="side side-pro">
+                <h3 class="era-title" data-reveal>Coded and shipped</h3>
+                <p class="era-text" data-reveal>
+                  Now it is real apps, built fast and for fun, and actually put in front of people.
+                  Everything in the spiral up top came out of this stretch.
+                </p>
+                <ul class="era-now" role="list" data-reveal>
+                  <li><strong>Software Engineering</strong><span>Provo CAPS</span></li>
+                  <li><strong>Intern</strong><span>Doing Business Intelligently</span></li>
+                </ul>
+              </div>
+              <div class="side side-fun">
+                <h3 class="era-title fun-write" data-reveal>The friend group</h3>
+                <p class="era-text" data-reveal>
+                  We go to dances together as a group, and there's one friend I hang out with most
+                  of the time.
+                </p>
+                <p class="era-text" data-reveal>
+                  When I get a new idea, I build it with AI. I still like making YouTube videos,
+                  too.
+                </p>
+                <ul class="era-now" role="list" data-reveal>
+                  <li><strong>Karate</strong><span>Still training</span></li>
+                  <li><strong>YouTube</strong><span>Jeffrey_Creates</span></li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           <div class="era-media era-ships" data-parallax="-56" data-reveal>
+            <div class="duo">
+            <div class="side side-pro">
             <p class="group-title">Projects I use daily</p>
             <div class="era-media-pair">
               <a class="ship" href="https://jeffrey-hamilton-tools.vercel.app/" target="_blank" rel="noopener">
@@ -713,41 +1009,81 @@
                 </span>
               </a>
             </div>
+            </div>
+            <div class="side side-fun">
+              <p class="group-title">What I do for fun</p>
+              <div class="era-media-pair">
+                <div class="ship fun-ship" data-photo="ai-ideas">
+                  <span class="ship-shot fun-paper"><span class="fun-art" data-doodle="bulb"></span></span>
+                  <span class="ship-body">
+                    <span class="ship-title">Ideas, built with AI</span>
+                    <span class="ship-desc">Whenever something new pops into my head, I try to make it real.</span>
+                  </span>
+                </div>
+                <a class="ship fun-ship" href="https://www.youtube.com/@Jeffrey_Creates/videos" target="_blank" rel="noopener" data-photo="youtube">
+                  <span class="ship-shot fun-paper"><span class="fun-art" data-doodle="camera"></span></span>
+                  <span class="ship-body">
+                    <span class="ship-title">YouTube</span>
+                    <span class="ship-desc">Started in 2022, and still making videos.</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+            </div>
           </div>
 
           <!-- Not a build log. app.js stacks these into one pile beside the
-               dial when the watch is running; here they are just the photos
-               that go with the year. -->
-          <p class="pile-note">I still find time to have fun and hang out with friends.</p>
-          <ul class="pile" role="list" aria-label="Photographs from the same stretch">
+               dial when the watch is running; here they are just the pictures
+               that go with the year. Each card holds two: the workbench on the
+               work side, friends on the fun side. The friends' photos have no
+               src until fun.js fetches the fun side, so a visit that stays on
+               the work side never downloads them. -->
+          <p class="pile-note"><span class="duo duo-display"><span class="side side-pro">Off the screen: robots, drawings and idents.</span><span class="side side-fun">The friend group, the karate team, and everything in between.</span></span></p>
+          <ul class="pile" role="list" aria-label="Robots, drawings and idents from the same stretch"
+              data-label-pro="Robots, drawings and idents from the same stretch"
+              data-label-fun="Photographs of friends from the same stretch">
 
             <li class="pcard" style="--rot: -5.5deg; --ar: 3 / 4; --pw: 100%">
-    <img src="assets/friends/01.jpg" alt="Martial arts team, medals and all" width="900" height="1200"
-                   loading="lazy" decoding="async">
+              <span class="duo pcard-duo">
+                <img class="side side-pro" src="assets/robotics/build-4.jpg" alt="A VEX robot build" width="1600" height="2133" loading="lazy" decoding="async">
+                <img class="side side-fun" data-fun-src="assets/friends/01.jpg" alt="Martial arts team, medals and all" width="900" height="1200" loading="lazy" decoding="async">
+              </span>
             </li>
             <li class="pcard" style="--rot: -3.0deg; --ar: 3 / 4; --pw: 94%">
-    <img src="assets/friends/11.jpg" alt="An evening at the arcade" width="900" height="1200"
-                   loading="lazy" decoding="async">
+              <span class="duo pcard-duo">
+                <img class="side side-pro" src="assets/robotics/build-6.jpg" alt="A VEX robot build" width="1600" height="1200" loading="lazy" decoding="async">
+                <img class="side side-fun" data-fun-src="assets/friends/11.jpg" alt="An evening at the arcade" width="900" height="1200" loading="lazy" decoding="async">
+              </span>
             </li>
             <li class="pcard" style="--rot: 4.5deg; --ar: 3 / 4; --pw: 100%">
-    <img src="assets/friends/05.jpg" alt="The usual crowd out to eat" width="900" height="1200"
-                   loading="lazy" decoding="async">
+              <span class="duo pcard-duo">
+                <img class="side side-pro" src="assets/robotics/build-3.jpg" alt="A VEX robot build" width="800" height="420" loading="lazy" decoding="async">
+                <img class="side side-fun" data-fun-src="assets/friends/05.jpg" alt="The usual crowd out to eat" width="900" height="1200" loading="lazy" decoding="async">
+              </span>
             </li>
             <li class="pcard" style="--rot: -4.5deg; --ar: 3 / 4; --pw: 90%">
-    <img src="assets/friends/09.jpg" alt="Piled into a hot tub" width="900" height="1200"
-                   loading="lazy" decoding="async">
+              <span class="duo pcard-duo">
+                <img class="side side-pro" src="assets/cad/sheet-1.jpg" alt="A sheet from the CAD housing drawings" width="1600" height="1035" loading="lazy" decoding="async">
+                <img class="side side-fun" data-fun-src="assets/friends/09.jpg" alt="Piled into a hot tub" width="900" height="1200" loading="lazy" decoding="async">
+              </span>
             </li>
             <li class="pcard" style="--rot: 2.5deg; --ar: 3 / 4; --pw: 98%">
-    <img src="assets/friends/12.jpg" alt="Cinema trip" width="900" height="1200"
-                   loading="lazy" decoding="async">
+              <span class="duo pcard-duo">
+                <img class="side side-pro" src="assets/robotics/build-5.jpg" alt="A VEX robot build" width="1600" height="2133" loading="lazy" decoding="async">
+                <img class="side side-fun" data-fun-src="assets/friends/12.jpg" alt="Cinema trip" width="900" height="1200" loading="lazy" decoding="async">
+              </span>
             </li>
             <li class="pcard" style="--rot: -2.0deg; --ar: 9 / 16; --pw: 76%">
-    <img src="assets/friends/03.jpg" alt="Paddleboarding" width="900" height="1600"
-                   loading="lazy" decoding="async">
+              <span class="duo pcard-duo">
+                <img class="side side-pro" src="assets/animations/still-05.jpg" alt="The Timpview Thunderbirds roundel from a school ident" width="1000" height="562" loading="lazy" decoding="async">
+                <img class="side side-fun" data-fun-src="assets/friends/03.jpg" alt="Paddleboarding" width="900" height="1600" loading="lazy" decoding="async">
+              </span>
             </li>
             <li class="pcard" style="--rot: 5.0deg; --ar: 3 / 4; --pw: 96%">
-    <img src="assets/friends/13.jpg" alt="In costume for a school production" width="900" height="1200"
-                   loading="lazy" decoding="async">
+              <span class="duo pcard-duo">
+                <img class="side side-pro" src="assets/robotics/build-2.jpg" alt="An early robot build" width="361" height="304" loading="lazy" decoding="async">
+                <img class="side side-fun" data-fun-src="assets/friends/13.jpg" alt="In costume for a school production" width="900" height="1200" loading="lazy" decoding="async">
+              </span>
             </li>
           </ul>
         </div>
@@ -765,51 +1101,90 @@
            already named in the panel for 2025, and repeating them said
            nothing the dial had not just said. -->
       <div class="path-picks">
-        <p class="pp-kicker">Next</p>
-        <h3 class="group-title">What I'm aiming at</h3>
-        <p class="pg-text">
-          I want to make something that lasts. Not an app that just exists, but one people
-          genuinely use and enjoy, and that is still worth talking about years from now. If it
-          puts my name in the history books, even better.
-        </p>
-        <p class="pg-text">
-          Along the way, a lot more languages: HTML, Python, whatever the next thing needs.
-        </p>
-        <p class="pg-text">
-          Outside the code, I want to enjoy life to the fullest and come out of it with
-          connections I did not have before. When my name comes up, I want the people who know me
-          to say they love me.
-        </p>
+        <div class="duo">
+          <div class="side side-pro">
+            <p class="pp-kicker">Next</p>
+            <h3 class="group-title">What I'm aiming at</h3>
+            <p class="pg-text">
+              I want to make something that lasts. Not an app that just exists, but one people
+              genuinely use and enjoy, and that is still worth talking about years from now. If it
+              puts my name in the history books, even better.
+            </p>
+            <p class="pg-text">
+              Along the way, a lot more languages: HTML, Python, whatever the next thing needs.
+            </p>
+            <p class="pg-text">
+              Outside the code, I want to enjoy life to the fullest and come out of it with
+              connections I did not have before. When my name comes up, I want the people who know me
+              to say they love me.
+            </p>
+          </div>
+          <div class="side side-fun">
+            <p class="pp-kicker">Next</p>
+            <h3 class="group-title">What I'm aiming at</h3>
+            <p class="pg-text">
+              Learn as much karate as I can, and finally start calisthenics. I've wanted to for a
+              while.
+            </p>
+            <p class="pg-text">
+              Keep making videos, and keep building whatever ideas show up.
+            </p>
+            <p class="pg-text">
+              Stay close with my Lindon friends. We don't hang out much, but if any of them wanted
+              to, I'd be there.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div class="path-now">
-        <p class="pn-kicker">Now</p>
-        <h3 class="pn-title">Where the hand is</h3>
-        <p class="pn-about">
-          Egg money to shipped software in seven years, most of it self-taught: Blender and game
-          engines first, then Minecraft mods with a language model wired into them, and now web
-          and desktop apps people actually use. TypeScript and Next.js day to day, Electron when
-          it needs to be a real program, Java for the mods, and enough Blender and Revit left over
-          to be useful. Next I want to build the on-device kind: software that runs the model on
-          your own machine, so the useful part happens without anything leaving it.
-        </p>
-        <ul class="pn-list" role="list">
-          <li><strong>Software Engineering</strong><span>Provo CAPS</span></li>
-          <li><strong>Intern</strong><span>Doing Business Intelligently</span></li>
-          <li><strong>Timpview High School</strong><span>Graduating 2027</span></li>
-        </ul>
+        <div class="duo">
+          <div class="side side-pro">
+            <p class="pn-kicker">Now</p>
+            <h3 class="pn-title">Where the hand is</h3>
+            <p class="pn-about">
+              Egg money to shipped software in seven years, most of it self-taught: Blender and game
+              engines first, then Minecraft mods with a language model wired into them, and now web
+              and desktop apps people actually use. TypeScript and Next.js day to day, Electron when
+              it needs to be a real program, Java for the mods, and enough Blender and Revit left over
+              to be useful. Next I want to build the on-device kind: software that runs the model on
+              your own machine, so the useful part happens without anything leaving it.
+            </p>
+            <ul class="pn-list" role="list">
+              <li><strong>Software Engineering</strong><span>Provo CAPS</span></li>
+              <li><strong>Intern</strong><span>Doing Business Intelligently</span></li>
+              <li><strong>Timpview High School</strong><span>Graduating 2027</span></li>
+            </ul>
+          </div>
+          <div class="side side-fun">
+            <p class="pn-kicker">Now</p>
+            <h3 class="pn-title fun-write">Right now</h3>
+            <p class="pn-about">
+              Karate, mostly, and I'm hoping to learn a lot from it. When an idea hits, I build it
+              with AI, and I still make YouTube videos. Next I want to start calisthenics.
+            </p>
+            <ul class="pn-list" role="list">
+              <li><strong>Karate</strong><span>Still training</span></li>
+              <li><strong>Calisthenics</strong><span>Next up</span></li>
+              <li><strong>YouTube</strong><span>Jeffrey_Creates</span></li>
+            </ul>
+          </div>
+        </div>
       </div>
 
-      <ul class="path-certs" role="list" aria-label="Certificates earned at school">
-        <li><a href="assets/certificates/computer-programming-1.pdf" target="_blank" rel="noopener">Computer Programming 1</a></li>
-        <li><a href="assets/certificates/computer-programming-2-java.pdf" target="_blank" rel="noopener">Computer Programming 2 &middot; Java</a></li>
-        <li><a href="assets/certificates/game-development-fundamentals.pdf" target="_blank" rel="noopener">Game Development Fundamentals</a></li>
-        <li><a href="assets/certificates/digital-media-1.pdf" target="_blank" rel="noopener">Digital Media 1</a></li>
-        <li><a href="assets/certificates/digital-media-2.pdf" target="_blank" rel="noopener">Digital Media 2</a></li>
-        <li><a href="assets/certificates/robotics-1.pdf" target="_blank" rel="noopener">Robotics 1</a></li>
-        <li><a href="assets/certificates/unmanned-aerial-systems.pdf" target="_blank" rel="noopener">Unmanned Aerial Systems</a></li>
-        <li><a href="assets/certificates/cad-architectural-design-1.pdf" target="_blank" rel="noopener">Architectural Design 1</a></li>
-        <li><a href="assets/certificates/architectural-design-2.pdf" target="_blank" rel="noopener">Architectural Design 2</a></li>
+      <!-- On the fun side these are the things I do for fun; fun.js puts
+           the addresses away while they are. -->
+      <ul class="path-certs" role="list" aria-label="Certificates earned at school"
+          data-label-pro="Certificates earned at school" data-label-fun="Things I do for fun">
+        <li><a href="assets/certificates/computer-programming-1.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Computer Programming 1</span><span class="side side-fun">Soccer</span></span></a></li>
+        <li><a href="assets/certificates/computer-programming-2-java.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Computer Programming 2 &middot; Java</span><span class="side side-fun">Swimming</span></span></a></li>
+        <li><a href="assets/certificates/game-development-fundamentals.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Game Development Fundamentals</span><span class="side side-fun">Karate</span></span></a></li>
+        <li><a href="assets/certificates/digital-media-1.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Digital Media 1</span><span class="side side-fun">Blender</span></span></a></li>
+        <li><a href="assets/certificates/digital-media-2.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Digital Media 2</span><span class="side side-fun">Game dev</span></span></a></li>
+        <li><a href="assets/certificates/robotics-1.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Robotics 1</span><span class="side side-fun">YouTube</span></span></a></li>
+        <li><a href="assets/certificates/unmanned-aerial-systems.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Unmanned Aerial Systems</span><span class="side side-fun">Disney Channel</span></span></a></li>
+        <li><a href="assets/certificates/cad-architectural-design-1.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Architectural Design 1</span><span class="side side-fun">Dances</span></span></a></li>
+        <li><a href="assets/certificates/architectural-design-2.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Architectural Design 2</span><span class="side side-fun">Calisthenics, soon</span></span></a></li>
       </ul>
 
     </div>
@@ -828,12 +1203,20 @@
     <div class="slab-inner">
       <div class="wrap" data-stagger="0.09" data-rise>
         <h2 id="contact-heading">
-          <span class="line"><span>Want to work</span></span>
-          <span class="line"><span>together?</span></span>
+          <span class="line"><span><span class="duo duo-display"><span class="side side-pro">Want to work</span><span class="side side-fun">Got an idea?</span></span></span></span>
+          <span class="line"><span><span class="duo duo-display"><span class="side side-pro">together?</span><span class="side side-fun">Say hi.</span></span></span></span>
         </h2>
         <p class="contact-note" data-reveal>
-          I want to be part of something big. If you are building one, I would like to hear
-          about it. Easiest way to reach me:
+          <span class="duo">
+            <span class="side side-pro">
+              I want to be part of something big. If you are building one, I would like to hear
+              about it. Easiest way to reach me:
+            </span>
+            <span class="side side-fun">
+              Want to talk karate, videos, or something you want built? This is the easiest way to
+              reach me:
+            </span>
+          </span>
         </p>
         <a class="contact-mail" href="mailto:jeffreyscotthamilton6399@gmail.com" data-reveal>
           jeffreyscotthamilton6399@gmail.com
@@ -853,7 +1236,10 @@
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <script src="assets/vendor/lenis.min.js" defer></script>
-<script src="app.js?v=20260904f" defer></script>
+<script src="app.js?v=20260914d" defer></script>
+<!-- A module, so it runs after app.js, once the watch has lifted the eras
+     onto the dial. -->
+<script type="module" src="fun.js?v=20260914i"></script>
 
 </body>
 </html>
