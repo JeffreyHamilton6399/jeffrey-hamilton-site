@@ -15,7 +15,7 @@
      plain files with no build step behind them, so nothing in their URLs
      ever changes when their contents do, and a browser holding an old
      copy has no way to know. Bump it whenever either one changes. -->
-<link rel="stylesheet" href="styles.css?v=20260914g">
+<link rel="stylesheet" href="styles.css?v=20260914h">
 <script>
   /* Runs before the first paint, which is the whole point of it.
 
@@ -267,7 +267,7 @@
       </li>
 
       <li class="spiral-card">
-        <a href="https://animation-library-ruby.vercel.app" target="_blank" rel="noopener">
+        <a data-fun-href="https://www.youtube.com/@Jeffrey_Creates/videos" href="https://animation-library-ruby.vercel.app" target="_blank" rel="noopener">
           <span class="card-shot">
             <img src="assets/shots/jot.png" width="2880" height="1800" loading="lazy" decoding="async"
                  alt="jot's landing page, headlined Interfaces with a human hand, beside a sticky note, speech bubbles and a toggle all drawn in pen.">
@@ -983,7 +983,7 @@
                 </p>
                 <ul class="era-now" role="list" data-reveal>
                   <li><strong>Karate</strong><span>Still training</span></li>
-                  <li><strong>YouTube</strong><span>Jeffrey_Creates</span></li>
+                  <li><strong>YouTube</strong><span><a class="ulink" href="https://www.youtube.com/@Jeffrey_Creates/videos" target="_blank" rel="noopener">Jeffrey_Creates</a></span></li>
                 </ul>
               </div>
             </div>
@@ -1166,25 +1166,24 @@
             <ul class="pn-list" role="list">
               <li><strong>Karate</strong><span>Still training</span></li>
               <li><strong>Calisthenics</strong><span>Next up</span></li>
-              <li><strong>YouTube</strong><span>Jeffrey_Creates</span></li>
+              <li><strong>YouTube</strong><span><a class="ulink" href="https://www.youtube.com/@Jeffrey_Creates/videos" target="_blank" rel="noopener">Jeffrey_Creates</a></span></li>
             </ul>
           </div>
         </div>
       </div>
 
-      <!-- On the fun side these are the things I do for fun; fun.js puts
-           the addresses away while they are. -->
-      <ul class="path-certs" role="list" aria-label="Certificates earned at school"
-          data-label-pro="Certificates earned at school" data-label-fun="Things I do for fun">
-        <li><a href="assets/certificates/computer-programming-1.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Computer Programming 1</span><span class="side side-fun">Soccer</span></span></a></li>
-        <li><a href="assets/certificates/computer-programming-2-java.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Computer Programming 2 &middot; Java</span><span class="side side-fun">Swimming</span></span></a></li>
-        <li><a href="assets/certificates/game-development-fundamentals.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Game Development Fundamentals</span><span class="side side-fun">Karate</span></span></a></li>
-        <li><a href="assets/certificates/digital-media-1.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Digital Media 1</span><span class="side side-fun">Blender</span></span></a></li>
-        <li><a href="assets/certificates/digital-media-2.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Digital Media 2</span><span class="side side-fun">Game dev</span></span></a></li>
-        <li><a href="assets/certificates/robotics-1.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Robotics 1</span><span class="side side-fun">YouTube</span></span></a></li>
-        <li><a href="assets/certificates/unmanned-aerial-systems.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Unmanned Aerial Systems</span><span class="side side-fun">Disney Channel</span></span></a></li>
-        <li><a href="assets/certificates/cad-architectural-design-1.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Architectural Design 1</span><span class="side side-fun">Dances</span></span></a></li>
-        <li><a href="assets/certificates/architectural-design-2.pdf" target="_blank" rel="noopener"><span class="duo duo-mono"><span class="side side-pro">Architectural Design 2</span><span class="side side-fun">Calisthenics, soon</span></span></a></li>
+      <!-- The work side's alone: on the fun side the coil fades out of the
+           watch (app.js) and this list is hidden in the flow. -->
+      <ul class="path-certs" role="list" aria-label="Certificates earned at school">
+        <li><a href="assets/certificates/computer-programming-1.pdf" target="_blank" rel="noopener">Computer Programming 1</a></li>
+        <li><a href="assets/certificates/computer-programming-2-java.pdf" target="_blank" rel="noopener">Computer Programming 2 &middot; Java</a></li>
+        <li><a href="assets/certificates/game-development-fundamentals.pdf" target="_blank" rel="noopener">Game Development Fundamentals</a></li>
+        <li><a href="assets/certificates/digital-media-1.pdf" target="_blank" rel="noopener">Digital Media 1</a></li>
+        <li><a href="assets/certificates/digital-media-2.pdf" target="_blank" rel="noopener">Digital Media 2</a></li>
+        <li><a href="assets/certificates/robotics-1.pdf" target="_blank" rel="noopener">Robotics 1</a></li>
+        <li><a href="assets/certificates/unmanned-aerial-systems.pdf" target="_blank" rel="noopener">Unmanned Aerial Systems</a></li>
+        <li><a href="assets/certificates/cad-architectural-design-1.pdf" target="_blank" rel="noopener">Architectural Design 1</a></li>
+        <li><a href="assets/certificates/architectural-design-2.pdf" target="_blank" rel="noopener">Architectural Design 2</a></li>
       </ul>
 
     </div>
@@ -1236,10 +1235,10 @@
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <script src="assets/vendor/lenis.min.js" defer></script>
-<script src="app.js?v=20260914d" defer></script>
+<script src="app.js?v=20260914e" defer></script>
 <!-- A module, so it runs after app.js, once the watch has lifted the eras
      onto the dial. -->
-<script type="module" src="fun.js?v=20260914i"></script>
+<script type="module" src="fun.js?v=20260914j"></script>
 
 </body>
 </html>

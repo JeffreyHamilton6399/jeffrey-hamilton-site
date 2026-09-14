@@ -694,16 +694,17 @@ function stagger() {
 
 const buttons = switcher ? [].slice.call(switcher.querySelectorAll('[data-side-set]')) : [];
 const skillsLine = document.querySelector('.hero-skills');
-/* On the fun side the certificates round the watch are the things I do for
-   fun instead, and not links to school paperwork: their addresses are put
-   away until the work side is back. */
+/* The certificates are the work side's alone. On the fun side the coil fades
+   out of the watch (app.js), and the spiral cards with no fun face fade out
+   of the tube; both are taken out of reach for the keyboard and screen
+   readers with them. */
 const certList = document.querySelector('.path-certs');
 const pileList = document.querySelector('.pile');
-const certLinks = certList ? [].slice.call(certList.querySelectorAll('a[href]')) : [];
-/* The spiral cards with no fun face fade out on that side (app.js); they
-   are taken out of reach for the keyboard and screen readers with them. */
 const skipped = [].slice.call(document.querySelectorAll('.spiral-card.fun-skip'));
-certLinks.forEach((a) => { a.dataset.href = a.getAttribute('href'); });
+/* A card whose fun face has somewhere of its own to go — the YouTube one,
+   to the channel — carries that address and wears it on the fun side. */
+const funLinks = [].slice.call(document.querySelectorAll('a[data-fun-href]'));
+funLinks.forEach((a) => { a.dataset.proHref = a.getAttribute('href'); });
 
 function labelled(el) {
   if (!el) return;
@@ -714,22 +715,25 @@ function labelled(el) {
 function sync() {
   buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.sideSet === side)));
   labelled(skillsLine);
-  labelled(certList);
   labelled(pileList);
   skipped.forEach((card) => { card.inert = side === 'fun'; });
-  certLinks.forEach((a) => {
-    if (side === 'fun') a.removeAttribute('href');
-    else a.setAttribute('href', a.dataset.href);
-  });
+  if (certList) certList.inert = side === 'fun';
+  funLinks.forEach((a) => a.setAttribute('href', side === 'fun' ? a.dataset.funHref : a.dataset.proHref));
 }
 
 let flip = 0;
 let settle = 0;
+let left = 0;
 
 function setSide(next) {
   if (next === side) return;
   if (next === 'fun') attach(true);
   stagger();
+  /* Both ways round, the same move: whatever is leaving lifts out, and
+     whatever is arriving comes up and forward into its place. */
+  doc.setAttribute('data-leaving', side);
+  clearTimeout(left);
+  left = setTimeout(() => doc.removeAttribute('data-leaving'), OUT + STAGGER_MAX + 80);
   side = next;
   doc.setAttribute('data-side', next);
   try { localStorage.setItem(KEY, next); } catch (e) {}
@@ -762,13 +766,14 @@ function setSide(next) {
 buttons.forEach((b) => b.addEventListener('click', () => setSide(b.dataset.sideSet)));
 
 /* On the fun side a card in the grid is a chapter of the story rather than
-   a project, so it takes you down to the story instead of out. (The spiral
-   opens its cards itself, in app.js, and does the same.) The nav link is the
-   one app.js already scrolls smoothly. */
+   a project, so it takes you down to the story instead of out — unless its
+   fun face has a place of its own to go. (The spiral opens its cards itself,
+   in app.js, and does the same.) The nav link is the one app.js already
+   scrolls smoothly. */
 document.addEventListener('click', (e) => {
   if (side !== 'fun') return;
   const a = e.target.closest && e.target.closest('.spiral-card a');
-  if (!a) return;
+  if (!a || a.hasAttribute('data-fun-href')) return;
   e.preventDefault();
   const story = document.querySelector('.nav a[href="#path"]');
   if (story) story.click();

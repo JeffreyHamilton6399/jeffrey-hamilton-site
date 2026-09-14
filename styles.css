@@ -1987,18 +1987,28 @@ html[data-side="fun"] .spiral-card:not(.fun-skip) .card-body {
     transform .34s cubic-bezier(.55, 0, .8, .2) var(--sd, 0ms),
     visibility 0s linear calc(var(--sd, 0ms) + 340ms);
 }
-/* Opposite ways, so going back reads as turning back: the work lifts out
-   and the fun side comes up from below, and the reverse on the way home. */
+/* The same move both ways round, so going back feels like going forward. A
+   side waiting to come in sits a little low (and its card faces a touch
+   large), so it arrives up and forward into place; the side leaving lifts
+   out and settles back, for as long as fun.js holds data-leaving on it. */
 html:not([data-side="fun"]) .side-fun { transform: translateY(14px); }
-html[data-side="fun"] .side-pro       { transform: translateY(-14px); }
-html:not([data-side="fun"]) .card-fun          { transform: scale(1.04); }
-html[data-side="fun"] .spiral-card:not(.fun-skip) .card-shot  { transform: scale(.97); }
+html[data-side="fun"] .side-pro       { transform: translateY(14px); }
+html[data-leaving="pro"] .side-pro,
+html[data-leaving="fun"] .side-fun    { transform: translateY(-14px); }
+html:not([data-side="fun"]) .card-fun { transform: scale(1.04); }
+html[data-side="fun"] .spiral-card:not(.fun-skip) .card-shot { transform: scale(1.04); }
+html[data-leaving="fun"] .card-fun,
+html[data-leaving="pro"] .spiral-card:not(.fun-skip) .card-shot { transform: scale(.97); }
 
 /* A card with no fun face keeps its work face while app.js fades it out of
    the tube, rather than going blank first, and cannot be clicked while it
    is going. In the grid on a phone it simply leaves the grid. */
 html[data-side="fun"] .spiral-card.fun-skip > a { pointer-events: none; }
 html[data-side="fun"] .spiral-fallback .fun-skip { display: none; }
+
+/* The certificates are the work side's. On the dial app.js fades the coil
+   out; in the flow, where they are just a list, the list goes. */
+html[data-side="fun"] .slab-inner > .path-certs { display: none; }
 
 /* ---- the fun side's type -------------------------------------------------
    Everything on the fun side is written by hand: Caveat Brush wherever the

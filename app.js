@@ -965,8 +965,9 @@
       var a = el && el.closest && el.closest('.spiral-card a[href]');
       if (!a) return;
       /* On the fun side a card is a chapter of the story rather than a
-         project, so it takes you down to the story instead of out. */
-      if (doc.getAttribute('data-side') === 'fun') {
+         project, so it takes you down to the story instead of out — unless
+         its fun face has a place of its own, which fun.js has put in href. */
+      if (doc.getAttribute('data-side') === 'fun' && !a.hasAttribute('data-fun-href')) {
         var story = document.getElementById('path');
         if (story && lenis) lenis.scrollTo(story, { offset: -60, duration: 1.2 });
         else if (story) story.scrollIntoView();
@@ -1307,6 +1308,9 @@
        because a trigger can fire its first update while it is still being
        created */
     var certDrift = 0, certLit = 0, certPull = 0, spinning = false;
+    /* the certificates are the work side's; on the fun side the coil fades
+       out, and back in on the way home (see the sidechange listener) */
+    var certShow = { v: doc.getAttribute('data-side') === 'fun' ? 0 : 1 };
     var parts = [].slice.call(orbit.querySelectorAll('.watch-crown, .watch-case'));
     var stitching = orbit.querySelector('.watch-stitching');
     if (!svg || !eras.length) return;
@@ -1674,7 +1678,7 @@
         var level = 1 - clamp01((Math.abs(y) - rc * 0.35) / (rc * 0.95));
         var hid = 1 - deep * level;
 
-        var lit2 = lit * depth * ends * hid * (1 - certPull);
+        var lit2 = lit * depth * ends * hid * (1 - certPull) * certShow.v;
         el.style.opacity = lit2.toFixed(3);
         el.style.pointerEvents = lit2 > 0.5 ? 'auto' : 'none';
       }
@@ -2015,6 +2019,19 @@
         if (a) window.open(a.href, '_blank', 'noopener');
       });
     }
+
+    /* The coil fades per chip rather than as a list, for the same reason its
+       scroll fade does: an opacity on the list would flatten it. The update
+       redraws it even when nothing is scrolling. */
+    document.addEventListener('sidechange', function () {
+      gsap.to(certShow, {
+        v: doc.getAttribute('data-side') === 'fun' ? 0 : 1,
+        duration: 0.5,
+        ease: 'power2.out',
+        overwrite: true,
+        onUpdate: function () { windCerts(certDrift, certLit); }
+      });
+    });
 
     var rt;
     window.addEventListener('resize', function () {
