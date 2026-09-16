@@ -738,7 +738,7 @@
 
     var LEN = 0, R = 0, LIFT = 0;
 
-    var auto = 0, scrolled = 0, thrown = 0, vel = 0;
+    var auto = 0, scrolled = 0, thrown = 0, vel = 0, boost = 0;
     var dragging = false, moved = 0, lastX = 0, lastT = 0;
     var ticking = false, active = false, pin = null;
     var lastBase = -1, lastFocus = -1;
@@ -749,6 +749,10 @@
        card sits along the tube, 0…1, and shown is how much of it is there.
        A switch tweens both rather than setting them, so the tube re-spaces
        itself instead of jumping. */
+    var RESPACE_S = 1.1;      /* how long a switch takes to re-space the tube   */
+    var BOOST_MIN = 0.06;     /* the least a switch pushes the tube forward      */
+    var BOOST_MARGIN = 0.04;  /* forward travel left to the card that goes back
+                                 furthest, so even it is visibly moving on     */
     var slots = cards.map(function (c, i) { return i / N; });
     var shown = cards.map(function () { return 1; });
     var respace = null;
@@ -771,11 +775,24 @@
         lastBase = -1;
         return;
       }
-      var s0 = slots.slice(), v0 = shown.slice(), k = { v: 0 };
+      var s0 = slots.slice(), v0 = shown.slice(), b0 = boost, k = { v: 0 };
+
+      /* The tube only ever turns one way, and a switch must not be the one
+         time it doesn't. Closing up means some cards' slots move back along
+         the tube, so the whole tube is pushed forward at the same time, by
+         more than the furthest any card has to go back: every card then
+         travels forward the whole way, the ones going furthest back the
+         least. Both share the one ease, so no card is ever going backwards
+         at any moment along the way, not just by the end of it. */
+      var back = 0;
+      to.forEach(function (t, i) { if (t.slot !== null) back = Math.max(back, s0[i] - t.slot); });
+      var push = Math.max(BOOST_MIN, back + BOOST_MARGIN);
+
       respace = gsap.to(k, {
         v: 1,
-        duration: 0.9,
-        ease: 'power2.inOut',
+        duration: RESPACE_S,
+        /* quick off the mark and easing out: a shove, not a slide */
+        ease: 'power3.out',
         onUpdate: function () {
           /* the leaving cards are gone well before the rest have closed up */
           var f = Math.min(1, k.v * 1.8);
@@ -783,6 +800,7 @@
             if (t.slot !== null) slots[i] = s0[i] + (t.slot - s0[i]) * k.v;
             shown[i] = v0[i] + (t.shown - v0[i]) * f;
           });
+          boost = b0 + push * k.v;
           lastBase = -1;
         }
       });
@@ -835,7 +853,7 @@
     function wrap01(v) { v %= 1; return v < 0 ? v + 1 : v; }
 
     function render() {
-      var base = wrap01(auto + scrolled + thrown);
+      var base = wrap01(auto + scrolled + thrown + boost);
       if (base === lastBase) return;              /* nothing moved this frame */
       lastBase = base;
 
