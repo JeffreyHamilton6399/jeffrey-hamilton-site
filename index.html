@@ -16,7 +16,7 @@
      plain files with no build step behind them, so nothing in their URLs
      ever changes when their contents do, and a browser holding an old
      copy has no way to know. Bump it whenever either one changes. -->
-<link rel="stylesheet" href="styles.css?v=20260914p">
+<link rel="stylesheet" href="styles.css?v=20260916a">
 <script>
   /* Runs before the first paint, which is the whole point of it.
 
@@ -139,11 +139,15 @@
            on its own, then fades out from under it. -->
       <span class="boot" aria-hidden="true"></span>
 
-      <!-- Layer 10: the boot name. Outside the spiral because it has to
-           sit over the loading sheet, and because it leaves — it dips, packs
-           itself into the travelling dot, and is gone. -->
+      <!-- Layer 10: the face the opening starts on. Outside the spiral because
+           it has to sit over the loading sheet, and because it leaves — it
+           gathers, spirals into the travelling dot, and is gone. The name is
+           the page heading underneath it, hidden from sight only. -->
       <div class="hero-center" data-intro>
-        <h1 class="hero-title" id="hero-heading"><span class="hw">Jeffrey</span> <span class="hw">Hamilton</span></h1>
+        <h1 class="hero-title vh" id="hero-heading">Jeffrey Hamilton</h1>
+        <span class="boot-face" aria-hidden="true">
+          <img src="assets/portrait.jpg" width="1100" height="1489" fetchpriority="high" decoding="async" alt="">
+        </span>
       </div>
 
       <!-- The glowing dot the name becomes, and the line it draws. Both are
@@ -863,12 +867,29 @@
                     <span class="fun-frame fun-paper"><span class="fun-art" data-doodle="swim"></span><span class="fun-soon">Photo soon</span></span>
                     <figcaption class="vid-cap"><span class="vid-title">Swim team</span><span class="vid-kind">2023</span></figcaption>
                   </figure>
-                  <figure class="fun-photo" data-photo="blender">
-                    <span class="fun-frame fun-paper"><span class="fun-art" data-doodle="cube"></span><span class="fun-soon">Photo soon</span></span>
-                    <figcaption class="vid-cap"><span class="vid-title">Blender and game dev</span><span class="vid-kind">2023</span></figcaption>
-                  </figure>
+                  <!-- my own old videos, the Blender and the game dev -->
+                  <a class="vid" href="https://www.youtube.com/watch?v=O1i1TQkx9b8" data-yt="O1i1TQkx9b8"
+                     target="_blank" rel="noopener" aria-label="Play my 3D in Blender video on YouTube">
+                    <span class="vid-frame">
+                      <img src="https://i.ytimg.com/vi/O1i1TQkx9b8/maxresdefault.jpg"
+                           onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/O1i1TQkx9b8/hqdefault.jpg'"
+                           loading="lazy" decoding="async" alt="">
+                      <span class="vid-play" aria-hidden="true"></span>
+                    </span>
+                    <span class="vid-cap"><span class="vid-title">3D in Blender</span><span class="vid-kind">Blender</span></span>
+                  </a>
                 </div>
                 <p class="era-note">I switched schools a bunch of times around then.</p>
+                <a class="vid" href="https://www.youtube.com/watch?v=pZhBZBH4NhU" data-yt="pZhBZBH4NhU"
+                     target="_blank" rel="noopener" aria-label="Play my first parkour game video on YouTube">
+                    <span class="vid-frame">
+                      <img src="https://i.ytimg.com/vi/pZhBZBH4NhU/maxresdefault.jpg"
+                           onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/pZhBZBH4NhU/hqdefault.jpg'"
+                           loading="lazy" decoding="async" alt="">
+                      <span class="vid-play" aria-hidden="true"></span>
+                    </span>
+                    <span class="vid-cap"><span class="vid-title">First version of a parkour game</span><span class="vid-kind">Game dev &middot; VR</span></span>
+                  </a>
                 <p class="era-note">In middle school we moved to Provo, into the house I still live in.</p>
               </div>
             </div>
@@ -1245,10 +1266,10 @@
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <script src="assets/vendor/lenis.min.js" defer></script>
-<script src="app.js?v=20260914i" defer></script>
+<script src="app.js?v=20260916a" defer></script>
 <!-- A module, so it runs after app.js, once the watch has lifted the eras
      onto the dial. -->
-<script type="module" src="fun.js?v=20260914q"></script>
+<script type="module" src="fun.js?v=20260914t"></script>
 
 </body>
 </html>

@@ -524,26 +524,43 @@ html.booting .site-head { opacity: 0; pointer-events: none; transition: none; }
 html.head-wait .site-head { opacity: 0; pointer-events: none; }
 .site-head { transition: opacity .45s var(--ease-out); }
 
-/* Extruded, not tilted. The depth comes from a stack of offset copies
-   marching down-right into a mid-tone, with one soft cast shadow under the
-   whole thing — which reads as solid 3D while the letters themselves stay
-   dead straight and horizontal, which is the point. */
-/* The name, set the way everything else on this page is set: one weight of
-   the display face in plain ink, and nothing behind it. It used to be pushed
-   out into a twelve step extrusion, which is a different site's idea and the
-   only thing on the page pretending to be a solid object.
-
-   What it has instead is an arrival. The two words come up a beat apart and a
-   violet hairline draws out from the middle under them, which is the same
-   line the timeline is about to draw. */
-.hero-title {
-  font-size: clamp(3rem, 12vw, 10rem);
-  line-height: .9;
-  letter-spacing: -.015em;
-  text-transform: uppercase;
-  color: var(--void);
+/* The opening starts on a face, not a name: the portrait in a circle, in
+   the middle of the loading sheet. It rises in, gathers a ring of the dot's
+   gold (--charge), then spirals in on itself and turns gold all over
+   (--gold) as it shrinks to exactly the dot it becomes. app.js drives both.
+   The name is still the page's heading, for everyone who reads it rather
+   than sees it. */
+.boot-face {
+  --charge: 0;
+  --gold: 0;
+  position: relative;
+  display: block;
+  width: clamp(9rem, 22vw, 15rem);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--shell);
+  box-shadow:
+    0 0 0 calc(var(--charge) * 5px) color-mix(in srgb, var(--glow) 60%, transparent),
+    0 0 calc(var(--charge) * 46px) calc(var(--charge) * 12px) color-mix(in srgb, var(--glow) 45%, transparent),
+    0 24px 60px color-mix(in srgb, var(--void) 18%, transparent);
 }
-.hw { display: inline-block; }
+.boot-face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 26%;
+}
+.boot-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--glow);
+  opacity: var(--gold);
+}
 
 
 /* Held back until the script has decided what the opening is doing. See the
@@ -604,28 +621,26 @@ html.pre .hero-skills { opacity: 0; }
    app.js arms the centre (everything hidden), then adds boot-in and
    intro-line in turn. With no script, or reduced motion, none of this is
    set and the name and line just sit there. */
-/* The words and the rule each carry their own arrival, so the title element
-   itself is left free for the dip and the pack into the dot that follow. */
-html.motion [data-intro] .hw {
-  transition: opacity .95s var(--ease-out), transform .95s var(--ease-out);
+/* The face carries its own arrival, on its image, so the circle itself is
+   left free for the gather and the spiral into the dot that follow. */
+html.motion [data-intro] .boot-face img {
+  transition: opacity .95s var(--ease-out), transform 1.1s var(--ease-out);
 }
-html.motion [data-intro] .hw:nth-child(2) { transition-delay: .17s; }
 html.motion .hero-skills {
   transition: opacity .8s var(--ease-out), transform .8s var(--ease-out);
 }
-html.motion [data-intro].intro-armed .hw {
-  opacity: 0;
-  transform: translateY(.22em);
-}
+html.motion [data-intro].intro-armed .boot-face { opacity: 0; transition: opacity .6s var(--ease-out); }
+html.motion [data-intro].intro-armed .boot-face img { opacity: 0; transform: scale(1.18); }
 html.motion .hero-skills.is-held {
   opacity: 0;
   transform: translateY(22px);
 }
-html.motion [data-intro].boot-in .hw { opacity: 1; transform: none; }
+html.motion [data-intro].boot-in .boot-face,
+html.motion [data-intro].boot-in .boot-face img { opacity: 1; transform: none; }
 html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 
 
-/* Once the name has gone into the dot there is nothing left to show. */
+/* Once the face has gone into the dot there is nothing left to show. */
 [data-intro].name-gone { display: none; }
 
 .hero.is-spiral .hero-stage {
@@ -1925,6 +1940,9 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
      width — the captions are what spill, not the frames. */
   .era-media-pair { grid-template-columns: 1fr; }
   .vid-cap { flex-wrap: wrap; }
+  /* Two up, a title and its label side by side run into the next tile —
+     the label drops under its own title instead. */
+  .era-row .vid-cap { flex-direction: column; gap: .125rem; }
   .contact-leather { width: min(var(--lw, 12rem), 94vw) !important; }
 
   :root { --slab-lift: 1.25rem; }
@@ -1936,7 +1954,6 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   .nav { justify-self: end; }
 
   .hero-stage { padding-top: 6.5rem; }
-  .hero-title { font-size: clamp(2.75rem, 17vw, 5rem); }
   .foot-inner { justify-content: flex-start; }
 }
 
@@ -2097,23 +2114,11 @@ html[data-font="fun"], .side-fun, .card-fun {
   transition: opacity .28s var(--ease-out), transform .28s var(--ease-out), filter .26s var(--ease-out);
 }
 .contact-mail { transition: background-size .5s var(--ease), color .4s var(--ease), filter .26s var(--ease-out); }
-/* The header goes up off the top of the screen, changes while it is out of
-   sight (data-font, and the nav labels below, flip then), and drops back in
-   with a little give. FLIP in fun.js is how long it takes to go. The boot's
-   own rules for the header still win while the opening is running. */
-.site-head {
-  transition:
-    opacity .45s var(--ease-out),
-    color .45s var(--ease),
-    transform .55s cubic-bezier(.2, 1.35, .4, 1);
-}
-html.side-swap .site-head {
-  transform: translateY(calc(-100% - 1rem));
-  transition:
-    opacity .45s var(--ease-out),
-    color .45s var(--ease),
-    transform .28s cubic-bezier(.55, 0, .8, .2);
-}
+/* For a switch the header goes up off the top of the screen and comes back
+   down once it has changed. fun.js animates that, so the drop always follows
+   the lift however busy the page is; here it only keeps its own fades. The
+   boot's rules for the header still win while the opening is running. */
+.site-head { transition: opacity .45s var(--ease-out), color .45s var(--ease); }
 
 /* The word under the spiral is not dipped: taking it down is its own
    change. It wears the face of the side it was built on (app.js sets
@@ -2447,6 +2452,20 @@ html[data-side="fun"] .ss-word[data-word="fun"] { transform: none; }
 }
 .fun-ship .ship-shot { position: relative; }
 
+/* a placeholder sitting in a row beside a video takes the video's shape */
+.era-row .fun-frame { aspect-ratio: 16 / 9; }
+
+/* The ink ribbon the pointer leaves on the fun side (fun.js). Over the page,
+   under the switch. */
+.ink-ribbon {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 65;
+}
+
 /* The pile's cards hold a picture for each side in the card's own frame, so
    the pile — its shape, its order, the drag — is the same thing either way
    round and only the photograph changes. */
@@ -2467,7 +2486,8 @@ html[data-side="fun"] .ss-word[data-word="fun"] { transform: none; }
   }
   html.motion [data-reveal],
   html.motion .line > span { opacity: 1; transform: none; }
-  html.motion [data-intro] .hw,
+  html.motion [data-intro] .boot-face,
+  html.motion [data-intro] .boot-face img,
   html.motion .hero-skills { opacity: 1 !important; transform: none !important; filter: none !important; }
   .slab-inner { transform: none !important; opacity: 1 !important; }
 }

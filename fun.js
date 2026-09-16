@@ -47,11 +47,14 @@ const SWAP_MS = 780;
 const MIDDLE = 0.08;
 /* How far past the edge a block goes, so its shadow is gone too. */
 const CLEAR = 48;
-/* The type that belongs to neither side cannot cross-fade. The header goes up
-   off the screen for it and the watch's numbers dip out (html.side-swap);
-   FLIP is how long that takes, and the faces change while nothing shows. (The word under the spiral has its own way: see
-   app.js.) */
-const FLIP = 280;
+/* The type that belongs to neither side cannot cross-fade. For a switch the
+   header goes up off the top of the screen and comes back down, and the
+   watch's numbers dip out (html.side-swap); the faces change while nothing
+   is showing. HEAD_UP_MS is the lift, HEAD_DOWN_MS the drop back in. (The
+   word under the spiral has its own way: see app.js.) */
+const HEAD_UP_MS = 320;
+const HEAD_DOWN_MS = 900;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* between drawings that start in the same pass, so a screen of them inks
    one after another rather than all at once */
 const PEN_GAP = 90;
@@ -765,6 +768,219 @@ function keepPlace(change) {
 let relaned = 0;
 addEventListener('resize', () => { clearTimeout(relaned); relaned = setTimeout(lanes, 150); }, { passive: true });
 
+/* The header goes up off the top of the screen, changes, and comes back down.
+   Two animations, one after the other: the drop only starts once the lift
+   has finished, so however busy the page is at that moment the header is
+   seen to go and seen to come back — never simply there again — and it only
+   ever changes while it is out of sight. The browser runs both away from
+   the page's scripts, so a slow frame of script cannot stall them either. A
+   second switch mid-flight picks the header up from wherever it has got to. */
+const head = document.querySelector('.site-head');
+const HEAD_UP = 'translateY(calc(-100% - 1rem))';
+let headRun = null;
+
+function liftHeader(change) {
+  if (!head || reduced || typeof head.animate !== 'function') { change(); return; }
+  const from = getComputedStyle(head).transform;
+  if (headRun) headRun.cancel();
+  const up = head.animate(
+    [{ transform: from === 'none' ? 'none' : from }, { transform: HEAD_UP }],
+    { duration: HEAD_UP_MS, easing: 'cubic-bezier(.55, 0, .8, .2)', fill: 'forwards' });
+  headRun = up;
+  up.onfinish = () => {
+    if (headRun !== up) return;
+    change();
+    const down = head.animate(
+      [{ transform: HEAD_UP }, { transform: 'none' }],
+      { duration: HEAD_DOWN_MS, easing: 'cubic-bezier(.22, 1.2, .36, 1)' });
+    headRun = down;
+    up.cancel();
+    down.onfinish = () => { if (headRun === down) headRun = null; };
+  };
+}
+
+/* ---- the ink ribbon ----------------------------------------------------------
+   On the fun side the pointer trails a soft stroke, like a line of pastel,
+   that thins and fades as it ages: dark over the page, bone over the dark
+   bands. It is one shape, not a string of pieces — a smooth curve through the
+   pointer's path, fattened into a taper from its newest end to nothing and
+   filled once — so no two parts of it ever lay colour on top of each other,
+   and there are no beads where they would have overlapped. One canvas over
+   everything, drawn only while there is any ribbon left: once it has faded
+   the loop stops and nothing runs. The real cursor stays visible and the
+   ribbon's newest end is always exactly where it is, so the pointer itself
+   never lags. Only for a mouse or a pen, never with reduced motion, and
+   never on the work side. */
+const RIBBON_POINTS = 60;   /* the most points the ribbon keeps              */
+const RIBBON_STEP = 6;      /* px the pointer moves before it lays a point   */
+const RIBBON_AGE = 0.018;   /* of a point's life lost every frame            */
+const RIBBON_WIDTH = 15;    /* px across at the newest end                   */
+const RIBBON_SMOOTH = 3;    /* curve samples laid between each pair of points */
+const RIBBON_ALPHA = 0.82;  /* one even strength for the whole stroke        */
+/* The canvas is drawn at no more than this many pixels per CSS pixel. A
+   tapered line does not need a retina screen's full two, and at two a
+   full-window canvas is four times the pixels to clear and fill. */
+const RIBBON_DPR = 1.5;
+const ribbonAllowed = !reduced && matchMedia('(pointer: fine)').matches;
+let ribbonStop = null;
+
+function ribbon(on) {
+  if (!ribbonAllowed) return;
+  if (on && !ribbonStop) ribbonStop = inkRibbon();
+  else if (!on && ribbonStop) { ribbonStop(); ribbonStop = null; }
+}
+
+function inkRibbon() {
+  const canvas = document.createElement('canvas');
+  canvas.className = 'ink-ribbon';
+  canvas.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  let W = 0, H = 0;
+  let drawn = null;          /* the patch last frame drew in, to clear      */
+  let darkRects = [];
+  let darkStale = true;
+  const size = () => {
+    const dpr = Math.min(window.devicePixelRatio || 1, RIBBON_DPR);
+    W = innerWidth; H = innerHeight;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawn = null;
+    darkStale = true;
+  };
+  size();
+
+  /* Which ink a point gets. The dark bands are measured once after each
+     scroll or resize, not asked about at every point: asking the page what
+     is under a point makes it lay itself out again in the middle of a move. */
+  const stale = () => { darkStale = true; };
+  const inkAt = (x, y) => {
+    if (darkStale) {
+      darkRects = [].map.call(document.querySelectorAll('.on-dark'), (el) => el.getBoundingClientRect());
+      darkStale = false;
+    }
+    return darkRects.some((r) => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) ? DARK_INK : PAPER_INK;
+  };
+
+  const pts = [];
+  let lx = null, ly = null, raf = 0;
+  let cur = null;            /* where the pointer is right now */
+
+  /* The laid points, with the pointer's own position as the newest end, so
+     the ribbon always reaches the cursor rather than the last point laid. */
+  function withHead() {
+    if (!pts.length || !cur) return pts;
+    const last = pts[pts.length - 1];
+    if (cur.x === last.x && cur.y === last.y) return pts;
+    return pts.concat({ x: cur.x, y: cur.y, life: last.life, ink: last.ink });
+  }
+
+  /* A smooth centre line through the points (Catmull-Rom), each sample
+     carrying how far along the ribbon it is, how alive, and its ink. */
+  function centre(src) {
+    const n = src.length;
+    const line = [];
+    for (let i = 0; i < n - 1; i++) {
+      const p0 = src[Math.max(i - 1, 0)], p1 = src[i], p2 = src[i + 1], p3 = src[Math.min(i + 2, n - 1)];
+      for (let k = 0; k < RIBBON_SMOOTH; k++) {
+        const t = k / RIBBON_SMOOTH, t2 = t * t, t3 = t2 * t;
+        const cr = (a0, a1, a2, a3) =>
+          0.5 * (2 * a1 + (a2 - a0) * t + (2 * a0 - 5 * a1 + 4 * a2 - a3) * t2 + (3 * a1 - a0 - 3 * a2 + a3) * t3);
+        line.push({
+          x: cr(p0.x, p1.x, p2.x, p3.x),
+          y: cr(p0.y, p1.y, p2.y, p3.y),
+          along: (i + t) / (n - 1),
+          life: p1.life + (p2.life - p1.life) * t,
+          ink: p2.ink,
+        });
+      }
+    }
+    const last = src[n - 1];
+    line.push({ x: last.x, y: last.y, along: 1, life: last.life, ink: last.ink });
+    return line;
+  }
+
+  /* Fill one run of the centre line as a single tapered shape: out along one
+     edge, back along the other, round at the newest end. box collects the
+     patch it covers, so the next frame clears only that. */
+  function fillRun(line, from, to, box) {
+    const left = [], right = [];
+    for (let j = from; j <= to; j++) {
+      const prev = line[Math.max(j - 1, 0)], next = line[Math.min(j + 1, line.length - 1)];
+      let tx = next.x - prev.x, ty = next.y - prev.y;
+      const tl = Math.hypot(tx, ty) || 1;
+      tx /= tl; ty /= tl;
+      const half = (RIBBON_WIDTH / 2) * Math.pow(line[j].along, 1.3) * Math.max(line[j].life, 0);
+      left.push([line[j].x - ty * half, line[j].y + tx * half]);
+      right.push([line[j].x + ty * half, line[j].y - tx * half]);
+      box.x0 = Math.min(box.x0, line[j].x - half); box.x1 = Math.max(box.x1, line[j].x + half);
+      box.y0 = Math.min(box.y0, line[j].y - half); box.y1 = Math.max(box.y1, line[j].y + half);
+    }
+    ctx.beginPath();
+    ctx.moveTo(left[0][0], left[0][1]);
+    for (let j = 1; j < left.length; j++) ctx.lineTo(left[j][0], left[j][1]);
+    for (let j = right.length - 1; j >= 0; j--) ctx.lineTo(right[j][0], right[j][1]);
+    ctx.closePath();
+    const tip = line[to];
+    const r = Math.hypot(left[left.length - 1][0] - tip.x, left[left.length - 1][1] - tip.y);
+    if (r > 0.5) { ctx.moveTo(tip.x + r, tip.y); ctx.arc(tip.x, tip.y, r, 0, Math.PI * 2); }
+    ctx.fill();
+  }
+
+  function draw() {
+    raf = 0;
+    if (drawn) ctx.clearRect(drawn.x0 - 2, drawn.y0 - 2, drawn.x1 - drawn.x0 + 4, drawn.y1 - drawn.y0 + 4);
+    drawn = null;
+    for (let i = pts.length - 1; i >= 0; i--) {
+      pts[i].life -= RIBBON_AGE;
+      if (pts[i].life <= 0) pts.splice(i, 1);
+    }
+    const src = withHead();
+    if (src.length > 2) {
+      const line = centre(src);
+      const box = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+      ctx.globalAlpha = RIBBON_ALPHA;
+      /* Where the ribbon crosses from the page onto a dark band its ink
+         changes, so it is filled in runs of one ink. Each run reaches one
+         sample into the next, so the two meet without a gap. */
+      let start = 0;
+      for (let j = 1; j <= line.length; j++) {
+        if (j === line.length || line[j].ink !== line[start].ink) {
+          ctx.fillStyle = line[start].ink;
+          fillRun(line, start, Math.min(j, line.length - 1), box);
+          start = j;
+        }
+      }
+      drawn = box;
+    }
+    if (pts.length) raf = requestAnimationFrame(draw);
+  }
+
+  const move = (e) => {
+    if (e.pointerType === 'touch') return;
+    cur = { x: e.clientX, y: e.clientY };
+    const far = lx === null || (cur.x - lx) ** 2 + (cur.y - ly) ** 2 >= RIBBON_STEP * RIBBON_STEP;
+    if (far) {
+      lx = cur.x; ly = cur.y;
+      pts.push({ x: lx, y: ly, life: 1, ink: inkAt(lx, ly) });
+      if (pts.length > RIBBON_POINTS) pts.shift();
+    }
+    if (pts.length && !raf) raf = requestAnimationFrame(draw);
+  };
+
+  addEventListener('pointermove', move, { passive: true });
+  addEventListener('scroll', stale, { passive: true });
+  addEventListener('resize', size, { passive: true });
+  return () => {
+    cancelAnimationFrame(raf);
+    removeEventListener('pointermove', move);
+    removeEventListener('scroll', stale);
+    removeEventListener('resize', size);
+    canvas.remove();
+  };
+}
+
 /* The switch is one button. It says which side you are on; a press takes you
    to the other, and the word rolls up out of the pill as the new one rolls
    up into it (styles.css). data-out marks the word on its way out; once it
@@ -812,7 +1028,6 @@ function sync() {
   funLinks.forEach((a) => a.setAttribute('href', side === 'fun' ? a.dataset.funHref : a.dataset.proHref));
 }
 
-let flip = 0;
 let settle = 0;
 
 function setSide(next) {
@@ -834,12 +1049,12 @@ function setSide(next) {
   /* the header goes up (styles.css), and everything that belongs to neither
      side changes face while it is out of sight */
   doc.classList.add('side-swap');
-  clearTimeout(flip);
-  flip = setTimeout(() => {
+  liftHeader(() => {
     doc.setAttribute('data-font', side);
     document.title = TITLES[side];
     doc.classList.remove('side-swap');
-  }, FLIP);
+  });
+  ribbon(next === 'fun');
 
   watchPanels(next === 'fun');
   clearTimeout(settle);
@@ -879,6 +1094,7 @@ lanes();
 if (side === 'fun') {
   document.title = TITLES.fun;
   attach(true);
+  ribbon(true);
   watchPanels(true);
   /* nothing is inked under the loading sheet; the first look is when it lifts */
   if (booting()) {

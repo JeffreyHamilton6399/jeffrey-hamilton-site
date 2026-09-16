@@ -272,6 +272,7 @@
     if (!center) return;
 
     var title  = center.querySelector('.hero-title');
+    var portrait = center.querySelector('.boot-face');
     var line   = document.querySelector('.hero-skills');
     var skills = document.querySelector('.skills-type');
     var out    = document.querySelector('.type-out');
@@ -309,7 +310,7 @@
       leave(gen);
     });
 
-    if (reduced || !list.length || !title || !face || !line) return;
+    if (reduced || !list.length || !portrait || !face || !line) return;
 
     /* The first word stays where the markup put it — the morph swaps it out
        later. (Clearing it here was the typewriter's job, and the typewriter
@@ -326,51 +327,82 @@
     if (nav)    nav.classList.add('is-held');
     if (social) social.classList.add('is-held');
 
-    var HOLD_NAME = 1250;    /* how long the name has the screen to itself */
-    var DIP       = 420;     /* it sinks a little before it goes           */
-    var MORPH     = 280;     /* then packs itself into the dot             */
-    var FLIGHT    = 1450;    /* and the dot rides the line to the face     */
+    var HOLD_FACE = 1250;    /* how long the face has the screen to itself */
+    var DIP       = 420;     /* it tenses, gathering light, before it goes */
+    var MORPH     = 560;     /* then spirals in on itself and becomes the dot */
+    var FLIGHT    = 1450;    /* and the dots ride the lines out (about)    */
+    var DOT       = 14;      /* .boot-dot's size: what the face shrinks to */
 
     requestAnimationFrame(function () {
+      /* On a phone the hero is a plain column and the face would sit up in
+         its top quarter over an empty sheet. It is carried down to the
+         middle of the screen, where the spiral puts it on a wide one — and
+         since everything after measures where it is actually drawn, the dot
+         still pops out of the spot it vanished into. */
+      if (hasGsap) {
+        var r = portrait.getBoundingClientRect();
+        var dy = innerHeight / 2 - (r.top + r.height / 2);
+        if (r.height && dy > 24 && r.top >= 0) gsap.set(portrait, { y: dy });
+      }
       setTimeout(function () { center.classList.add('boot-in'); }, 420);
-      setTimeout(dip, HOLD_NAME);
+      setTimeout(dip, HOLD_FACE);
     });
 
-    /* A beat of settling before the launch — the name drops slightly, as if
-       gathering itself, and that dip is where the line starts. */
+    /* A beat of gathering before the launch: the face draws in slightly while
+       a ring of the dot's gold charges up around it, so the light it is about
+       to become is already there. */
     function dip() {
       if (!hasGsap) { fly(); return; }
-      title.style.transition = 'none';
-      gsap.to(title, {
-        y: 42, scale: 0.96,
+      gsap.to(portrait, {
+        scale: 0.93,
+        '--charge': 1,
         duration: DIP / 1000,
         ease: 'power2.inOut',
         onComplete: morph
       });
     }
 
-    /* The name gathers into a single point at the centre — it shrinks away
-       while the point comes up in its place — and that one point holds for a
-       beat before the other two split out of it and all three leave. Without
-       the beat there is nothing to split from and it reads as three separate
-       things that happened to start together. */
+    /* The face becomes the dot. It spirals in on its own centre, speeding up
+       as it goes, shrinking to exactly the dot's size and turning to the
+       dot's gold on the way — so at the last frame it already is the dot, and
+       the dot that takes its place pops out of the very spot it vanished
+       into. That one point holds for a beat before the other two split out
+       of it and all three leave; without the beat there is nothing to split
+       from, and it reads as three separate things that happened to start
+       together. */
     var SPLIT = 300;
 
     function morph() {
       if (!hasGsap) { fly(); return; }
 
       var stage = document.querySelector('.hero-stage');
-      var t = title.getBoundingClientRect();
+      var t = portrait.getBoundingClientRect();
       var box = stage && stage.getBoundingClientRect();
+      /* the unscaled width: the dip has already drawn it in */
+      var full = portrait.offsetWidth || t.width || 1;
 
-      gsap.to(title, { scale: 0.06, opacity: 0, duration: MORPH / 1000, ease: 'power2.in' });
-
-      if (dot && box) {
-        dot.style.transform = 'translate(' + (t.left + t.width / 2 - box.left) + 'px,' +
-                                             (t.top + t.height / 2 - box.top) + 'px)';
-        gsap.fromTo(dot, { opacity: 0 }, { opacity: 1, duration: MORPH / 1000, ease: 'power2.out' });
-      }
-      setTimeout(fly, MORPH + SPLIT);
+      gsap.to(portrait, {
+        scale: DOT / full,
+        rotation: 200,
+        '--gold': 1,
+        duration: MORPH / 1000,
+        ease: 'power3.in',
+        onComplete: function () {
+          portrait.style.opacity = '0';
+          if (dot && box) {
+            dot.style.transform = 'translate(' + (t.left + t.width / 2 - box.left) + 'px,' +
+                                                 (t.top + t.height / 2 - box.top) + 'px)';
+            dot.style.opacity = '1';
+            /* the pop: the separate scale property, so it never fights the
+               translate the flight writes into transform */
+            if (typeof dot.animate === 'function') {
+              dot.animate([{ scale: '2.4' }, { scale: '1' }],
+                { duration: 280, easing: 'cubic-bezier(.34, 1.8, .6, 1)' });
+            }
+          }
+          setTimeout(fly, SPLIT);
+        }
+      });
     }
 
     var flown = false;
@@ -386,24 +418,23 @@
       flown = true;
 
       var stage = document.querySelector('.hero-stage');
-      var t = title.getBoundingClientRect();
+      var t = portrait.getBoundingClientRect();
       var box = stage && stage.getBoundingClientRect();
       if (!t.width || !box) { arrive(); openNav(); openSocial(); land(); return; }
 
-      title.style.transition = 'none';
-      title.style.opacity = '0';
+      portrait.style.transition = 'none';
+      portrait.style.opacity = '0';
 
       var x0 = t.left + t.width / 2 - box.left;
       var y0 = t.top + t.height / 2 - box.top;
 
-      /* Where the three points are headed, what each one sets off, and which
-         way it wanders on the way. bias is how far the route bows out before
-         it turns for the target: the left one swings out to the left and
-         then climbs, the right one mirrors it, the middle one barely bends. */
+      /* Where the three points are headed and what each one sets off. Which
+         of them leaves first is shuffled every visit, like the routes. */
+      var holds = [0, 150, 300].sort(function () { return Math.random() - 0.5; });
       var legs = [
-        { el: face,        after: arrive,     spin: -1, bias: -0.55, hold: 0   },
-        { el: navTarget(), after: openNav,    spin:  1, bias:  0.10, hold: 150 },
-        { el: socialTarget(), after: openSocial, spin: 1, bias: 0.55, hold: 300 }
+        { el: face,           after: arrive,     hold: holds[0] },
+        { el: navTarget(),    after: openNav,    hold: holds[1] },
+        { el: socialTarget(), after: openSocial, hold: holds[2] }
       ].filter(function (leg) { return leg.el; });
 
       if (!legs.length) { arrive(); openNav(); openSocial(); land(); return; }
@@ -444,26 +475,35 @@
 
         var len = Math.hypot(x1 - x0, y1 - y0) || 1;
 
-        /* The route is one curve with a spiral wound onto it. The curve is a
-           quadratic from the start to the target whose control point is
-           thrown out sideways by bias, so the left leg wanders left before
-           it climbs and the right leg mirrors that. The spiral is a rotation
-           around whatever point the curve is at, with a radius that decays
-           to nothing — so it corkscrews as it sets off and has unwound by
-           the time it arrives, instead of drawing one tidy loop and then
-           going quiet.
+        /* The route is drawn fresh every visit. It is a cubic from the dot to
+           the target whose two handles are thrown out to either side of the
+           straight line by a random amount (and kept on the screen), with a
+           spiral wound onto it whose direction, turns, size and squash are
+           all drawn fresh too, and a hand's wobble on top — so no two openings
+           take the same lines. The spiral opens from nothing at the dot and
+           closes back to nothing at the target, so however the line wanders,
+           every leg still comes out of the one dot and lands on its mark. */
+        var rnd = function (lo, hi) { return lo + Math.random() * (hi - lo); };
+        var EDGE = 24;
+        var clampX = function (v) { return Math.max(EDGE, Math.min(box.width - EDGE, v)); };
+        var clampY = function (v) { return Math.max(EDGE, Math.min(box.height - EDGE, v)); };
 
-           This is what stops it reading as machine-made: a single arc is
-           obviously computed, but something that spirals down to a point
-           looks like a hand that kept moving. */
-        var cx2 = (x0 + x1) / 2 + (y1 - y0) * leg.bias;
-        var cy2 = (y0 + y1) / 2 - (x1 - x0) * leg.bias + len * 0.16;
+        var nx = -(y1 - y0) / len, ny = (x1 - x0) / len;   /* across the line */
+        var s1 = rnd(-0.7, 0.7), s2 = rnd(-0.7, 0.7);
+        var u1 = rnd(0.15, 0.45), u2 = rnd(0.55, 0.85);
+        var c1x = clampX(x0 + (x1 - x0) * u1 + nx * len * s1);
+        var c1y = clampY(y0 + (y1 - y0) * u1 + ny * len * s1);
+        var c2x = clampX(x0 + (x1 - x0) * u2 + nx * len * s2);
+        var c2y = clampY(y0 + (y1 - y0) * u2 + ny * len * s2);
 
-        var TURNSP = 2.4;
-        var R0 = Math.max(26, Math.min(len * 0.20, 96));
+        var spin = Math.random() < 0.5 ? -1 : 1;
+        var TURNSP = rnd(1.1, 3.4);
+        var R0 = Math.max(18, Math.min(len * rnd(0.08, 0.24), 110));
+        var squash = rnd(0.55, 0.95);
         var ph0 = Math.random() * 6.28;
         var ph1 = Math.random() * 6.28, ph2 = Math.random() * 6.28;
-        var amp = Math.min(len * 0.014, 8);
+        var amp = Math.min(len * rnd(0.006, 0.02), 10);
+        var flight = FLIGHT * rnd(0.9, 1.12);
 
         var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         svg.appendChild(path);
@@ -473,21 +513,15 @@
           var tt = k / STEPS, qq = 1 - tt;
 
           /* the carrying curve */
-          var bx = qq * qq * x0 + 2 * qq * tt * cx2 + tt * tt * x1;
-          var by = qq * qq * y0 + 2 * qq * tt * cy2 + tt * tt * y1;
+          var bx = qq * qq * qq * x0 + 3 * qq * qq * tt * c1x + 3 * qq * tt * tt * c2x + tt * tt * tt * x1;
+          var by = qq * qq * qq * y0 + 3 * qq * qq * tt * c1y + 3 * qq * tt * tt * c2y + tt * tt * tt * y1;
 
-          /* The spiral wound onto it, opening from nothing at the centre and
-             tightening back to nothing at the target. Both ends have to be
-             pinned to zero: with the radius at full width from the first
-             step, each leg began R0 away from the centre in whatever
-             direction its random phase pointed — so the three lines looked
-             like they started in three scattered places rather than all
-             coming out of the one dot. */
-          var a = ph0 + tt * TURNSP * Math.PI * 2 * leg.spin;
+          /* the spiral wound onto it, pinned to nothing at both ends */
+          var a = ph0 + tt * TURNSP * Math.PI * 2 * spin;
           var open = Math.min(tt / 0.14, 1);
           var rad = R0 * Math.pow(1 - tt, 1.5) * (open * open * (3 - 2 * open));
           bx += Math.cos(a) * rad;
-          by += Math.sin(a) * rad * 0.72;
+          by += Math.sin(a) * rad * squash;
 
           /* and the hand on top of that */
           var env = Math.sin(Math.PI * tt);
@@ -507,7 +541,7 @@
         var at = { p: 0 };
         gsap.to(at, {
           p: 1,
-          duration: FLIGHT / 1000,
+          duration: flight / 1000,
           delay: leg.hold / 1000,
           ease: 'power2.inOut',
           onUpdate: function () {
@@ -763,13 +797,12 @@
 
     function place(animate) {
       var to = spacing();
-      if (respace) respace.kill();
+      respace = null;
       if (!animate) {
         to.forEach(function (t, i) { if (t.slot !== null) slots[i] = t.slot; shown[i] = t.shown; });
         lastBase = -1;
         return;
       }
-      var s0 = slots.slice(), v0 = shown.slice(), b0 = boost, k = { v: 0 };
 
       /* The tube only ever turns one way, and a switch must not be the one
          time it doesn't. Closing up means some cards' slots move back along
@@ -778,26 +811,41 @@
          travels forward the whole way, the ones going furthest back the
          least. Both share the one ease, so no card is ever going backwards
          at any moment along the way, not just by the end of it. */
+      var s0 = slots.slice();
       var back = 0;
       to.forEach(function (t, i) { if (t.slot !== null) back = Math.max(back, s0[i] - t.slot); });
-      var push = Math.max(BOOST_MIN, back + BOOST_MARGIN);
 
-      respace = gsap.to(k, {
-        v: 1,
-        duration: RESPACE_S,
-        /* quick off the mark and easing out: a shove, not a slide */
-        ease: 'power3.out',
-        onUpdate: function () {
-          /* the leaving cards are gone well before the rest have closed up */
-          var f = Math.min(1, k.v * 1.8);
-          to.forEach(function (t, i) {
-            if (t.slot !== null) slots[i] = s0[i] + (t.slot - s0[i]) * k.v;
-            shown[i] = v0[i] + (t.shown - v0[i]) * f;
-          });
-          boost = b0 + push * k.v;
-          lastBase = -1;
-        }
+      /* Driven by the tube's own ticker (tick), not a tween. A tween runs on
+         GSAP's clock, which this page tells not to smooth over lag, so a
+         switch that landed on a slow frame — the first one fetches and draws
+         a good deal — jumped straight to the end of the re-spacing and the
+         cards leapt. The ticker already caps how far a single frame can move
+         anything, so a slow frame now only makes for a slower shove. */
+      respace = {
+        s0: s0,
+        v0: shown.slice(),
+        b0: boost,
+        push: Math.max(BOOST_MIN, back + BOOST_MARGIN),
+        to: to,
+        t: 0
+      };
+      /* with the hero off screen nobody sees it happen: arrive at once */
+      if (!ticking) stepRespace(RESPACE_S);
+    }
+
+    function stepRespace(dt) {
+      var r = respace;
+      if (!r) return;
+      r.t = Math.min(1, r.t + dt / RESPACE_S);
+      var e = 1 - Math.pow(1 - r.t, 3);   /* quick off the mark, easing out: a shove */
+      var f = Math.min(1, e * 1.8);       /* the leaving cards go well before the rest close up */
+      r.to.forEach(function (t, i) {
+        if (t.slot !== null) slots[i] = r.s0[i] + (t.slot - r.s0[i]) * e;
+        shown[i] = r.v0[i] + (t.shown - r.v0[i]) * f;
       });
+      boost = r.b0 + r.push * e;
+      lastBase = -1;
+      if (r.t >= 1) respace = null;
     }
     place(false);
     document.addEventListener('sidechange', function () { place(!reduced && hasGsap); });
@@ -909,6 +957,7 @@
           vel *= Math.pow(DECAY, dt);
         } else vel = 0;
       }
+      stepRespace(dt);
       render();
     }
 
