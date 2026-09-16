@@ -2160,44 +2160,20 @@ html[data-side="fun"] :is(.watch-stitch > path, .path-tick, .watch-knurl line, .
   transition: stroke-opacity .5s var(--ease-out), visibility 0s linear .5s;
 }
 
-/* ---- behind the watch ----------------------------------------------------
-   A dial wants a ground. On the work side it is engine-turned, like the
-   face of a real watch: fine rings and finer rays out from the middle of
-   the case, gone before they reach the edges. On the fun side it is a page
-   of the sketchbook: dots on the dark. Each is a layer of its own, painted
-   once — the watch in front repaints on every frame of its turn, and the
-   pattern is not part of that. */
-.path-orbit.is-live,
-.path-orbit.is-still { isolation: isolate; }
-.path-orbit::before,
-.path-orbit::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  will-change: opacity;
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0, #000 20%, transparent 66%);
-          mask-image: radial-gradient(circle at 50% 50%, #000 0, #000 20%, transparent 66%);
-  transition: opacity .6s var(--ease-out);
-}
-.path-orbit::before {
-  background:
-    repeating-radial-gradient(circle at 50% 50%,
-      transparent 0 13px,
-      color-mix(in srgb, var(--on-dark) 6%, transparent) 13px 14px),
-    repeating-conic-gradient(from 0deg at 50% 50%,
-      color-mix(in srgb, var(--on-dark) 4%, transparent) 0deg .5deg,
-      transparent .5deg 4deg);
-}
-.path-orbit::after {
+/* ---- the watch face -----------------------------------------------------
+   The face has a pattern of its own, inside the case: engine-turned on the
+   work side, like a real dial — fine rays and rings out from the centre —
+   and a page of sketchbook dots on the fun side. Both are pictures
+   (assets/watch), so the hand turning over them never makes them redraw;
+   app.js brings the face up with the ticks as the watch is built, and the
+   two cross over with the side. */
+.watch-face image { transition: opacity .5s var(--ease-out), visibility 0s linear 0s; }
+html[data-side="fun"] .watch-face .face-pro,
+html:not([data-side="fun"]) .watch-face .face-fun {
   opacity: 0;
-  background: radial-gradient(circle,
-    color-mix(in srgb, var(--on-dark) 16%, transparent) 1.1px,
-    transparent 1.7px) 0 0 / 22px 22px;
+  visibility: hidden;
+  transition: opacity .5s var(--ease-out), visibility 0s linear .5s;
 }
-html[data-side="fun"] .path-orbit::before { opacity: 0; }
-html[data-side="fun"] .path-orbit::after { opacity: 1; }
 
 /* The leather past the drawing is HTML and changes size every frame, so its
    pen lines are tiles of brush stroke (fun.js) that repeat along it rather

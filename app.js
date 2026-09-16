@@ -1293,6 +1293,7 @@
     var svg   = orbit.querySelector('.path-svg');
     var knurl = orbit.querySelector('.watch-knurl');
     var ticks = orbit.querySelector('.path-ticks');
+    var face  = orbit.querySelector('.watch-face');
     var hand  = orbit.querySelector('.path-hand');
     var hub   = orbit.querySelector('.path-hub');
     var mark  = orbit.querySelector('.path-mark');
@@ -1402,6 +1403,7 @@
     if (hub) hub.style.opacity = '0';
 
     if (year) year.style.opacity = '0';
+    if (face) face.style.opacity = '0';
     if (dial) dial.style.opacity = '0';
     var yearIn = 0, dialIn = 0, held = false;
 
@@ -1743,6 +1745,8 @@
 
         if (stitching) stitching.style.opacity = String(ramp(p, 0.46, 0.68));
         ticks.style.opacity = String(ramp(p, 0.72, 0.88));
+        /* the face comes up with the ticks, once the case is closed */
+        if (face) face.style.opacity = ticks.style.opacity;
         if (hand) hand.style.opacity = String(ramp(p, 0.84, 0.98) * 0.9);
         if (hub) hub.style.opacity = String(ramp(p, 0.84, 0.98));
         if (year) year.style.opacity = String(ramp(p, 0.86, 1));

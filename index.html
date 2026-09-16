@@ -16,7 +16,7 @@
      plain files with no build step behind them, so nothing in their URLs
      ever changes when their contents do, and a browser holding an old
      copy has no way to know. Bump it whenever either one changes. -->
-<link rel="stylesheet" href="styles.css?v=20260914o">
+<link rel="stylesheet" href="styles.css?v=20260914p">
 <script>
   /* Runs before the first paint, which is the whole point of it.
 
@@ -696,6 +696,13 @@
                the hands keep their own rotation inside it. -->
           <g class="watch-core">
             <circle class="watch-case" cx="500" cy="700" r="292"/>
+            <!-- The face: engine-turned on the work side, sketchbook dots on
+                 the fun side. Pictures, so they are rasterised once rather than
+                 redrawn every time the hand turns across them. -->
+            <g class="watch-face">
+              <image class="face-pro" href="assets/watch/face-pro.svg" x="208" y="408" width="584" height="584"/>
+              <image class="face-fun" href="assets/watch/face-fun.svg" x="208" y="408" width="584" height="584"/>
+            </g>
             <g class="watch-case-ink"></g>
             <g class="path-ticks"></g>
             <g class="path-hand"><line x1="500" y1="736" x2="500" y2="452"/></g>
@@ -1238,7 +1245,7 @@
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <script src="assets/vendor/lenis.min.js" defer></script>
-<script src="app.js?v=20260914h" defer></script>
+<script src="app.js?v=20260914i" defer></script>
 <!-- A module, so it runs after app.js, once the watch has lifted the eras
      onto the dial. -->
 <script type="module" src="fun.js?v=20260914q"></script>
