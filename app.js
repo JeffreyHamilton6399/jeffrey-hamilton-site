@@ -294,9 +294,10 @@
 
     /* The toggle (fun.js) announces a switch. Before the cycle has started —
        during the boot, or for good with reduced motion — the word is simply
-       swapped. Once it is running, whatever melt is under way is cut short
-       and the next word comes from the new list straight away; gen retires
-       the old chain so it does not carry on alongside the new one. */
+       swapped. Once it is running, whatever is coming in or being held is
+       cut short: the word is taken down straight away and the new list's
+       first word built in its place. gen retires the old chain so it does
+       not carry on alongside the new one. */
     var started = false, gen = 0, timer = 0;
     document.addEventListener('sidechange', function () {
       list = sideList();
@@ -305,7 +306,7 @@
       gen++;
       clearTimeout(timer);
       wi = -1;
-      step();
+      leave(gen);
     });
 
     if (reduced || !list.length || !title || !face || !line) return;
@@ -597,113 +598,106 @@
       }, SHEET);
     }
 
-    /* ---- the liquid word ------------------------------------------------
+    /* ---- the word -------------------------------------------------------
 
-       No typing. Each word melts into the next: the one leaving blurs out,
-       swells and lifts away while the one arriving resolves from a blur
-       underneath it, and the box eases between the two widths so the line
-       never snaps. Overlapping the two through a blur is what gives it the
-       fluid read rather than a cut or a slide. */
+       Each word is built up and taken down a letter at a time. Coming in,
+       the letters rise into place as outlines, left to right, and then fill
+       the same way, so partway through the word is solid at its start and
+       still hollow at its end. Going out is the same move run backwards: the
+       fill drains from the last letter back to the first, then the hollow
+       letters drop away in that order, while the box eases to the next
+       word's width. One word is never on top of another. */
 
-    var HOLD = 2200, MELT = 620, FILL = 46;   /* FILL: gap between letters */
+    var HOLD = 2200;       /* a word stays up this long, filled                */
+    var RISE_MS = 34;      /* between letters rising in as outlines            */
+    var FILL_MS = 46;      /* between letters filling                          */
+    var DRAIN_MS = 28;     /* between letters emptying, last letter first      */
+    var DROP_MS = 24;      /* between hollow letters dropping away             */
+    var LETTER_MS = 380;   /* one letter's own change (styles.css, .ch)        */
+    var WIDTH_MS = 460;    /* the box easing to the next word (.skills-type)   */
     var wi = 0;
-
-    /* One word, letter by letter. Each letter arrives as an outline and then
-       fills in, running left to right — the look the reference has mid
-       change, where part of the word is still hollow and the rest has already
-       gone solid. Spaces are kept as their own spans so the rhythm of the
-       stagger matches the rhythm of the word. */
-    function build(text) {
-      var wrap = document.createElement('span');
-      wrap.className = 'type-out';
-
-      for (var i = 0; i < text.length; i++) {
-        var ch = document.createElement('span');
-        ch.className = 'ch';
-        if (text[i] === ' ') {
-          ch.className = 'ch is-space';
-          ch.innerHTML = '&nbsp;';
-        } else {
-          ch.textContent = text[i];
-        }
-        wrap.appendChild(ch);
-      }
-      return wrap;
-    }
-
-    /* Run the fill across the letters. Direction is the order they resolve
-       in; on the way out they hollow again the same way. */
-    function sweep(wrap, on) {
-      var chars = wrap.querySelectorAll('.ch');
-      for (var i = 0; i < chars.length; i++) {
-        (function (el, k) {
-          setTimeout(function () { el.classList.toggle('is-fill', on); }, k * FILL);
-        })(chars[i], i);
-      }
-      return chars.length * FILL;
-    }
 
     function measureWidth(el) {
       return Math.ceil(el.getBoundingClientRect().width);
     }
 
-    function cycle() {
-      started = true;
-      /* swap the flat markup word for the built one, then fill it in */
-      var built = build(out.textContent);
-      out.replaceWith(built);
-      out = built;
-      skills.style.width = measureWidth(out) + 'px';
-      var span = sweep(out, true);
-      timer = setTimeout(step, HOLD + span);
+    /* every step is scheduled through here, so a switch retiring gen stops a
+       chain wherever it has got to */
+    function later(fn, ms, g) {
+      timer = setTimeout(function () { if (g === gen) fn(); }, ms);
     }
 
-    function step() {
-      var g = gen;
-      wi = (wi + 1) % list.length;
+    /* The word keeps the face it was built in until the next one starts: a
+       switch takes the old word down in its own face, and the new side's
+       face arrives with the new word (styles.css). */
+    function wear() {
+      skills.setAttribute('data-face', doc.getAttribute('data-side') === 'fun' ? 'fun' : 'pro');
+    }
 
-      var prev = out;
-      /* hollow the old one out again on its way off */
-      sweep(prev, false);
+    function letters() {
+      return [].slice.call(out.querySelectorAll('.ch'));
+    }
 
-      var next = build(list[wi]);
-      next.style.opacity = '0';
-      prev.classList.add('is-out');
-      skills.appendChild(next);
-      out = next;
-
-      /* the box eases to the incoming word's width */
-      skills.style.width = measureWidth(next) + 'px';
-
-      if (!hasGsap) {
-        prev.remove();
-        next.style.opacity = '1';
-        sweep(next, true);
-        timer = setTimeout(step, HOLD);
-        return;
+    /* Spaces are letters too, so the rhythm of a run follows the word. */
+    function build(word) {
+      out.textContent = '';
+      for (var i = 0; i < word.length; i++) {
+        var ch = document.createElement('span');
+        ch.className = word[i] === ' ' ? 'ch is-space' : 'ch';
+        ch.textContent = word[i] === ' ' ? ' ' : word[i];
+        out.appendChild(ch);
       }
+    }
 
-      /* a switch can land mid-melt, with this word still fading in */
-      gsap.killTweensOf(prev);
-      gsap.to(prev, {
-        opacity: 0,
-        y: -14,
-        duration: MELT / 1000,
-        ease: 'power2.in',
-        onComplete: function () { prev.remove(); }
-      });
-      gsap.fromTo(next,
-        { opacity: 0, y: 16 },
-        {
-          opacity: 1, y: 0,
-          duration: MELT / 1000,
-          ease: 'power3.out',
-          onComplete: function () {
-            if (g !== gen) return;
-            var span = sweep(next, true);
-            timer = setTimeout(step, HOLD + span);
-          }
-        });
+    /* Toggle a class across the letters one after another, from the first or
+       from the last. Returns how long until the last letter has finished. */
+    function run(ls, cls, on, gap, fromEnd, g) {
+      var n = ls.length;
+      for (var i = 0; i < n; i++) {
+        (function (el, k) {
+          setTimeout(function () { if (g === gen) el.classList.toggle(cls, on); }, k * gap);
+        })(ls[fromEnd ? n - 1 - i : i], i);
+      }
+      return Math.max(n - 1, 0) * gap + LETTER_MS;
+    }
+
+    function enter(word, g) {
+      wear();
+      build(word);
+      skills.style.width = measureWidth(out) + 'px';
+      var ls = letters();
+      /* the letters start up as the box is part way to its new width */
+      later(function () {
+        var rise = run(ls, 'is-in', true, RISE_MS, false, g);
+        later(function () {
+          var fill = run(ls, 'is-fill', true, FILL_MS, false, g);
+          later(function () { leave(g); }, fill + HOLD, g);
+        }, rise * 0.6, g);
+      }, WIDTH_MS * 0.4, g);
+    }
+
+    function leave(g) {
+      var ls = letters();
+      var drain = run(ls, 'is-fill', false, DRAIN_MS, true, g);
+      later(function () {
+        var drop = run(ls, 'is-in', false, DROP_MS, true, g);
+        later(function () {
+          wi = (wi + 1) % list.length;
+          enter(list[wi], g);
+        }, drop, g);
+      }, drain * 0.55, g);
+    }
+
+    function cycle() {
+      started = true;
+      /* the markup's flat word becomes letters that are already in and
+         filled — the classes go on before anything is painted, so nothing
+         animates on the way */
+      wear();
+      build(out.textContent);
+      letters().forEach(function (el) { el.classList.add('is-in', 'is-fill'); });
+      skills.style.width = measureWidth(out) + 'px';
+      later(function () { leave(gen); }, HOLD, gen);
     }
   })();
 

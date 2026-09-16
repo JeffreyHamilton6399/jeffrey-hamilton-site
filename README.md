@@ -48,8 +48,9 @@ measured a screen wide enough to hold it.
 The pill in the bottom corner switches the page between the work and the
 rest of it. Nothing moves when it does: every block that changes is a `.duo`
 holding both versions in one grid cell, and the spiral's cards each carry a
-second face (`.card-fun`). The side leaving blurs out, the side arriving
-resolves in a beat later, and the choice is remembered in `localStorage`.
+second face (`.card-fun`). A switch swaps each block out past the nearer
+edge of the screen and back in from the same edge, while the spiral keeps
+turning and only its cards change faces. The choice is remembered in `localStorage`.
 
 `fun.js` owns the switch and draws the fun side with
 [jot](https://animation-library-ruby.vercel.app), vendored in

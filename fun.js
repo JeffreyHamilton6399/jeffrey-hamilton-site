@@ -4,8 +4,9 @@
    The same page, told twice. The toggle only swaps what is said: every
    section, the spiral and the watch stay exactly where they are. Each .duo
    holds both versions stacked in one grid cell (see styles.css), so a switch
-   is a cross-fade with nothing re-laid-out underneath it, and the spiral's
-   cards carry a second face that fades over the first.
+   swaps each block out to its nearer edge and back with nothing re-laid-out
+   underneath, and the spiral's cards carry a second face they change to in
+   place.
 
    The fun side is written by hand and drawn with jot, the ink library that
    is also on the spiral (vendored in assets/vendor/jot): the doodles, the
@@ -36,16 +37,20 @@ const doc = document.documentElement;
 const KEY = 'side';
 const TITLES = { pro: document.title, fun: 'Jeffrey Hamilton, off the clock' };
 
-/* Shared with styles.css: the side leaving takes OUT, the side arriving
-   starts IN after the switch, and blocks on screen are staggered by STEP up
-   to a ceiling, so a full screen of them still lands inside half a second. */
-const OUT = 340;
-const IN = 260;
-const STEP = 45;
-const STAGGER_MAX = 360;
-/* The type that belongs to neither side — the header, the changing word,
-   the watch's numbers — cannot cross-fade, so it dips out (html.side-swap)
-   and its face is changed while nothing is showing. */
+/* A switch swaps every block out past its nearer edge of the screen and
+   back in from it (styles.css). SWAP_MS is how long until the new blocks
+   have settled — the old ones out (.42s), the new ones in (.28s later, over
+   .5s) — and has to match the stylesheet. */
+const SWAP_MS = 780;
+/* How much of the screen's width either side of its centre counts as the
+   middle, where a block fades in place rather than going out to an edge. */
+const MIDDLE = 0.08;
+/* How far past the edge a block goes, so its shadow is gone too. */
+const CLEAR = 48;
+/* The type that belongs to neither side — the header, the watch's numbers —
+   cannot cross-fade, so it dips out (html.side-swap) and its face is changed
+   while nothing is showing. (The word under the spiral has its own way: see
+   app.js.) */
 const FLIP = 280;
 /* between drawings that start in the same pass, so a screen of them inks
    one after another rather than all at once */
@@ -622,8 +627,7 @@ function panelShown(it) {
   return it.live ? 0 : 1;
 }
 
-/* After a switch the arriving blocks are still waiting on their turn in the
-   stagger, and jot skips strokes it cannot see (they would turn up later
+/* After a switch the arriving blocks are still coming in, and jot skips strokes it cannot see (they would turn up later
    already drawn), so nothing is looked at until they are all in. */
 let quietUntil = 0;
 
@@ -679,18 +683,40 @@ function watchPanels(on) {
 
 /* ---- the switch ----------------------------------------------------------- */
 
-/* Blocks on screen go in reading order, top to bottom and a little left to
-   right; everything off screen switches at once, since nobody sees it. */
-function stagger() {
-  const on = [];
-  document.querySelectorAll('.duo, .spiral-card').forEach((el) => {
-    const r = el.getBoundingClientRect();
-    if (r.width && r.bottom > 0 && r.top < innerHeight) on.push({ el, at: r.top + r.left * 0.3 });
-    else el.style.setProperty('--sd', '0ms');
+/* Which way each block goes out and comes back in: past the nearer edge of
+   the screen, by as far as it takes to be clear of it (--off, in
+   styles.css). A block in the middle has no nearer edge and fades in place.
+   Measured on every switch and whenever the window changes size, so a panel
+   on the watch always leaves on whichever side of the dial it sits. */
+function lanes() {
+  const vw = innerWidth;
+  document.querySelectorAll('.duo').forEach((duo) => {
+    const r = duo.getBoundingClientRect();
+    const mid = (r.left + r.right) / 2;
+    let off = 0;
+    if (r.width && Math.abs(mid - vw / 2) > vw * MIDDLE) {
+      off = mid < vw / 2 ? -(r.right + CLEAR) : vw - r.left + CLEAR;
+    }
+    duo.style.setProperty('--off', Math.round(off) + 'px');
   });
-  on.sort((a, b) => a.at - b.at)
-    .forEach(({ el }, i) => el.style.setProperty('--sd', Math.min(i * STEP, STAGGER_MAX) + 'ms'));
 }
+/* Keep what you are looking at where it is. A switch can change how tall
+   something above you is — on a phone the grid of cards loses the rows the
+   fun side skips — and the browser's own scroll anchoring stands down while
+   the thing it would anchor to is moving sideways, which on a switch it is.
+   So the switch notes where whatever is in the middle of the screen sits,
+   makes its change, and scrolls by however far that moved. */
+function keepPlace(change) {
+  const el = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
+  const before = el ? el.getBoundingClientRect().top : 0;
+  change();
+  if (!el || !el.isConnected) return;
+  const moved = el.getBoundingClientRect().top - before;
+  if (Math.abs(moved) >= 1) window.scrollBy(0, moved);
+}
+
+let relaned = 0;
+addEventListener('resize', () => { clearTimeout(relaned); relaned = setTimeout(lanes, 150); }, { passive: true });
 
 const buttons = switcher ? [].slice.call(switcher.querySelectorAll('[data-side-set]')) : [];
 
@@ -746,31 +772,27 @@ function sync() {
 
 let flip = 0;
 let settle = 0;
-let left = 0;
 
 function setSide(next) {
   if (next === side) return;
   if (next === 'fun') attach(true);
-  stagger();
-  /* Both ways round, the same move: whatever is leaving lifts out, and
-     whatever is arriving comes up and forward into its place. */
-  doc.setAttribute('data-leaving', side);
-  clearTimeout(left);
-  left = setTimeout(() => doc.removeAttribute('data-leaving'), OUT + STAGGER_MAX + 80);
+  lanes();
   side = next;
-  doc.setAttribute('data-side', next);
+  keepPlace(() => doc.setAttribute('data-side', next));
   slideKnob(next);
   try { localStorage.setItem(KEY, next); } catch (e) {}
   sync();
+
+  /* app.js answers this straight away: the tube re-spaces, the coil fades,
+     and the word under the spiral starts backspacing in its own face — it
+     only takes the new one when the next word starts to type */
+  document.dispatchEvent(new CustomEvent('sidechange', { detail: { side: next } }));
 
   doc.classList.add('side-swap');
   clearTimeout(flip);
   flip = setTimeout(() => {
     doc.setAttribute('data-font', side);
     document.title = TITLES[side];
-    /* app.js swaps the changing word under the spiral on this, now that the
-       new face is in, so the next word is built in it */
-    document.dispatchEvent(new CustomEvent('sidechange', { detail: { side } }));
     doc.classList.remove('side-swap');
   }, FLIP);
 
@@ -778,12 +800,12 @@ function setSide(next) {
   clearTimeout(settle);
   if (next === 'fun') {
     /* the ink starts once the blocks have arrived, not before */
-    quietUntil = performance.now() + IN + STAGGER_MAX + 60;
-    settle = setTimeout(schedulePump, IN + STAGGER_MAX + 80);
+    quietUntil = performance.now() + SWAP_MS + 60;
+    settle = setTimeout(schedulePump, SWAP_MS + 80);
   } else {
     /* once the fun side has gone, put its pens back so it draws itself
        again next time */
-    settle = setTimeout(() => inks.forEach((it) => { if (it.done) lift(it); }), OUT + STAGGER_MAX);
+    settle = setTimeout(() => inks.forEach((it) => { if (it.done) lift(it); }), SWAP_MS + 40);
   }
 }
 
@@ -807,6 +829,7 @@ document.addEventListener('click', (e) => {
 
 doc.classList.add('sides-ready');
 sync();
+lanes();
 
 if (side === 'fun') {
   document.title = TITLES.fun;

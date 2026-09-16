@@ -565,29 +565,34 @@ html.pre .hero-skills { opacity: 0; }
   text-transform: uppercase;
   color: var(--void);
   white-space: nowrap;
-  /* the box eases between word widths, which is half the liquid feel */
-  transition: width .75s cubic-bezier(.6, 0, .2, 1);
+  /* the box eases between word widths while one word goes and the next
+     comes, so the line never snaps (WIDTH_MS in app.js) */
+  transition: width .46s cubic-bezier(.6, 0, .2, 1);
 }
 
-/* Flat, not extruded — the interest is in how it arrives. Each letter turns
-   up as an outline and then fills in, left to right, so mid-change part of
-   the word is still hollow and the rest has gone solid. */
+/* Flat, not extruded — the interest is in how it arrives. A letter that is
+   out is hollow and a little low; in, it is hollow and in place; filled, it
+   is solid. app.js runs those across the word, in for a new word and back
+   out for the old one (LETTER_MS there is this change's length). */
 .type-out {
   display: inline-block;
   white-space: nowrap;
-  will-change: transform, opacity;
 }
 .ch {
   display: inline-block;
   color: transparent;
   -webkit-text-stroke: 1.5px var(--void);
-  transition: color .42s var(--ease-out), -webkit-text-stroke-color .42s var(--ease-out);
+  opacity: 0;
+  transform: translateY(.14em);
+  transition:
+    opacity .3s var(--ease-out),
+    transform .38s var(--ease-out),
+    color .38s var(--ease-out),
+    -webkit-text-stroke-color .38s var(--ease-out);
 }
+.ch.is-in { opacity: 1; transform: none; }
 .ch.is-fill { color: var(--void); }
 .ch.is-space { -webkit-text-stroke: 0; }
-/* The outgoing word is lifted out of flow so the incoming one sets the
-   width while the two melt through each other. */
-.type-out.is-out { position: absolute; left: 0; top: 0; }
 
 
 /* ---- the staged open --------------------------------------------------
@@ -1942,12 +1947,8 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 
    The toggle swaps what the page says, never where anything is. Each .duo
    holds both versions in one grid cell, so its box is the larger of the two
-   whichever is showing, and nothing under it moves on a switch. The side
-   leaving fades and drifts one way; the side arriving comes in from the
-   other, a beat later, so the two read as one turning into the next. Only
-   opacity and transform move — the two things the compositor animates
-   without repainting; a blur on every block was one cost too many. fun.js
-   staggers the blocks on screen with --sd. */
+   whichever is showing, and nothing under it moves on a switch. The change
+   itself is a change of page — see below. */
 
 :root {
   /* the sketchbook the fun side is drawn in — jot's own paper and ink */
@@ -1961,44 +1962,71 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .duo { display: grid; }
 .duo > .side { grid-area: 1 / 1; min-width: 0; }
 
-/* The side arriving: a beat after the switch. */
-.side,
-.spiral-card .card-shot,
-.spiral-card .card-body,
-.card-fun {
+/* ---- the switch --------------------------------------------------------
+   A switch swaps what is written block by block, out past the nearer edge of
+   the screen and back in from it. Everything on the left of the page leaves
+   off the left-hand edge and its replacement comes in from the left, and the
+   right does the same on the right, so on the watch the panel on each side of
+   the dial is swapped out on its own side. A block in the middle, with no
+   nearer edge, fades where it is. The old one is gone before the new one
+   arrives, so the two never cross.
+
+   fun.js measures every block and gives it --off: how far, and which way, it
+   has to travel to be clear of its edge. The spiral keeps turning through a
+   switch and only its cards change faces; the nav labels and the photos in
+   the pile change in place (below). The header stays where it is.
+
+   main clips sideways, so the page is never wider than the window while a
+   block is off the edge. It has to be main: an overflow set on body is handed
+   up to the window, where it only hides the scrollbar and the page still
+   measures — and on a phone, still swipes — wider than the screen. */
+
+main { overflow-x: clip; }
+
+/* Arriving: in from its edge once the old one has gone, settling into place. */
+.side {
   transition:
-    opacity .55s var(--ease-out) calc(var(--sd, 0ms) + 260ms),
-    transform .7s var(--ease-out) calc(var(--sd, 0ms) + 260ms),
-    visibility 0s linear calc(var(--sd, 0ms) + 260ms);
+    transform .5s cubic-bezier(.15, .8, .3, 1) .28s,
+    opacity .35s var(--ease-out) .28s,
+    visibility 0s linear .28s;
 }
 
-/* The side leaving: straight away, quickly, and out of reach for good once
-   it has gone — hidden, so it cannot be clicked, tabbed to or read out. */
+/* Leaving, and then waiting: out past its edge, gathering speed, and hidden
+   so it cannot be clicked, tabbed to or read out. */
 html:not([data-side="fun"]) .side-fun,
-html:not([data-side="fun"]) .card-fun,
-html[data-side="fun"] .side-pro,
-html[data-side="fun"] .spiral-card:not(.fun-skip) .card-shot,
-html[data-side="fun"] .spiral-card:not(.fun-skip) .card-body {
+html[data-side="fun"] .side-pro {
   opacity: 0;
+  transform: translateX(var(--off, 0px));
   visibility: hidden;
   pointer-events: none;
   transition:
-    opacity .34s cubic-bezier(.55, 0, .8, .2) var(--sd, 0ms),
-    transform .34s cubic-bezier(.55, 0, .8, .2) var(--sd, 0ms),
-    visibility 0s linear calc(var(--sd, 0ms) + 340ms);
+    transform .42s cubic-bezier(.55, 0, .8, .2),
+    opacity .3s ease-in .12s,
+    visibility 0s linear .42s;
 }
-/* The same move both ways round, so going back feels like going forward. A
-   side waiting to come in sits a little low (and its card faces a touch
-   large), so it arrives up and forward into place; the side leaving lifts
-   out and settles back, for as long as fun.js holds data-leaving on it. */
-html:not([data-side="fun"]) .side-fun { transform: translateY(14px); }
-html[data-side="fun"] .side-pro       { transform: translateY(14px); }
-html[data-leaving="pro"] .side-pro,
-html[data-leaving="fun"] .side-fun    { transform: translateY(-14px); }
-html:not([data-side="fun"]) .card-fun { transform: scale(1.04); }
-html[data-side="fun"] .spiral-card:not(.fun-skip) .card-shot { transform: scale(1.04); }
-html[data-leaving="fun"] .card-fun,
-html[data-leaving="pro"] .spiral-card:not(.fun-skip) .card-shot { transform: scale(.97); }
+
+/* In place: the spiral's card faces, the nav labels, the pile's photos. */
+.spiral-card .card-shot,
+.spiral-card .card-body,
+.card-fun,
+.nav .side,
+.pcard-duo > .side {
+  transform: none;
+  transition: opacity .35s var(--ease-out), visibility 0s linear 0s;
+}
+html:not([data-side="fun"]) .card-fun,
+html[data-side="fun"] .spiral-card:not(.fun-skip) .card-shot,
+html[data-side="fun"] .spiral-card:not(.fun-skip) .card-body,
+html:not([data-side="fun"]) .nav .side-fun,
+html[data-side="fun"] .nav .side-pro,
+html:not([data-side="fun"]) .pcard-duo > .side-fun,
+html[data-side="fun"] .pcard-duo > .side-pro {
+  opacity: 0;
+  transform: none;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .35s var(--ease-out), visibility 0s linear .35s;
+}
 
 /* A card with no fun face keeps its work face while app.js fades it out of
    the tube, rather than going blank first, and cannot be clicked while it
@@ -2047,14 +2075,20 @@ html[data-font="fun"], .side-fun, .card-fun {
 /* The shared type, out and back while its face changes. Opacity where
    nothing else writes it; filter where app.js already owns the opacity. */
 .site-head .head-inner { transition: opacity .26s var(--ease-out); }
-.skills-type { transition: width .75s cubic-bezier(.6, 0, .2, 1), opacity .26s var(--ease-out); }
 .path-dial, .site-foot { transition: filter .26s var(--ease-out); }
 .path-year .py-now {
   transition: opacity .28s var(--ease-out), transform .28s var(--ease-out), filter .26s var(--ease-out);
 }
 .contact-mail { transition: background-size .5s var(--ease), color .4s var(--ease), filter .26s var(--ease-out); }
-html.side-swap .site-head .head-inner,
-html.side-swap .skills-type { opacity: 0; }
+html.side-swap .site-head .head-inner { opacity: 0; }
+
+/* The word under the spiral is not dipped: taking it down is its own
+   change. It wears the face of the side it was built on (app.js sets
+   data-face as each word starts), so a switch takes the old word down in
+   the old face and the new face comes in with the new word. */
+.skills-type[data-face="pro"] { font-family: var(--pro-display); }
+.skills-type[data-face="fun"] { font-family: var(--fun-display); }
+
 html.side-swap :is(.path-dial, .path-year .py-now, .contact-mail, .site-foot, .side-switch button) { filter: opacity(0); }
 
 /* ---- the watch, in pen ---------------------------------------------------
