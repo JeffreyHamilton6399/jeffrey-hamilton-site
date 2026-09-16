@@ -47,9 +47,9 @@ const SWAP_MS = 780;
 const MIDDLE = 0.08;
 /* How far past the edge a block goes, so its shadow is gone too. */
 const CLEAR = 48;
-/* The type that belongs to neither side — the header, the watch's numbers —
-   cannot cross-fade, so it dips out (html.side-swap) and its face is changed
-   while nothing is showing. (The word under the spiral has its own way: see
+/* The type that belongs to neither side cannot cross-fade. The header goes up
+   off the screen for it and the watch's numbers dip out (html.side-swap);
+   FLIP is how long that takes, and the faces change while nothing shows. (The word under the spiral has its own way: see
    app.js.) */
 const FLIP = 280;
 /* between drawings that start in the same pass, so a screen of them inks
@@ -282,20 +282,42 @@ let seed = 17;
 const nextSeed = () => (seed += 101);
 
 /* The spiral turns on its own, with no scroll to say a card has come round,
-   so its cards count as in view whenever the hero is: they are all drawn at
-   once, one after another, and are finished by the time each one faces you. */
+   so its cards count as in view whenever the hero is (see look): they are
+   all drawn at once, one after another, and are finished by the time each
+   one faces you. */
+/* What is on screen is reported, not measured. Asking every drawing for its
+   box on every frame of a scroll made the browser lay the page out again in
+   the middle of each one; an observer is told when a drawing (or, for the
+   spiral, the hero) comes into view or leaves it, and costs nothing between. */
+const watching = new Map();   /* element watched -> the drawings it stands for */
+let sight = null;
+
+function look(it, target) {
+  if (!('IntersectionObserver' in window)) { it.inView = true; return; }
+  if (!sight) {
+    sight = new IntersectionObserver((entries) => {
+      entries.forEach((e) => (watching.get(e.target) || []).forEach((x) => { x.inView = e.isIntersecting; }));
+      schedulePump();
+    });
+  }
+  if (!watching.has(target)) { watching.set(target, []); sight.observe(target); }
+  watching.get(target).push(it);
+}
+
 function keep(drawing, el) {
   const gate = el.closest(GATES);
-  inks.push({
+  const it = {
     d: drawing,
     el,
     gate,
     /* on the live watch a panel that has no opacity written on it yet has
        not been brought in, whatever the flow version of it would say */
     live: !!gate && !!gate.closest('.path-orbit.is-live'),
-    zone: el.closest('.spiral-card') && el.closest('.hero'),
+    inView: false,
     done: false,
-  });
+  };
+  inks.push(it);
+  look(it, (el.closest('.spiral-card') && el.closest('.hero')) || el);
 }
 
 const switcher = document.querySelector('.side-switch');
@@ -357,10 +379,30 @@ function inkWatch(j) {
   const svg = document.querySelector('.path-svg');
   if (!svg || svg.querySelector('.fun-ink')) return;
   const rand = j.mulberry32(1400);
+  const bone = (a) => `rgba(244,241,234,${a})`;   /* --on-dark, at a strength */
 
-  const stroke = (pts, width, cls, amp = WOBBLE_U) =>
-    `<path class="fun-ink ${cls}" d="${j.brush(j.wobble(densify(pts, 8), rand, amp), width, rand)}"/>`;
+  const brushD = (pts, width, amp = WOBBLE_U) => j.brush(j.wobble(densify(pts, 8), rand, amp), width, rand);
+  const stroke = (pts, width, cls, amp) => `<path class="fun-ink ${cls}" d="${brushD(pts, width, amp)}"/>`;
   const put = (el, html) => { if (el && html) el.insertAdjacentHTML('beforeend', html); };
+
+  /* A set of strokes that never change shape — the ticks, a run of stitching,
+     the crown's notches — goes in as one picture rather than a path each. The
+     browser rasterises a picture once and reuses it, where every path would
+     be filled again on each frame the hand turns over it. The picture is
+     cropped to its strokes, padded by more than a brush is wide. */
+  const PAD = 12;
+  const picture = (parts, cls) => {
+    if (!parts.length) return '';
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    parts.forEach((pt) => pt.pts.forEach(([x, y]) => {
+      x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+    }));
+    x0 -= PAD; y0 -= PAD; x1 += PAD; y1 += PAD;
+    const w = x1 - x0, h = y1 - y0;
+    const body = parts.map((pt) => `<path fill="${pt.fill}" d="${pt.d}"/>`).join('');
+    const pic = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x0} ${y0} ${w} ${h}">${body}</svg>`;
+    return `<image class="fun-ink ${cls}" x="${x0}" y="${y0}" width="${w}" height="${h}" preserveAspectRatio="none" href="data:image/svg+xml,${encodeURIComponent(pic)}"/>`;
+  };
 
   /* the strap's two edges; its ends are under the case */
   const straps = svg.querySelectorAll('.watch-strap');
@@ -369,38 +411,44 @@ function inkWatch(j) {
   put(straps[1], stroke([[440, 1400], [440, 1150], [424, 930]], 5.5, 'ink-strap') +
                  stroke([[560, 1400], [560, 1150], [576, 930]], 5.5, 'ink-strap'));
 
-  /* the stitching, one short stroke per stitch */
+  /* the stitching, one short stroke per stitch, one picture per run */
   svg.querySelectorAll('.watch-stitch').forEach((g) => {
     const line = g.querySelector('path');
     if (!line) return;
     const fine = densify(pointsOf(line.getAttribute('d')), 2);
-    let html = '', run = [fine[0]], on = true, gone = 0;
+    const parts = [];
+    let run = [fine[0]], on = true, gone = 0;
     for (let i = 1; i < fine.length; i++) {
       gone += Math.hypot(fine[i][0] - fine[i - 1][0], fine[i][1] - fine[i - 1][1]);
       if (on) run.push(fine[i]);
       if (on && gone >= STITCH_ON) {
-        html += `<path class="fun-ink ink-stitch" d="${j.brush(run, 3, rand)}"/>`;
+        parts.push({ pts: run, fill: bone(0.24), d: j.brush(run, 3, rand) });
         on = false; gone = 0;
       } else if (!on && gone >= STITCH_OFF) {
         on = true; gone = 0; run = [fine[i]];
       }
     }
-    put(g, html);
+    put(g, picture(parts, 'ink-stitch'));
   });
 
   /* whatever ticks and knurl app.js made — sixty and thirty-two on the live
      watch, sixteen notches on the still one — traced one for one */
-  let ticks = '';
+  const ticks = [];
   svg.querySelectorAll('.path-ticks .path-tick').forEach((l) => {
     const major = l.classList.contains('is-major');
-    ticks += stroke(ends(l), major ? 5.5 : 3.2, major ? 'ink-tick is-major' : 'ink-tick', 0.8);
+    const pts = ends(l);
+    ticks.push({ pts, fill: major ? bone(1) : bone(0.42), d: brushD(pts, major ? 5.5 : 3.2, 0.8) });
   });
-  put(svg.querySelector('.path-ticks'), ticks);
+  put(svg.querySelector('.path-ticks'), picture(ticks, 'ink-ticks'));
 
-  let knurl = '';
-  svg.querySelectorAll('.watch-knurl line').forEach((l) => { knurl += stroke(ends(l), 2.6, 'ink-knurl', 0.4); });
-  put(svg.querySelector('.watch-knurl'), knurl);
+  const knurl = [];
+  svg.querySelectorAll('.watch-knurl line').forEach((l) => {
+    const pts = ends(l);
+    knurl.push({ pts, fill: bone(0.4), d: brushD(pts, 2.6, 0.4) });
+  });
+  put(svg.querySelector('.watch-knurl'), picture(knurl, 'ink-knurl'));
 
+  /* the hands move, so they stay strokes */
   [['.path-hand', 9, 'ink-hand'], ['.path-hand-sm', 6, 'ink-hand-sm']].forEach(([sel, width, cls]) => {
     const g = svg.querySelector(sel);
     const l = g && g.querySelector('line');
@@ -638,9 +686,8 @@ function pump() {
   let n = 0;
   for (const it of inks) {
     if (!it.done) {
+      if (!it.inView) continue;
       if (it.gate && panelShown(it) <= 0.55) continue;
-      const r = (it.zone || it.el).getBoundingClientRect();
-      if (!r.width || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
       it.done = true;
       setTimeout(() => { if (side === 'fun' && it.done) ink(it); }, n++ * PEN_GAP);
     } else if (it.gate && panelShown(it) < 0.05) {
@@ -718,29 +765,24 @@ function keepPlace(change) {
 let relaned = 0;
 addEventListener('resize', () => { clearTimeout(relaned); relaned = setTimeout(lanes, 150); }, { passive: true });
 
-const buttons = switcher ? [].slice.call(switcher.querySelectorAll('[data-side-set]')) : [];
-
-/* The knob only ever moves to the right. To Fun is the stylesheet's own
-   slide across; back to Pro, rather than sliding back, it keeps going — out
-   of the right-hand end of the track and round in from the left into its
-   place. The two halves take the same time over the same distance, and the
-   curve out ends as fast as the curve in begins, so the wrap reads as one
-   unbroken move with no pause at the edge. */
-const knob = switcher && switcher.querySelector('.ss-knob');
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const WRAP_MS = 600;
-let knobRun = null;
-
-function slideKnob(next) {
-  if (knobRun) { knobRun.cancel(); knobRun = null; }
-  if (!knob || reduced || next !== 'pro' || typeof knob.animate !== 'function') return;
-  knobRun = knob.animate([
-    { transform: 'translateX(100%)', easing: 'cubic-bezier(.5, 0, .9, .6)' },
-    { transform: 'translateX(200%)', offset: 0.5 },
-    { transform: 'translateX(-100%)', offset: 0.5, easing: 'cubic-bezier(.1, .4, .5, 1)' },
-    { transform: 'translateX(0)' },
-  ], { duration: WRAP_MS });
-  knobRun.onfinish = () => { knobRun = null; };
+/* The switch is one button. It says which side you are on; a press takes you
+   to the other, and the word rolls up out of the pill as the new one rolls
+   up into it (styles.css). data-out marks the word on its way out; once it
+   has gone it is dropped back below with its transition off, so it is never
+   seen passing back through. */
+const ROLL_MS = 420;
+let rolled = 0;
+function roll(from) {
+  if (!switcher) return;
+  switcher.classList.remove('is-settling');
+  switcher.setAttribute('data-out', from);
+  clearTimeout(rolled);
+  rolled = setTimeout(() => {
+    switcher.classList.add('is-settling');
+    switcher.removeAttribute('data-out');
+    void switcher.offsetWidth;
+    switcher.classList.remove('is-settling');
+  }, ROLL_MS + 20);
 }
 const skillsLine = document.querySelector('.hero-skills');
 /* The certificates are the work side's alone. On the fun side the coil fades
@@ -762,7 +804,7 @@ function labelled(el) {
 }
 
 function sync() {
-  buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.sideSet === side)));
+  if (switcher) switcher.setAttribute('aria-label', side === 'fun' ? 'Switch to the work side' : 'Switch to the fun side');
   labelled(skillsLine);
   labelled(pileList);
   skipped.forEach((card) => { card.inert = side === 'fun'; });
@@ -777,9 +819,10 @@ function setSide(next) {
   if (next === side) return;
   if (next === 'fun') attach(true);
   lanes();
+  const from = side;
   side = next;
   keepPlace(() => doc.setAttribute('data-side', next));
-  slideKnob(next);
+  roll(from);
   try { localStorage.setItem(KEY, next); } catch (e) {}
   sync();
 
@@ -788,6 +831,8 @@ function setSide(next) {
      only takes the new one when the next word starts to type */
   document.dispatchEvent(new CustomEvent('sidechange', { detail: { side: next } }));
 
+  /* the header goes up (styles.css), and everything that belongs to neither
+     side changes face while it is out of sight */
   doc.classList.add('side-swap');
   clearTimeout(flip);
   flip = setTimeout(() => {
@@ -809,7 +854,7 @@ function setSide(next) {
   }
 }
 
-buttons.forEach((b) => b.addEventListener('click', () => setSide(b.dataset.sideSet)));
+if (switcher) switcher.addEventListener('click', () => setSide(side === 'fun' ? 'pro' : 'fun'));
 
 /* On the fun side a card in the grid is a chapter of the story rather than
    a project, so it takes you down to the story instead of out — unless its

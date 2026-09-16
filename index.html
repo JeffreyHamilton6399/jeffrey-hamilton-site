@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="only light">
 <title>Jeffrey Hamilton, Builder and Digital Designer</title>
 <meta name="description" content="I make browser tools, desktop apps and games. Most of them run on your own machine, and all of them are free.">
 <meta name="theme-color" content="#F4F1EA">
@@ -15,7 +16,7 @@
      plain files with no build step behind them, so nothing in their URLs
      ever changes when their contents do, and a browser holding an old
      copy has no way to know. Bump it whenever either one changes. -->
-<link rel="stylesheet" href="styles.css?v=20260914n">
+<link rel="stylesheet" href="styles.css?v=20260914o">
 <script>
   /* Runs before the first paint, which is the whole point of it.
 
@@ -101,15 +102,17 @@
   </div>
 </header>
 
-<!-- The two sides of the page: the work, and the rest of it. fun.js wires
-     it and shows it; without that script there is only the one side, so it
-     stays hidden. -->
-<div class="side-switch" role="group" aria-label="Which side of me to show">
-  <span class="ss-track" aria-hidden="true"><span class="ss-knob"></span></span>
-  <button type="button" data-side-set="pro" aria-pressed="true">Pro</button>
-  <button type="button" data-side-set="fun" aria-pressed="false">Fun</button>
+<!-- The switch between the two sides: one button. It says which side you are
+     on, and a press takes you to the other. fun.js wires it and shows it;
+     without that script there is only the one side, so it stays hidden. -->
+<button type="button" class="side-switch" aria-label="Switch to the fun side">
+  <span class="ss-words" aria-hidden="true">
+    <span class="ss-word" data-word="pro">Pro</span>
+    <span class="ss-word" data-word="fun">Fun</span>
+  </span>
+  <svg class="ss-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 5.5h9.5M10 3l2.5 2.5L10 8M13 10.5H3.5M6 8l-2.5 2.5L6 13"/></svg>
   <span class="ss-spark" aria-hidden="true"></span>
-</div>
+</button>
 
 <main id="top">
 
@@ -1238,7 +1241,7 @@
 <script src="app.js?v=20260914h" defer></script>
 <!-- A module, so it runs after app.js, once the watch has lifted the eras
      onto the dial. -->
-<script type="module" src="fun.js?v=20260914p"></script>
+<script type="module" src="fun.js?v=20260914q"></script>
 
 </body>
 </html>

@@ -4,6 +4,11 @@
    Layout is plain CSS; app.js drives the scroll motion and the spiral.
    ========================================================================== */
 
+/* The page is designed light, with dark bands of its own. A browser that
+   darkens pages by itself (Chrome's auto-dark, Samsung Internet) inverts
+   those bands and the paper both, so it is told not to. */
+:root { color-scheme: only light; }
+
 :root {
   /* Brand */
   --void:    #14121C;   /* near-black with a violet cast — display type, dark bands */
@@ -2005,11 +2010,10 @@ html[data-side="fun"] .side-pro {
     visibility 0s linear .42s;
 }
 
-/* In place: the spiral's card faces, the nav labels, the pile's photos. */
+/* In place: the spiral's card faces and the pile's photos. */
 .spiral-card .card-shot,
 .spiral-card .card-body,
 .card-fun,
-.nav .side,
 .pcard-duo > .side {
   transform: none;
   transition: opacity .35s var(--ease-out), visibility 0s linear 0s;
@@ -2017,8 +2021,6 @@ html[data-side="fun"] .side-pro {
 html:not([data-side="fun"]) .card-fun,
 html[data-side="fun"] .spiral-card:not(.fun-skip) .card-shot,
 html[data-side="fun"] .spiral-card:not(.fun-skip) .card-body,
-html:not([data-side="fun"]) .nav .side-fun,
-html[data-side="fun"] .nav .side-pro,
 html:not([data-side="fun"]) .pcard-duo > .side-fun,
 html[data-side="fun"] .pcard-duo > .side-pro {
   opacity: 0;
@@ -2026,6 +2028,22 @@ html[data-side="fun"] .pcard-duo > .side-pro {
   visibility: hidden;
   pointer-events: none;
   transition: opacity .35s var(--ease-out), visibility 0s linear .35s;
+}
+
+/* The nav labels ride the header: they change while it is up off the screen
+   (data-font flips then), all at once, with nothing to see. */
+html .nav .side {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+  transition: none;
+}
+html:not([data-font="fun"]) .nav .side-fun,
+html[data-font="fun"] .nav .side-pro {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* A card with no fun face keeps its work face while app.js fades it out of
@@ -2074,13 +2092,28 @@ html[data-font="fun"], .side-fun, .card-fun {
 
 /* The shared type, out and back while its face changes. Opacity where
    nothing else writes it; filter where app.js already owns the opacity. */
-.site-head .head-inner { transition: opacity .26s var(--ease-out); }
 .path-dial, .site-foot { transition: filter .26s var(--ease-out); }
 .path-year .py-now {
   transition: opacity .28s var(--ease-out), transform .28s var(--ease-out), filter .26s var(--ease-out);
 }
 .contact-mail { transition: background-size .5s var(--ease), color .4s var(--ease), filter .26s var(--ease-out); }
-html.side-swap .site-head .head-inner { opacity: 0; }
+/* The header goes up off the top of the screen, changes while it is out of
+   sight (data-font, and the nav labels below, flip then), and drops back in
+   with a little give. FLIP in fun.js is how long it takes to go. The boot's
+   own rules for the header still win while the opening is running. */
+.site-head {
+  transition:
+    opacity .45s var(--ease-out),
+    color .45s var(--ease),
+    transform .55s cubic-bezier(.2, 1.35, .4, 1);
+}
+html.side-swap .site-head {
+  transform: translateY(calc(-100% - 1rem));
+  transition:
+    opacity .45s var(--ease-out),
+    color .45s var(--ease),
+    transform .28s cubic-bezier(.55, 0, .8, .2);
+}
 
 /* The word under the spiral is not dipped: taking it down is its own
    change. It wears the face of the side it was built on (app.js sets
@@ -2089,7 +2122,7 @@ html.side-swap .site-head .head-inner { opacity: 0; }
 .skills-type[data-face="pro"] { font-family: var(--pro-display); }
 .skills-type[data-face="fun"] { font-family: var(--fun-display); }
 
-html.side-swap :is(.path-dial, .path-year .py-now, .contact-mail, .site-foot, .side-switch button) { filter: opacity(0); }
+html.side-swap :is(.path-dial, .path-year .py-now, .contact-mail, .site-foot) { filter: opacity(0); }
 
 /* ---- the watch, in pen ---------------------------------------------------
    fun.js inks a second skin for the watch with jot's brush and puts each
@@ -2100,22 +2133,71 @@ html.side-swap :is(.path-dial, .path-year .py-now, .contact-mail, .site-foot, .s
   fill: color-mix(in srgb, var(--on-dark) 55%, transparent);
   stroke: none;
   stroke-dasharray: none;
-  transition: opacity .5s var(--ease-out);
+  transition: opacity .5s var(--ease-out), visibility 0s linear 0s;
 }
-html:not([data-side="fun"]) .fun-ink { opacity: 0; }
-.fun-ink.ink-case,
-.fun-ink.ink-tick.is-major { fill: var(--on-dark); }
-.fun-ink.ink-tick   { fill: color-mix(in srgb, var(--on-dark) 42%, transparent); }
-.fun-ink.ink-stitch { fill: color-mix(in srgb, var(--on-dark) 24%, transparent); }
-.fun-ink.ink-knurl  { fill: color-mix(in srgb, var(--on-dark) 40%, transparent); }
+/* Hidden once it has faded, so a skin nobody can see is not painted on every
+   frame the hand turns. The ticks, stitching and knurl are pictures (fun.js)
+   with their colours in them; the rest take theirs from here. */
+html:not([data-side="fun"]) .fun-ink {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .5s var(--ease-out), visibility 0s linear .5s;
+}
+.fun-ink.ink-case   { fill: var(--on-dark); }
 .fun-ink.ink-hand   { fill: var(--glow); }
 .fun-ink.ink-hand-sm { fill: var(--haze); }
 
-.watch-strap > path, .watch-stitch > path, .path-tick, .watch-knurl line,
-.path-hand > line, .path-hand-sm > line { transition: stroke-opacity .5s var(--ease-out); }
-.watch-crown, .watch-case { transition: stroke .55s var(--ease-out), stroke-opacity .5s var(--ease-out); }
-html[data-side="fun"] :is(.watch-strap > path, .watch-stitch > path, .watch-crown, .watch-case,
-  .path-tick, .watch-knurl line, .path-hand > line, .path-hand-sm > line):not(.fun-ink) { stroke-opacity: 0; }
+.watch-strap > path, .watch-crown, .watch-case { transition: stroke .55s var(--ease-out), stroke-opacity .5s var(--ease-out); }
+.watch-stitch > path, .path-tick, .watch-knurl line, .path-hand > line, .path-hand-sm > line {
+  transition: stroke-opacity .5s var(--ease-out), visibility 0s linear 0s;
+}
+/* The strap, crown and case keep their fill on the fun side, so only their
+   lines go; the parts that are nothing but line go out of the paint too. */
+html[data-side="fun"] :is(.watch-strap > path, .watch-crown, .watch-case) { stroke-opacity: 0; }
+html[data-side="fun"] :is(.watch-stitch > path, .path-tick, .watch-knurl line, .path-hand > line, .path-hand-sm > line) {
+  stroke-opacity: 0;
+  visibility: hidden;
+  transition: stroke-opacity .5s var(--ease-out), visibility 0s linear .5s;
+}
+
+/* ---- behind the watch ----------------------------------------------------
+   A dial wants a ground. On the work side it is engine-turned, like the
+   face of a real watch: fine rings and finer rays out from the middle of
+   the case, gone before they reach the edges. On the fun side it is a page
+   of the sketchbook: dots on the dark. Each is a layer of its own, painted
+   once — the watch in front repaints on every frame of its turn, and the
+   pattern is not part of that. */
+.path-orbit.is-live,
+.path-orbit.is-still { isolation: isolate; }
+.path-orbit::before,
+.path-orbit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  will-change: opacity;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0, #000 20%, transparent 66%);
+          mask-image: radial-gradient(circle at 50% 50%, #000 0, #000 20%, transparent 66%);
+  transition: opacity .6s var(--ease-out);
+}
+.path-orbit::before {
+  background:
+    repeating-radial-gradient(circle at 50% 50%,
+      transparent 0 13px,
+      color-mix(in srgb, var(--on-dark) 6%, transparent) 13px 14px),
+    repeating-conic-gradient(from 0deg at 50% 50%,
+      color-mix(in srgb, var(--on-dark) 4%, transparent) 0deg .5deg,
+      transparent .5deg 4deg);
+}
+.path-orbit::after {
+  opacity: 0;
+  background: radial-gradient(circle,
+    color-mix(in srgb, var(--on-dark) 16%, transparent) 1.1px,
+    transparent 1.7px) 0 0 / 22px 22px;
+}
+html[data-side="fun"] .path-orbit::before { opacity: 0; }
+html[data-side="fun"] .path-orbit::after { opacity: 1; }
 
 /* The leather past the drawing is HTML and changes size every frame, so its
    pen lines are tiles of brush stroke (fun.js) that repeat along it rather
@@ -2166,63 +2248,69 @@ html.sides-ready .side-switch {
   right: clamp(.875rem, 2.5vw, 1.5rem);
   bottom: clamp(.875rem, 2.5vw, 1.5rem);
   z-index: 70;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  padding: .25rem;
-  border-radius: 999px;
-  background: var(--void);
-  box-shadow:
-    0 12px 32px color-mix(in srgb, var(--void) 30%, transparent),
-    inset 0 0 0 1px var(--rule-dark);
-  transition: opacity .6s var(--ease-out), transform .6s var(--ease-out);
-}
-/* Held back through the opening, like the header. */
-html.pre .side-switch,
-html.booting .side-switch { opacity: 0; transform: translateY(12px); pointer-events: none; }
-
-/* The knob only ever travels to the right: to Fun it slides across, and
-   back to Pro it carries on out of the right-hand end and comes round in
-   from the left (fun.js). The track is what it disappears into — the pill
-   itself cannot clip, or it would clip the sparkle hanging off its corner. */
-.ss-track {
-  position: absolute;
-  inset: .25rem;
-  border-radius: 999px;
-  overflow: hidden;
-  pointer-events: none;
-}
-.ss-knob {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 50%;
-  border-radius: 999px;
-  background: var(--paper);
-  transition: transform .5s cubic-bezier(.6, 0, .2, 1), background-color .4s var(--ease);
-}
-html[data-side="fun"] .ss-knob { transform: translateX(100%); background: var(--glow); }
-
-.side-switch button {
-  position: relative;
-  z-index: 1;
-  min-width: 3.25rem;
-  padding: .5625rem .875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .625rem .875rem .625rem 1rem;
   border: 0;
   border-radius: 999px;
-  background: none;
+  background: var(--void);
+  color: var(--on-dark);
   font-family: var(--mono);
   font-size: .625rem;
   font-weight: 500;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--on-dark-soft);
   cursor: pointer;
-  transition: color .4s var(--ease), filter .26s var(--ease-out);
+  box-shadow:
+    0 12px 32px color-mix(in srgb, var(--void) 30%, transparent),
+    inset 0 0 0 1px var(--rule-dark);
+  transition:
+    opacity .6s var(--ease-out),
+    transform .6s var(--ease-out),
+    background-color .4s var(--ease),
+    color .4s var(--ease);
 }
-.side-switch button:hover { color: var(--on-dark); }
-.side-switch button[aria-pressed="true"] { color: var(--void); }
-.side-switch button:focus-visible { outline: 2px solid var(--haze); outline-offset: 2px; }
+html[data-side="fun"] .side-switch { background: var(--glow); color: var(--void); }
+.side-switch:focus-visible { outline: 2px solid var(--haze); outline-offset: 3px; }
+/* Held back through the opening, like the header. */
+html.pre .side-switch,
+html.booting .side-switch { opacity: 0; transform: translateY(12px); pointer-events: none; }
+
+/* One button. It says which side you are on, and a press takes you to the
+   other: the word rolls up and out of the pill as the new one rolls up into
+   it from below (fun.js holds data-out on the pill while the old word goes).
+   Both words sit in the one cell, so the pill is always the width of the
+   longer and never jumps. */
+.ss-words {
+  display: grid;
+  overflow: hidden;
+  height: 1.25em;
+  line-height: 1.25em;
+}
+.ss-word {
+  grid-area: 1 / 1;
+  transform: translateY(115%);
+  transition: transform .42s cubic-bezier(.65, 0, .35, 1);
+}
+html:not([data-side="fun"]) .ss-word[data-word="pro"],
+html[data-side="fun"] .ss-word[data-word="fun"] { transform: none; }
+.side-switch[data-out="pro"] .ss-word[data-word="pro"],
+.side-switch[data-out="fun"] .ss-word[data-word="fun"] { transform: translateY(-115%); }
+/* the gone word drops back below out of sight, not through the pill */
+.side-switch.is-settling .ss-word { transition: none; }
+
+.ss-icon {
+  width: .875rem;
+  height: .875rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .45s var(--ease);
+}
+.side-switch:hover .ss-icon { transform: rotate(180deg); }
 
 /* Two classes deep on purpose: jot's stylesheet is linked after this one
    (fun.js fetches it late), and its .jot-host would otherwise make this
