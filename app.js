@@ -390,13 +390,16 @@
         onComplete: function () {
           portrait.style.opacity = '0';
           if (dot && box) {
-            dot.style.transform = 'translate(' + (t.left + t.width / 2 - box.left) + 'px,' +
-                                                 (t.top + t.height / 2 - box.top) + 'px)';
+            var at = 'translate(' + (t.left + t.width / 2 - box.left) + 'px,' +
+                                    (t.top + t.height / 2 - box.top) + 'px)';
+            dot.style.transform = at;
             dot.style.opacity = '1';
-            /* the pop: the separate scale property, so it never fights the
-               translate the flight writes into transform */
+            /* the pop, scaled after the move so it swells in place. (The
+               separate scale property is applied outside transform, so it
+               scaled the move too and threw the dot out to the corner.) It
+               is over before the flight starts writing transform. */
             if (typeof dot.animate === 'function') {
-              dot.animate([{ scale: '2.4' }, { scale: '1' }],
+              dot.animate([{ transform: at + ' scale(2.4)' }, { transform: at }],
                 { duration: 280, easing: 'cubic-bezier(.34, 1.8, .6, 1)' });
             }
           }
