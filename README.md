@@ -15,7 +15,7 @@ browser and that is the site.
 | `app.js` | Scroll motion, the panel handoff, and the loop |
 | `assets/vendor/` | GSAP, ScrollTrigger and Lenis, vendored |
 | `assets/portrait.jpg` | Headshot |
-| `assets/shots/` | A screenshot of each project |
+| `assets/shots/` | A screenshot of each project, and of each game |
 
 The only outside request the page makes is to Google Fonts for Inter,
 Source Serif 4 and JetBrains Mono. The three libraries are checked in under
@@ -56,10 +56,17 @@ turning and only its cards change faces. The choice is remembered in `localStora
 [jot](https://animation-library-ruby.vercel.app), vendored in
 `assets/vendor/jot/`: the doodles, the handwritten titles, and a brush-pen
 skin for the watch that rides inside the same parts app.js moves. The fun
-side's type is Caveat Brush and Shantell Sans from Google Fonts. Anything
-waiting on a real photo is a jot drawing on a page of sketchbook paper marked
-`data-photo="…"`; swap the drawing for an `<img>` and nothing around it has
-to change.
+side's type is Caveat Brush and Shantell Sans from Google Fonts.
+
+The fun side of the spiral is the games. Every card's second face
+(`.card-fun`) is one of the games I have made — its screenshot out of
+`assets/shots/`, the name set over its foot the way the work side sets its
+own titles — and the anchor carries `data-fun-href` so the card opens the
+game on that side and the project on the work side. A card whose project is
+already a game on the work side (Line Glide, SpellFall, PixelParty) is
+marked `fun-skip` there instead of shown twice. The photo slots in the
+story further down are pages of sketchbook paper marked `data-photo="…"`;
+swap a drawing for an `<img>` and nothing around it has to change.
 
 A visit that stays on the work side pays for none of it up front. jot, its
 stylesheet and the fonts are fetched once the page has settled, and the

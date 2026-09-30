@@ -2306,25 +2306,15 @@ html[data-side="fun"] .ss-word[data-word="fun"] { transform: none; }
 }
 
 /* ---- the sketchbook ------------------------------------------------------
-   Where a photo will go there is a page of jot's paper with a drawing of it
-   instead. Each one carries data-photo, so a real picture can replace the
-   drawing without touching anything around it. */
+   The fun side of the spiral is the games. Each one's second face carries
+   its screenshot on a page of jot's paper — the paper is what shows while
+   the shot loads, or if it never does. The photo slots further down the
+   page, in the story, keep their own data-photo markers. */
 .fun-paper {
   background-color: var(--sketch-paper);
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><circle cx='2' cy='2' r='.9' fill='%23ddd5c4'/></svg>");
 }
 .fun-art { display: block; }
-.fun-soon {
-  position: absolute;
-  top: .625rem;
-  left: .75rem;
-  font-family: var(--mono);
-  font-size: .5rem;
-  font-weight: 500;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--sketch-faint);
-}
 
 /* the spiral's second face */
 .spiral-card > a { position: relative; }
@@ -2337,13 +2327,17 @@ html[data-side="fun"] .ss-word[data-word="fun"] { transform: none; }
   color: var(--sketch-ink);
 }
 .card-fun .fun-shot { position: relative; display: block; flex: 1 1 auto; min-height: 0; }
-.card-fun .fun-art {
+/* A game's face is its screenshot, filling the page the doodle used to sit
+   on. It is laid out like the work side's own shot so the two faces of a
+   card keep the same shape. */
+.card-fun .fun-shot > img {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  height: 70%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  pointer-events: none;
 }
 .fun-body { display: block; padding: .75rem 1rem .875rem; }
 .fun-title { display: block; font-weight: 600; font-size: 1rem; letter-spacing: -.01em; }
@@ -2368,19 +2362,22 @@ html[data-side="fun"] .ss-word[data-word="fun"] { transform: none; }
   color: var(--ember);
 }
 
-/* On the spiral the face is one landscape page: the drawing to the right,
-   the name set the way the work side sets it, over the bottom left. */
-.spiral-track .card-fun .fun-art { left: auto; right: 6%; top: 46%; height: 72%; transform: translateY(-50%); }
+/* On the spiral the game's name sits over the foot of its screenshot the
+   way the work side sets its titles — the same scrim, in this side's hand:
+   the title in the pen face, the tag in ember. */
+.spiral-track .card-fun { color: #fff; }
 .spiral-track .card-fun .fun-body {
   position: absolute;
-  left: 0;
-  bottom: 0;
+  inset: auto 0 0 0;
   display: flex;
   flex-direction: column-reverse;
   align-items: flex-start;
   gap: .25rem;
-  max-width: 58%;
-  padding: 0 .875rem .8125rem;
+  padding: 3rem .875rem .8125rem;
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--void) 88%, transparent),
+    color-mix(in srgb, var(--void) 50%, transparent) 48%,
+    transparent);
 }
 .spiral-track .fun-title {
   font-family: var(--display);
@@ -2396,20 +2393,21 @@ html[data-side="fun"] .ss-word[data-word="fun"] { transform: none; }
 
 /* In the phone grid the card is a 4:3 tile a hundred and twenty pixels
    tall, and the work side already sets its name over the foot of it with no
-   description. The fun face does the same, or its words take the whole tile
-   and the drawing gets none of it. */
+   description. The fun face does the same, over its screenshot. */
 @media (max-width: 900px) {
-  .spiral-fallback .card-fun .fun-art { left: auto; right: 8%; top: 42%; height: 62%; transform: translateY(-50%); }
+  .spiral-fallback .card-fun { color: #fff; }
   .spiral-fallback .card-fun .fun-body {
     position: absolute;
-    left: 0;
-    bottom: 0;
+    inset: auto 0 0 0;
     display: flex;
     flex-direction: column-reverse;
     align-items: flex-start;
     gap: .1875rem;
-    max-width: 72%;
-    padding: 0 .625rem .5rem;
+    padding: 1.75rem .625rem .5rem;
+    background: linear-gradient(to top,
+      color-mix(in srgb, var(--void) 88%, transparent),
+      color-mix(in srgb, var(--void) 50%, transparent) 48%,
+      transparent);
   }
   .spiral-fallback .fun-title {
     font-family: var(--display);
@@ -2421,7 +2419,6 @@ html[data-side="fun"] .ss-word[data-word="fun"] { transform: none; }
   }
   .spiral-fallback .fun-desc { display: none; }
   .spiral-fallback .fun-tag { margin: 0; font-size: .4375rem; }
-  .spiral-fallback .fun-soon { top: .5rem; left: .625rem; font-size: .4375rem; }
 }
 
 /* ---- the fun side of the eras ------------------------------------------- */
