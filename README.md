@@ -64,7 +64,8 @@ The fun side of the spiral is the games. Every card's second face
 own titles — and the anchor carries `data-fun-href` so the card opens the
 game on that side and the project on the work side. A card whose project is
 already a game on the work side (Line Glide, SpellFall, PixelParty) is
-marked `fun-skip` there instead of shown twice. The photo slots in the
+marked `fun-skip` there instead of shown twice, as is a card with no game of
+its own to carry. The photo slots in the
 story further down are pages of sketchbook paper marked `data-photo="…"`;
 swap a drawing for an `<img>` and nothing around it has to change.
 
