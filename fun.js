@@ -334,17 +334,28 @@ function plan(j) {
   document.querySelectorAll('.fun-art[data-doodle]').forEach((el) => jobs.push(() => {
     const name = el.dataset.doodle;
     const size = Math.min(el.clientWidth, el.clientHeight) || 60;
-    const opts = { trigger: 'manual', color: inkFor(el), width: clamp(size / 34, 1.8, 3.4), seed: nextSeed() };
+    /* Drawn with a marker, not a biro. At the old weight the doodles read as
+       scratches on a dark panel — thin enough that they looked unfinished
+       rather than hand-made. */
+    const opts = { trigger: 'manual', color: inkFor(el), width: clamp(size / 16, 3.4, 7), seed: nextSeed() };
     if (BUILTIN.has(name)) keep(j.jotDoodle(el, { shape: name, solid: SOLID.has(name), fill: ACCENT, ...opts }), el);
     else if (DOODLES[name]) keep(j.jotMark(el, geometry(DOODLES[name]), opts), el);
   }));
 
   document.querySelectorAll('.fun-write').forEach((el) => jobs.push(() => {
-    keep(j.jotWrite(el, { trigger: 'manual', color: inkFor(el), seed: nextSeed() }), el);
+    /* Written with a brush pen. jot's default nib is a hairline next to a
+       40px headline, which left every title looking like a wireframe of
+       itself; the nib now grows with the type it is writing. */
+    const px = parseFloat(getComputedStyle(el).fontSize) || 32;
+    keep(j.jotWrite(el, {
+      trigger: 'manual', color: inkFor(el), width: clamp(px / 7.5, 3.4, 9), seed: nextSeed(),
+    }), el);
   }));
 
   document.querySelectorAll('.fun-mark').forEach((el) => jobs.push(() => {
-    keep(j.jotUnderline(el, { variant: 'wavy', trigger: 'manual', color: ACCENT, seed: nextSeed() }), el);
+    keep(j.jotUnderline(el, {
+      variant: 'wavy', trigger: 'manual', color: ACCENT, width: 3.4, seed: nextSeed(),
+    }), el);
   }));
 
   const spark = switcher && switcher.querySelector('.ss-spark');
