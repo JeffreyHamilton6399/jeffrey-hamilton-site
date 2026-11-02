@@ -2516,6 +2516,322 @@ html[data-side="fun"] :is(.era-now, .pn-list) strong {
   grid-template: 100% / 100%;
 }
 
+/* --------------------------------------------------------- The intro
+
+   intro.js: a loading bar, a blank canvas, and a few cursors that build the
+   first screen out of the page's own elements. html.bi-on is set before the
+   first paint (the head script) and only covers the page until intro.js has
+   put its loading screen up and taken over (bi-live). Everything the intro
+   hides stays in the flow — visibility, never display — so nothing moves
+   when it is shown. */
+
+html.bi-on:not(.bi-live) body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: var(--paper);
+}
+/* The page holds still while it is built. The gutter keeps the width the
+   page has with its scrollbar, so nothing shifts when it comes back; the
+   root takes the paper colour so the empty gutter is not a dark stripe. */
+html.bi-live { overflow: hidden; scrollbar-gutter: stable; background: var(--paper); }
+
+[data-bi="off"] { visibility: hidden !important; }
+.bi-c { visibility: hidden; }
+.bi-c.on { visibility: inherit; }
+
+/* the header's scrim is the frame being drawn; the current page's pill is
+   the style applied to it */
+html.bi-live .site-head::before { transition: opacity .5s var(--ease-out), background .45s var(--ease); }
+.site-head.bi-noscrim::before { opacity: 0; }
+.nav.bi-plain a.is-here { background: transparent; color: inherit; opacity: .6; }
+
+/* the face and its lines take over from the cursors: the sheet fades up
+   over what they built instead of being there from the first frame */
+html.bi-handoff.booting .boot { transition: opacity .55s var(--ease-out); }
+html.bi-handoff.booting .site-head { transition: opacity .45s var(--ease-out); }
+
+/* the canvas: a dot grid on the paper, under everything in the hero */
+.bi-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 17%, transparent) 1px, transparent 1.6px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 45%, transparent 100%);
+          mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 45%, transparent 100%);
+  opacity: 0;
+  transition: opacity .7s var(--ease-out);
+}
+.bi-canvas.on { opacity: 1; }
+
+/* the layer the cursors and their selections live on; it also takes every
+   click, so nothing underneath is pressed by accident mid-build */
+.bi {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: auto;
+  cursor: default;
+  transition: opacity .5s var(--ease-out);
+}
+.bi.out { opacity: 0; pointer-events: none; }
+.bi-layer, .bi-cursors { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+.bi-cur {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 24px;
+  height: 26px;
+  margin: -2px 0 0 -3px;   /* the tip of the arrow is the point */
+  will-change: transform;
+  filter: drop-shadow(0 1px 1.5px rgba(20, 18, 28, .28)) drop-shadow(0 4px 10px rgba(20, 18, 28, .12));
+  transition: opacity .55s var(--ease-out);
+}
+.bi-cur svg { display: block; transform-origin: 3px 2px; transition: transform .09s ease-out; }
+.bi-cur.down svg, .bi-cur.grab svg { transform: scale(.86); }
+.bi-cur.leaving { opacity: 0; }
+
+.bi-ring {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border: 2px solid var(--c);
+  border-radius: 50%;
+  animation: biRing .45s var(--ease-out) forwards;
+}
+@keyframes biRing {
+  from { transform: scale(.2); opacity: .9; }
+  to   { transform: scale(1);  opacity: 0; }
+}
+
+.bi-box {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: 1.5px solid var(--c);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity .2s var(--ease-out);
+}
+.bi-box.on { opacity: 1; }
+.bi-box.fill { background: color-mix(in srgb, var(--c) 6%, transparent); }
+.bi-box.on.faint { opacity: .4; border-style: dashed; border-width: 1px; }
+.bi-h {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -4px;
+  background: #fff;
+  border: 1.5px solid var(--c);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.bi-h.tl { left: 0; top: 0; }
+.bi-h.tr { left: 100%; top: 0; }
+.bi-h.bl { left: 0; top: 100%; }
+.bi-h.br { left: 100%; top: 100%; }
+.bi-box.handles .bi-h { opacity: 1; }
+
+.bi-badge, .bi-chip, .bi-measure-lab {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: .02em;
+  color: #fff;
+  background: var(--c);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.bi-badge {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 7px);
+  padding: 3px 5px;
+  transform: translateX(-50%);
+  opacity: 0;
+}
+.bi-badge.on { opacity: 1; }
+
+.bi-caret {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--c);
+  opacity: 0;
+}
+.bi-caret.on { opacity: 1; }
+.bi-caret.on.blink { animation: biBlink 1s steps(1) infinite; }
+@keyframes biBlink { 50% { opacity: 0; } }
+
+.bi-guide {
+  position: absolute;
+  background: var(--c);
+  opacity: 0;
+  transition: opacity .15s;
+}
+.bi-guide.on { opacity: .85; }
+
+.bi-measure {
+  position: absolute;
+  background: var(--c);
+  opacity: 0;
+  transition: opacity .18s;
+}
+.bi-measure.on { opacity: 1; }
+.bi-measure::before, .bi-measure::after {
+  content: "";
+  position: absolute;
+  background: var(--c);
+  width: 1px;
+  height: 7px;
+  top: -3px;
+}
+.bi-measure::before { left: 0; }
+.bi-measure::after { right: 0; }
+.bi-measure.v::before, .bi-measure.v::after { width: 7px; height: 1px; left: -3px; top: auto; right: auto; }
+.bi-measure.v::before { top: 0; }
+.bi-measure.v::after { bottom: 0; }
+.bi-measure-lab {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  padding: 2px 4px;
+  transform: translateX(-50%);
+}
+.bi-measure.v .bi-measure-lab { left: -8px; top: 50%; transform: translate(-100%, -50%); }
+
+.bi-chip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 4px 6px;
+  border-radius: 4px;
+  animation: biChip .9s var(--ease-out) forwards;
+}
+@keyframes biChip {
+  0%   { opacity: 0; margin-top: 4px; }
+  15%  { opacity: 1; margin-top: 0; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; margin-top: -4px; }
+}
+
+/* the loading screen */
+.bi-loader {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  transition: opacity .55s var(--ease-out);
+}
+.bi-loader.gone { opacity: 0; }
+.bi-load {
+  display: grid;
+  justify-items: center;
+  gap: .875rem;
+  width: min(15rem, 70vw);
+  transition: opacity .35s var(--ease-out), transform .45s var(--ease-out);
+  animation: biRise .6s var(--ease-out) both;
+}
+.bi-loader.done .bi-load { opacity: 0; transform: translateY(-10px); }
+@keyframes biRise { from { opacity: 0; transform: translateY(8px); } }
+.bi-load-label, .bi-pct {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: .625rem;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.bi-load-label { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink-soft); }
+.bi-load-dot {
+  width: .3125rem;
+  height: .3125rem;
+  border-radius: 50%;
+  background: var(--iris);
+  animation: biPulse 1.2s ease-in-out infinite;
+}
+@keyframes biPulse { 50% { opacity: .25; transform: scale(.7); } }
+.bi-bar {
+  position: relative;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--rule);
+  overflow: hidden;
+}
+.bi-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--void);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.bi-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--iris) 85%, #fff) 50%, transparent);
+  transform: translateX(-100%);
+  animation: biSheen 1.3s ease-in-out infinite;
+}
+@keyframes biSheen { to { transform: translateX(100%); } }
+.bi-pct { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+/* skip: always there while the intro is */
+.bi-skip {
+  position: fixed;
+  left: clamp(.875rem, 2.5vw, 1.5rem);
+  bottom: clamp(.875rem, 2.5vw, 1.5rem);
+  z-index: 9001;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .625rem 1rem;
+  border: 1px solid var(--frame);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: .625rem;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  animation: biRise .6s .3s var(--ease-out) both;
+  transition: background-color .25s var(--ease), border-color .25s var(--ease);
+}
+.bi-skip:hover { background: var(--shell); border-color: color-mix(in srgb, var(--ink) 30%, transparent); }
+.bi-skip:focus-visible { outline: 2px solid var(--iris); outline-offset: 3px; }
+
+/* the footer's way back in */
+.replay-intro {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-dark);
+  text-underline-offset: .2em;
+  transition: color .25s var(--ease), text-decoration-color .25s var(--ease);
+}
+.replay-intro:hover, .replay-intro:focus-visible { color: var(--on-dark); text-decoration-color: currentColor; }
+.replay-intro[hidden] { display: none; }
+
 /* --------------------------------------------------------- Reduced motion */
 
 @media (prefers-reduced-motion: reduce) {

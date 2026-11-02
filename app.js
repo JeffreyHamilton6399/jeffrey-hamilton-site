@@ -56,6 +56,15 @@
     }
   }
 
+  /* The cursor intro (intro.js) builds the page with it held still. It
+     reaches the scroll and the spiral through this, and nothing else. */
+  var JH = window.JH = window.JH || {};
+  JH.lenis = lenis;
+  if (lenis && doc.classList.contains('bi-on')) {
+    lenis.stop();
+    document.addEventListener('introdone', function () { lenis.start(); }, { once: true });
+  }
+
   /* In-page links have to go through Lenis too, otherwise the browser jumps
      the scroll position out from under it and the next wheel event snaps
      back to wherever Lenis still thinks it is. */
@@ -168,13 +177,17 @@
     var here = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
-        var id = entry.target.id;
+        var id = entry.target === hero ? 'top' : entry.target.id;
         for (var key in links) links[key].classList.toggle('is-here', key === id);
       });
     }, { rootMargin: '-40% 0px -55% 0px' });
 
+    /* #top is <main>, which holds every section and so never leaves the
+       line once it is on it: coming back up, Work never lit again. The hero
+       is what Work means, so it is the hero that is watched. */
+    var hero = document.querySelector('.hero');
     Object.keys(links).forEach(function (id) {
-      var el = document.getElementById(id);
+      var el = id === 'top' && hero ? hero : document.getElementById(id);
       if (el) here.observe(el);
     });
   })();
@@ -312,41 +325,63 @@
 
     if (reduced || !list.length || !portrait || !face || !line) return;
 
-    /* The first word stays where the markup put it — the morph swaps it out
-       later. (Clearing it here was the typewriter's job, and the typewriter
-       is gone.) */
-    line.classList.add('is-held');
-    center.classList.add('intro-armed');
-    doc.classList.add('booting');
-    doc.classList.add('head-wait');   /* outlives booting: see fly() */
-
-    /* Only now are these allowed to hide, because only now is something
-       guaranteed to come along and open them again. */
     var mark = face.closest ? face.closest('.mark') : null;
-    if (mark)   mark.classList.add('is-tucked');
-    if (nav)    nav.classList.add('is-held');
-    if (social) social.classList.add('is-held');
-
     var HOLD_FACE = 1250;    /* how long the face has the screen to itself */
     var DIP       = 420;     /* it tenses, gathering light, before it goes */
     var MORPH     = 560;     /* then spirals in on itself and becomes the dot */
     var FLIGHT    = 1450;    /* and the dots ride the lines out (about)    */
     var DOT       = 14;      /* .boot-dot's size: what the face shrinks to */
 
-    requestAnimationFrame(function () {
-      /* On a phone the hero is a plain column and the face would sit up in
-         its top quarter over an empty sheet. It is carried down to the
-         middle of the screen, where the spiral puts it on a wide one — and
-         since everything after measures where it is actually drawn, the dot
-         still pops out of the spot it vanished into. */
-      if (hasGsap) {
-        var r = portrait.getBoundingClientRect();
-        var dy = innerHeight / 2 - (r.top + r.height / 2);
-        if (r.height && dy > 24 && r.top >= 0) gsap.set(portrait, { y: dy });
-      }
-      setTimeout(function () { center.classList.add('boot-in'); }, 420);
-      setTimeout(dip, HOLD_FACE);
-    });
+    /* On a first visit the cursors (intro.js) build the page first, and the
+       boot is what they hand over to: the sheet fades up over what they made
+       rather than being there from the first frame. Skipping the build skips
+       this too — the face goes and the page is simply finished. */
+    if (doc.classList.contains('bi-on')) {
+      center.classList.add('name-gone');
+      document.addEventListener('introdone', function (e) {
+        if (e.detail && e.detail.built) {
+          center.classList.remove('name-gone');
+          arm(true);
+        } else {
+          landed = true;
+          started || cycle();
+        }
+      }, { once: true });
+    } else {
+      arm(false);
+    }
+
+    function arm(handoff) {
+      if (handoff) doc.classList.add('bi-handoff');
+
+      /* The first word stays where the markup put it — the morph swaps it
+         out later. */
+      line.classList.add('is-held');
+      center.classList.add('intro-armed');
+      doc.classList.add('booting');
+      doc.classList.add('head-wait');   /* outlives booting: see fly() */
+
+      /* Only now are these allowed to hide, because only now is something
+         guaranteed to come along and open them again. */
+      if (mark)   mark.classList.add('is-tucked');
+      if (nav)    nav.classList.add('is-held');
+      if (social) social.classList.add('is-held');
+
+      requestAnimationFrame(function () {
+        /* On a phone the hero is a plain column and the face would sit up
+           in its top quarter over an empty sheet. It is carried down to the
+           middle of the screen, where the spiral puts it on a wide one — and
+           since everything after measures where it is actually drawn, the
+           dot still pops out of the spot it vanished into. */
+        if (hasGsap) {
+          var r = portrait.getBoundingClientRect();
+          var dy = innerHeight / 2 - (r.top + r.height / 2);
+          if (r.height && dy > 24 && r.top >= 0) gsap.set(portrait, { y: dy });
+        }
+        setTimeout(function () { center.classList.add('boot-in'); }, handoff ? 520 : 420);
+        setTimeout(dip, HOLD_FACE + (handoff ? 200 : 0));
+      });
+    }
 
     /* A beat of gathering before the launch: the face draws in slightly while
        a ring of the dot's gold charges up around it, so the light it is about
@@ -626,7 +661,7 @@
       if (landed) return;
       landed = true;
       center.classList.add('name-gone');
-      doc.classList.remove('sheet-held');
+      doc.classList.remove('sheet-held', 'bi-handoff');
       doc.classList.add('booted');
       setTimeout(function () {
         line.classList.remove('is-held');
@@ -772,6 +807,10 @@
     var auto = 0, scrolled = 0, thrown = 0, vel = 0, boost = 0;
     var dragging = false, moved = 0, lastX = 0, lastT = 0;
     var ticking = false, active = false, pin = null;
+    /* Held still while the intro lays the cards in; released when it gives
+       the spiral its first turn, or when the intro ends or is skipped. */
+    var held = doc.classList.contains('bi-on');
+    document.addEventListener('introdone', function () { held = false; }, { once: true });
     var lastBase = -1, lastFocus = -1;
 
     /* The fun side (fun.js) has fewer cards than the work side. A card marked
@@ -953,7 +992,7 @@
     function tick(time, deltaMs) {
       var dt = Math.min(deltaMs, 50) / 1000;
 
-      if (!dragging) {
+      if (!dragging && !held) {
         auto += dt / TURN;
         if (Math.abs(vel) > 1e-6) {
           thrown += vel * dt;
@@ -1180,6 +1219,14 @@
     }
 
     decide();
+
+    JH.spiral = {
+      isActive: function () { return active; },
+      /* a hand on the tube: turn it by du of a revolution, as a drag would */
+      spin: function (du) { thrown += du; lastBase = -1; if (active) render(); },
+      release: function () { held = false; }
+    };
+
     return { decide: decide, refresh: function () { if (active) { lastBase = -1; render(); } } };
   })();
 

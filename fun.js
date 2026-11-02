@@ -626,7 +626,8 @@ function attach(now) {
 /* ---- inking what is in view ---------------------------------------------- */
 
 function booting() {
-  return doc.classList.contains('pre') || doc.classList.contains('booting') || doc.classList.contains('sheet-held');
+  return doc.classList.contains('pre') || doc.classList.contains('bi-on') ||
+    doc.classList.contains('booting') || doc.classList.contains('sheet-held');
 }
 
 /* Nothing is inked under the loading sheet. A look that lands while it is

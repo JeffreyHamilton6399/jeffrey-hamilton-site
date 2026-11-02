@@ -16,7 +16,7 @@
      plain files with no build step behind them, so nothing in their URLs
      ever changes when their contents do, and a browser holding an old
      copy has no way to know. Bump it whenever either one changes. -->
-<link rel="stylesheet" href="styles.css?v=20261028a">
+<link rel="stylesheet" href="styles.css?v=20261102b">
 <script>
   /* Runs before the first paint, which is the whole point of it.
 
@@ -33,6 +33,29 @@
     var d = document.documentElement;
     d.classList.add('pre');
     setTimeout(function () { d.classList.remove('pre'); }, 3000);
+
+    /* The intro (intro.js): a loading bar, then a handful of cursors that
+       build the page in front of you. It plays once per browser session,
+       never with reduced motion, and never when the visit is aimed at a
+       section further down. ?intro plays it again. bi-on goes on before the
+       first paint so the finished page is never glimpsed first; intro.js
+       covers it with the loading screen in its first task. If intro.js
+       never arrives, the timer hands the page back. */
+    var playIntro = false;
+    try {
+      var calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var asked = /[?&]intro\b/.test(location.search);
+      playIntro = !calm && !location.hash && (asked || sessionStorage.getItem('jh-intro-seen') !== '1');
+    } catch (e) {}
+    if (playIntro) {
+      d.classList.add('bi-on');
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+      setTimeout(function () {
+        if (d.classList.contains('bi-live') || !d.classList.contains('bi-on')) return;
+        d.classList.remove('bi-on');
+        document.dispatchEvent(new Event('introdone'));
+      }, 8000);
+    }
 
     /* Which side of the page to open on — the work or the fun one — set
        before the first paint too, so a visit that left on the fun side does
@@ -1257,16 +1280,18 @@
 <footer class="site-foot">
   <div class="wrap foot-inner">
     <p>&copy; 2026 Jeffrey Hamilton</p>
+    <button type="button" class="replay-intro" hidden>Replay the intro</button>
   </div>
 </footer>
 
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <script src="assets/vendor/lenis.min.js" defer></script>
-<script src="app.js?v=20260922a" defer></script>
+<script src="app.js?v=20261102b" defer></script>
+<script src="intro.js?v=20261102b" defer></script>
 <!-- A module, so it runs after app.js, once the watch has lifted the eras
      onto the dial. -->
-<script type="module" src="fun.js?v=20261028a"></script>
+<script type="module" src="fun.js?v=20261102b"></script>
 
 </body>
 </html>
