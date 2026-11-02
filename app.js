@@ -14,8 +14,8 @@
 (function () {
   /* First, before anything is measured or decided: the head marked the
      document while the opening was still unarranged. Everything below runs
-     in this one task, so nothing is painted between here and the word
-     being set up for its cycle. */
+     in this one task, so nothing is painted between here and the boot
+     putting the line back where it belongs. */
   document.documentElement.classList.remove('pre');
 
   'use strict';
@@ -56,8 +56,8 @@
     }
   }
 
-  /* The intro (intro.js) builds the first screen with the page held still.
-     It reaches the scroll and the spiral through this, and nothing else. */
+  /* The cursor intro (intro.js) builds the page with it held still. It
+     reaches the scroll and the spiral through this, and nothing else. */
   var JH = window.JH = window.JH || {};
   JH.lenis = lenis;
   if (lenis && doc.classList.contains('bi-on')) {
@@ -177,13 +177,17 @@
     var here = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
-        var id = entry.target.id;
+        var id = entry.target === hero ? 'top' : entry.target.id;
         for (var key in links) links[key].classList.toggle('is-here', key === id);
       });
     }, { rootMargin: '-40% 0px -55% 0px' });
 
+    /* #top is <main>, which holds every section and so never leaves the
+       line once it is on it: coming back up, Work never lit again. The hero
+       is what Work means, so it is the hero that is watched. */
+    var hero = document.querySelector('.hero');
     Object.keys(links).forEach(function (id) {
-      var el = document.getElementById(id);
+      var el = id === 'top' && hero ? hero : document.getElementById(id);
       if (el) here.observe(el);
     });
   })();
@@ -253,35 +257,57 @@
        drag    the pointer, with a fling that decays after release
      ========================================================================== */
 
-  /* ---------------------------------------------------------- The word
+  /* ---------------------------------------------------------- The boot
 
-     The line under the spiral cycles through what I build. On a first visit
-     intro.js types the first word out by hand and announces `introdone`
-     when the page is finished; the cycle starts from there. Otherwise it
-     starts straight away. With the script off or reduced motion on, the
-     first word simply sits where the markup put it. */
+     The open, in four beats:
+
+       1. a loading screen — a sheet of page colour over the spiral, with
+          nothing on it but the name, which resolves out of a blur
+       2. the name dips, then breaks into three glowing points, each of which
+          rides its own hand-drawn line to one of the three things in the
+          header: the face on the left, the nav in the middle, the icons on
+          the right
+       3. each landing has its own follow-through — the face catches its
+          point and the lockup slides out from behind it; the middle nav
+          button lights and the other two open out of it left and right; the
+          middle icon shimmers and the other two run in from the right
+       4. the word below the spiral fades up and starts its
+          cycle
+
+     Every target is measured at flight time, so nothing is hard-coded and it
+     lands correctly at any size.
+
+     With the script off or reduced motion on, none of this runs — the name
+     and the first word are in the markup, already in their resting place. */
 
   (function () {
+    var center = document.querySelector('[data-intro]');
+    if (!center) return;
+
+    var title  = center.querySelector('.hero-title');
+    var portrait = center.querySelector('.boot-face');
     var line   = document.querySelector('.hero-skills');
     var skills = document.querySelector('.skills-type');
     var out    = document.querySelector('.type-out');
-    if (!line || !skills || !out) return;
-
+    var face   = document.querySelector('.mark-face');
+    var dot    = document.querySelector('.boot-dot');
+    var nav    = document.querySelector('.nav');
+    var social = document.querySelector('.head-social');
     /* One list per side of the page. The markup carries the work side's
        first word; a visit that opens on the fun side starts on its own. */
     var lists = { pro: [], fun: [] };
     try {
-      lists.pro = JSON.parse(skills.getAttribute('data-skills') || '[]');
-      lists.fun = JSON.parse(skills.getAttribute('data-skills-fun') || '[]');
+      lists.pro = JSON.parse(skills && skills.getAttribute('data-skills') || '[]');
+      lists.fun = JSON.parse(skills && skills.getAttribute('data-skills-fun') || '[]');
     } catch (e) {}
     function sideList() {
       return doc.getAttribute('data-side') === 'fun' && lists.fun.length ? lists.fun : lists.pro;
     }
     var list = sideList();
-    if (list.length) out.textContent = list[0];
+    if (out && list.length) out.textContent = list[0];
 
     /* The toggle (fun.js) announces a switch. Before the cycle has started —
-       during the intro, or for good with reduced motion — the word is simply
+       during the boot, or for good with reduced motion — the word is simply
        swapped. Once it is running, whatever is coming in or being held is
        cut short: the word is taken down straight away and the new list's
        first word built in its place. gen retires the old chain so it does
@@ -289,7 +315,7 @@
     var started = false, gen = 0, timer = 0;
     document.addEventListener('sidechange', function () {
       list = sideList();
-      if (!list.length) return;
+      if (!list.length || !out) return;
       if (!started) { out.textContent = list[0]; wi = 0; return; }
       gen++;
       clearTimeout(timer);
@@ -297,12 +323,351 @@
       leave(gen);
     });
 
-    if (reduced || !list.length) return;
+    if (reduced || !list.length || !portrait || !face || !line) return;
 
+    var mark = face.closest ? face.closest('.mark') : null;
+    var HOLD_FACE = 1250;    /* how long the face has the screen to itself */
+    var DIP       = 420;     /* it tenses, gathering light, before it goes */
+    var MORPH     = 560;     /* then spirals in on itself and becomes the dot */
+    var FLIGHT    = 1450;    /* and the dots ride the lines out (about)    */
+    var DOT       = 14;      /* .boot-dot's size: what the face shrinks to */
+
+    /* On a first visit the cursors (intro.js) build the page first, and the
+       boot is what they hand over to: the sheet fades up over what they made
+       rather than being there from the first frame. Skipping the build skips
+       this too — the face goes and the page is simply finished. */
     if (doc.classList.contains('bi-on')) {
-      document.addEventListener('introdone', function () { if (!started) cycle(); }, { once: true });
+      center.classList.add('name-gone');
+      document.addEventListener('introdone', function (e) {
+        if (e.detail && e.detail.built) {
+          center.classList.remove('name-gone');
+          arm(true);
+        } else {
+          landed = true;
+          started || cycle();
+        }
+      }, { once: true });
     } else {
-      cycle();
+      arm(false);
+    }
+
+    function arm(handoff) {
+      if (handoff) doc.classList.add('bi-handoff');
+
+      /* The first word stays where the markup put it — the morph swaps it
+         out later. */
+      line.classList.add('is-held');
+      center.classList.add('intro-armed');
+      doc.classList.add('booting');
+      doc.classList.add('head-wait');   /* outlives booting: see fly() */
+
+      /* Only now are these allowed to hide, because only now is something
+         guaranteed to come along and open them again. */
+      if (mark)   mark.classList.add('is-tucked');
+      if (nav)    nav.classList.add('is-held');
+      if (social) social.classList.add('is-held');
+
+      requestAnimationFrame(function () {
+        /* On a phone the hero is a plain column and the face would sit up
+           in its top quarter over an empty sheet. It is carried down to the
+           middle of the screen, where the spiral puts it on a wide one — and
+           since everything after measures where it is actually drawn, the
+           dot still pops out of the spot it vanished into. */
+        if (hasGsap) {
+          var r = portrait.getBoundingClientRect();
+          var dy = innerHeight / 2 - (r.top + r.height / 2);
+          if (r.height && dy > 24 && r.top >= 0) gsap.set(portrait, { y: dy });
+        }
+        setTimeout(function () { center.classList.add('boot-in'); }, handoff ? 520 : 420);
+        setTimeout(dip, HOLD_FACE + (handoff ? 200 : 0));
+      });
+    }
+
+    /* A beat of gathering before the launch: the face draws in slightly while
+       a ring of the dot's gold charges up around it, so the light it is about
+       to become is already there. */
+    function dip() {
+      if (!hasGsap) { fly(); return; }
+      gsap.to(portrait, {
+        scale: 0.93,
+        '--charge': 1,
+        duration: DIP / 1000,
+        ease: 'power2.inOut',
+        onComplete: morph
+      });
+    }
+
+    /* The face becomes the dot. It spirals in on its own centre, speeding up
+       as it goes, shrinking to exactly the dot's size and turning to the
+       dot's gold on the way — so at the last frame it already is the dot, and
+       the dot that takes its place pops out of the very spot it vanished
+       into. That one point holds for a beat before the other two split out
+       of it and all three leave; without the beat there is nothing to split
+       from, and it reads as three separate things that happened to start
+       together. */
+    var SPLIT = 300;
+
+    function morph() {
+      if (!hasGsap) { fly(); return; }
+
+      var stage = document.querySelector('.hero-stage');
+      var t = portrait.getBoundingClientRect();
+      var box = stage && stage.getBoundingClientRect();
+      /* the unscaled width: the dip has already drawn it in */
+      var full = portrait.offsetWidth || t.width || 1;
+
+      gsap.to(portrait, {
+        scale: DOT / full,
+        rotation: 200,
+        '--gold': 1,
+        duration: MORPH / 1000,
+        ease: 'power3.in',
+        onComplete: function () {
+          portrait.style.opacity = '0';
+          if (dot && box) {
+            var at = 'translate(' + (t.left + t.width / 2 - box.left) + 'px,' +
+                                    (t.top + t.height / 2 - box.top) + 'px)';
+            dot.style.transform = at;
+            dot.style.opacity = '1';
+            /* the pop, scaled after the move so it swells in place. (The
+               separate scale property is applied outside transform, so it
+               scaled the move too and threw the dot out to the corner.) It
+               is over before the flight starts writing transform. */
+            if (typeof dot.animate === 'function') {
+              dot.animate([{ transform: at + ' scale(2.4)' }, { transform: at }],
+                { duration: 280, easing: 'cubic-bezier(.34, 1.8, .6, 1)' });
+            }
+          }
+          setTimeout(fly, SPLIT);
+        }
+      });
+    }
+
+    var flown = false;
+
+    /* Each line: an ideal shape with a loop in it, resampled into a wobbling
+       polyline so it reads as drawn rather than plotted, and a glowing point
+       placed on it with getPointAtLength. The loop makes the path
+       self-crossing, so there is no closed form left to evaluate — asking
+       the path itself where it is at a given length works for any shape and
+       keeps the point exactly on the ink. */
+    function fly() {
+      if (flown) return;
+      flown = true;
+
+      var stage = document.querySelector('.hero-stage');
+      var t = portrait.getBoundingClientRect();
+      var box = stage && stage.getBoundingClientRect();
+      if (!t.width || !box) { arrive(); openNav(); openSocial(); land(); return; }
+
+      portrait.style.transition = 'none';
+      portrait.style.opacity = '0';
+
+      var x0 = t.left + t.width / 2 - box.left;
+      var y0 = t.top + t.height / 2 - box.top;
+
+      /* Where the three points are headed and what each one sets off. Which
+         of them leaves first is shuffled every visit, like the routes. */
+      var holds = [0, 150, 300].sort(function () { return Math.random() - 0.5; });
+      var legs = [
+        { el: face,           after: arrive,     hold: holds[0] },
+        { el: navTarget(),    after: openNav,    hold: holds[1] },
+        { el: socialTarget(), after: openSocial, hold: holds[2] }
+      ].filter(function (leg) { return leg.el; });
+
+      if (!legs.length) { arrive(); openNav(); openSocial(); land(); return; }
+
+      var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'boot-trail');
+      svg.setAttribute('viewBox', '0 0 ' + box.width + ' ' + box.height);
+      svg.setAttribute('aria-hidden', 'true');
+      stage.insertBefore(svg, center);
+
+      /* booting comes off so the header can be there to be arrived at — the
+         legs land on it, and the class was holding it at zero. The sheet is
+         held separately and stays until they have all landed: the spiral and
+         the line underneath are the reward for the trip, and showing them
+         while it is still happening gives the ending away. */
+      doc.classList.remove('booting');
+      doc.classList.add('sheet-held');
+
+      /* Every point is made and lit at the centre first, so they are visibly
+         one thing coming apart rather than three that were always separate. */
+      var pips = legs.map(function (leg, i) {
+        var pip = i === 0 ? dot : (dot ? dot.cloneNode(true) : null);
+        if (pip && i > 0) stage.insertBefore(pip, center);
+        if (pip) {
+          pip.style.transform = 'translate(' + x0 + 'px,' + y0 + 'px)';
+          pip.style.opacity = '1';
+        }
+        return pip;
+      });
+
+      var done = 0;
+      legs.forEach(function (leg, i) { run(leg, i, pips[i]); });
+
+      function run(leg, i, pip) {
+        var m = leg.el.getBoundingClientRect();
+        var x1 = m.left + m.width / 2 - box.left;
+        var y1 = m.top + m.height / 2 - box.top;
+
+        var len = Math.hypot(x1 - x0, y1 - y0) || 1;
+
+        /* The route is drawn fresh every visit. It is a cubic from the dot to
+           the target whose two handles are thrown out to either side of the
+           straight line by a random amount (and kept on the screen), with a
+           spiral wound onto it whose direction, turns, size and squash are
+           all drawn fresh too, and a hand's wobble on top — so no two openings
+           take the same lines. The spiral opens from nothing at the dot and
+           closes back to nothing at the target, so however the line wanders,
+           every leg still comes out of the one dot and lands on its mark. */
+        var rnd = function (lo, hi) { return lo + Math.random() * (hi - lo); };
+        var EDGE = 24;
+        var clampX = function (v) { return Math.max(EDGE, Math.min(box.width - EDGE, v)); };
+        var clampY = function (v) { return Math.max(EDGE, Math.min(box.height - EDGE, v)); };
+
+        var nx = -(y1 - y0) / len, ny = (x1 - x0) / len;   /* across the line */
+        var s1 = rnd(-0.7, 0.7), s2 = rnd(-0.7, 0.7);
+        var u1 = rnd(0.15, 0.45), u2 = rnd(0.55, 0.85);
+        var c1x = clampX(x0 + (x1 - x0) * u1 + nx * len * s1);
+        var c1y = clampY(y0 + (y1 - y0) * u1 + ny * len * s1);
+        var c2x = clampX(x0 + (x1 - x0) * u2 + nx * len * s2);
+        var c2y = clampY(y0 + (y1 - y0) * u2 + ny * len * s2);
+
+        var spin = Math.random() < 0.5 ? -1 : 1;
+        var TURNSP = rnd(1.1, 3.4);
+        var R0 = Math.max(18, Math.min(len * rnd(0.08, 0.24), 110));
+        var squash = rnd(0.55, 0.95);
+        var ph0 = Math.random() * 6.28;
+        var ph1 = Math.random() * 6.28, ph2 = Math.random() * 6.28;
+        var amp = Math.min(len * rnd(0.006, 0.02), 10);
+        var flight = FLIGHT * rnd(0.9, 1.12);
+
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        svg.appendChild(path);
+
+        var d = '', STEPS = 220;
+        for (var k = 0; k <= STEPS; k++) {
+          var tt = k / STEPS, qq = 1 - tt;
+
+          /* the carrying curve */
+          var bx = qq * qq * qq * x0 + 3 * qq * qq * tt * c1x + 3 * qq * tt * tt * c2x + tt * tt * tt * x1;
+          var by = qq * qq * qq * y0 + 3 * qq * qq * tt * c1y + 3 * qq * tt * tt * c2y + tt * tt * tt * y1;
+
+          /* the spiral wound onto it, pinned to nothing at both ends */
+          var a = ph0 + tt * TURNSP * Math.PI * 2 * spin;
+          var open = Math.min(tt / 0.14, 1);
+          var rad = R0 * Math.pow(1 - tt, 1.5) * (open * open * (3 - 2 * open));
+          bx += Math.cos(a) * rad;
+          by += Math.sin(a) * rad * squash;
+
+          /* and the hand on top of that */
+          var env = Math.sin(Math.PI * tt);
+          var off = (Math.sin(tt * 11.3 + ph1) * 0.6 + Math.sin(tt * 5.1 + ph2) * 0.4) * amp * env;
+          bx += off; by += off * 0.4;
+
+          d += (k ? ' L ' : 'M ') + bx.toFixed(2) + ' ' + by.toFixed(2);
+        }
+        path.setAttribute('d', d);
+
+        var L = path.getTotalLength();
+        path.style.strokeDasharray  = L;
+        path.style.strokeDashoffset = L;
+
+        if (!hasGsap) { finish(); return; }
+
+        var at = { p: 0 };
+        gsap.to(at, {
+          p: 1,
+          duration: flight / 1000,
+          delay: leg.hold / 1000,
+          ease: 'power2.inOut',
+          onUpdate: function () {
+            var p = at.p;
+            var q = path.getPointAtLength(L * p);
+            if (pip) {
+              pip.style.transform = 'translate(' + q.x + 'px,' + q.y + 'px)';
+              if (p > 0.86) pip.style.opacity = String(1 - (p - 0.86) / 0.14);
+            }
+            path.style.strokeDashoffset = L * (1 - p);
+          },
+          onComplete: function () {
+            if (pip) pip.style.opacity = '0';
+            gsap.to(path, {
+              strokeDashoffset: -L,
+              duration: 0.5,
+              ease: 'power2.in',
+              onComplete: function () { if (pip && i > 0) pip.remove(); }
+            });
+            finish();
+          }
+        });
+
+        function finish() {
+          leg.after();
+          if (++done === legs.length) {
+            setTimeout(function () { if (svg.parentNode) svg.remove(); }, 620);
+            land();
+          }
+        }
+      }
+    }
+
+    function navTarget() {
+      if (!nav) return null;
+      var kids = nav.children;
+      return kids[Math.floor(kids.length / 2)] || kids[0] || null;
+    }
+
+    /* The furthest one. The other two come out from behind it and travel
+       left, so the row builds inward from the edge. */
+    function socialTarget() {
+      if (!social) return null;
+      var kids = social.children;
+      return kids[kids.length - 1] || null;
+    }
+
+    /* The handover on the left: the header appears only now, so the face
+       springing up reads as the name turning into it rather than as a second
+       thing that was already there. */
+    function arrive() {
+      doc.classList.remove('head-wait');
+      if (!mark) return;
+      mark.classList.add('is-arriving');
+      setTimeout(function () { mark.classList.add('is-open'); }, 420);
+    }
+
+    /* The middle: the button the line hit lights first, then the other two
+       open out of it, left and right. */
+    function openNav() {
+      if (!nav) return;
+      nav.classList.add('is-lit');
+      setTimeout(function () { nav.classList.add('is-open'); }, 260);
+    }
+
+    /* The right: the icon it hit shimmers, then the other two run in. */
+    function openSocial() {
+      if (!social) return;
+      social.classList.add('is-lit');
+      setTimeout(function () { social.classList.add('is-open'); }, 300);
+    }
+
+    var landed = false;
+    /* Everything has arrived. The sheet goes, and the line comes up out of
+       the spiral it uncovers rather than over the top of it. */
+    var SHEET = 380;
+
+    function land() {
+      if (landed) return;
+      landed = true;
+      center.classList.add('name-gone');
+      doc.classList.remove('sheet-held', 'bi-handoff');
+      doc.classList.add('booted');
+      setTimeout(function () {
+        line.classList.remove('is-held');
+        line.classList.add('is-lit');
+        setTimeout(cycle, 420);
+      }, SHEET);
     }
 
     /* ---- the word -------------------------------------------------------
@@ -443,7 +808,7 @@
     var dragging = false, moved = 0, lastX = 0, lastT = 0;
     var ticking = false, active = false, pin = null;
     /* Held still while the intro lays the cards in; released when it gives
-       the spiral its first turn, or when the intro is skipped. */
+       the spiral its first turn, or when the intro ends or is skipped. */
     var held = doc.classList.contains('bi-on');
     document.addEventListener('introdone', function () { held = false; }, { once: true });
     var lastBase = -1, lastFocus = -1;

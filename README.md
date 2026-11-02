@@ -13,7 +13,7 @@ browser and that is the site.
 | `index.html` | The whole page |
 | `styles.css` | All of the styling |
 | `app.js` | Scroll motion, the panel handoff, and the loop |
-| `intro.js` | The first-visit intro: a loading bar, then cursors that build the page |
+| `intro.js` | The first-visit build: a loading bar, then cursors that build the page |
 | `assets/vendor/` | GSAP, ScrollTrigger and Lenis, vendored |
 | `assets/portrait.jpg` | Headshot |
 | `assets/shots/` | A screenshot of each project, and of each game |
@@ -46,30 +46,40 @@ measured a screen wide enough to hold it.
 
 ## The intro
 
-A first visit opens on a loading bar, then a blank canvas, and then a few
-coloured cursors build the first screen in front of you, at the same time:
-one draws the header's frame and drops the face into it and types the name,
-one types the nav labels and drags the group onto the centre line, one types
-the word under the spiral (with a typo it takes back) and pulls it out to
-size, one drags the cards in and pastes the rest, and one clicks the icons
-in, brings up the switch and tightens the spacing. Phones get three cursors
-sharing the same jobs.
+A first visit runs in three parts.
 
-None of it is a copy. The cursors work on the page's own elements: text is
-typed by uncovering the real characters one at a time, and anything dragged
-or resized moves through the CSS `translate` and `scale` properties, which
-never touch layout. The ending takes those off, so the finished page is the
-page — and **Skip intro** (or Esc) runs the same clean-up at any moment.
+1. **Loading.** A bar that measures real work: the three faces of type, the
+   portrait and the first screen's screenshots. Never faster than about two
+   seconds, never more than a few seconds' wait on a slow line.
+2. **The build** (`intro.js`). On a blank canvas a few coloured cursors build
+   the first screen at the same time: one draws the header's frame, drops
+   the face in and types the name; one types the nav and drags it onto the
+   centre line; one types the word under the spiral (with a typo it takes
+   back) and pulls it out to size; one drags the cards in and pastes the
+   rest; one clicks the icons in, brings up the switch and tightens the
+   spacing. The page then rises in below, the view glides down to the
+   contact panel while two of them build it, and glides back up. Phones get
+   three cursors sharing the same jobs. While all this runs, the images
+   further down the page are fetched a few at a time, so the build is the
+   loading.
+3. **The boot** (`app.js`). The cursors hand over to the original opening:
+   the face rises over the page, spins into a gold dot, and three lines carry
+   it to the face, the nav and the icons, which open as they land.
 
-* The bar measures real work: the three faces of type, the portrait and the
-  first screen's screenshots. It never runs faster than about two seconds
-  and never waits on a slow line for more than a few.
-* It plays once per browser session (`sessionStorage`), never with reduced
+The cursors work on the page's own elements: text is typed by uncovering the
+real characters, and anything dragged or resized moves through the CSS
+`translate` and `scale` properties, which never touch layout. The build's
+clean-up takes those off, so the page it leaves is the page.
+
+* **Skip intro** (or Esc) skips the build and the boot and leaves the
+  finished page.
+* The build plays once per browser session (`sessionStorage`); later visits
+  in the same session get the boot alone, as before. Never with reduced
   motion, and never when the visit is aimed at a section further down.
 * **Replay the intro** in the footer, or `?intro` on the URL, plays it again.
 * The head script decides before the first paint, so the finished page is
-  never glimpsed first. If `intro.js` never arrives, the page is handed
-  back after a few seconds.
+  never glimpsed first. If `intro.js` never arrives, the page is handed back
+  after a few seconds.
 
 ## Two sides
 

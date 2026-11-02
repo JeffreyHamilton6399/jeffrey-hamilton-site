@@ -130,7 +130,7 @@
 
   /* The whole session runs a little faster than life, the way a screen
      recording of one is played back. */
-  var TIME = 0.7;
+  var TIME = 0.66;
 
   function tween(dur, fn, e) {
     return new Promise(function (res, rej) {
@@ -968,9 +968,145 @@
     });
   }
 
+  /* The contact panel, once the page has scrolled down to it: the heading
+     typed a line at a time, the note pasted in, the address typed. */
+  function jobContactHead(c) {
+    var lines = text.head.filter(function (l) { return l.length; });
+    var i = 0;
+    function next() {
+      if (i >= lines.length) return Promise.resolve();
+      var cs = lines[i++];
+      var r = rect(cs[0]);
+      return c.move(r.left + 2, r.top + r.height * 0.5).then(c.click).then(function () {
+        var tb = TextBox(c.color, [cs]);
+        tb.show();
+        c.move(c.x + rnd(30, 50), c.y + rnd(40, 60), { overshoot: false }).catch(function () {});
+        return type(cs, tb, { base: 46 }).then(function () {
+          return wait(rnd(90, 150));
+        }).then(function () { tb.done(); return next(); });
+      });
+    }
+    return next();
+  }
+
+  function jobContactBody(c) {
+    return Promise.resolve().then(function () {
+      if (!note) return;
+      var r = rect(note);
+      return c.move(r.left + rnd(10, 30), r.top + rnd(6, 14)).then(c.click).then(function () {
+        c.chip('⌘V');
+        show(note);
+        var sel = Box(c.color);
+        sel.track(function () { return rect(note); }, 4);
+        sel.on();
+        return c.idle(rnd(300, 360)).then(function () { sel.remove(); });
+      });
+    }).then(function () {
+      var cs = text.mail;
+      if (!cs.length) return;
+      var r = rect(cs[0]);
+      return c.move(r.left + 2, r.top + r.height * 0.5).then(c.click).then(function () {
+        var tb = TextBox(c.color, [cs]);
+        tb.show();
+        c.move(c.x + rnd(40, 70), c.y + rnd(30, 44), { overshoot: false }).catch(function () {});
+        return type(cs, tb, { base: 24 }).then(function () {
+          return wait(rnd(160, 220));
+        }).then(function () { tb.done(); });
+      });
+    });
+  }
+
+  /* Glide the page to a place, the way a hand on a trackpad would, while
+     input stays locked. Resolves once it has arrived. */
+  function glide(target, ms) {
+    var L = JH.lenis;
+    if (L) L.scrollTo(target, { force: true, duration: ms / 1000, easing: ease.inOut });
+    else {
+      var y = typeof target === 'number' ? target : rect(target).top + window.scrollY;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+    return wait(ms / TIME + 80).then(function () {
+      /* a forced scroll leaves Lenis running; the page stays held */
+      if (L) L.stop();
+    });
+  }
+
+  /* Where to stop so the contact copy sits in the middle of the screen. */
+  function contactY() {
+    var wrap = contact.querySelector('.wrap') || contact;
+    var r = rect(wrap);
+    return Math.max(0, Math.round(r.top + window.scrollY - Math.max(70, (H() - r.height) / 2)));
+  }
+
+  /* The rest of the page: it rises in under the hero, the view goes down
+     to the contact panel to build it, and comes back up to the top. */
+  function tour(cs) {
+    var path = below[0];
+    below.forEach(show);
+    if (path && rect(path).top < H()) {
+      setS(path, 'translate', '0px 120px');
+      if (strap) setS(strap, 'translate', '0px 120px');
+      tween(700, function (e) {
+        setS(path, 'translate', '0px ' + (120 * (1 - e)).toFixed(2) + 'px');
+        if (strap) setS(strap, 'translate', '0px ' + (120 * (1 - e)).toFixed(2) + 'px');
+      }, ease.out).catch(function () {});
+    }
+    show(strap);
+    if (!contact) return wait(600);
+
+    var a = cs[1] || cs[0], b = cs[2] || cs[0];
+    return wait(620).then(function () {
+      /* hands drift down the page with the view */
+      cs.forEach(function (c, i) {
+        var tx = clamp(c.x + rnd(-80, 80), 30, W() - 30);
+        var ty = H() * (0.45 + 0.1 * (i % 3)) + rnd(-30, 30);
+        c.move(tx, ty, { dur: 1400, overshoot: false }).catch(function () {});
+      });
+      return glide(contactY(), 2000);
+    }).then(function () {
+      /* the panels below move as they arrive; settle on the copy */
+      var wrap = contact.querySelector('.wrap') || contact;
+      var r = rect(wrap);
+      var want = Math.max(70, (H() - r.height) / 2);
+      if (Math.abs(r.top - want) > 30) return glide(window.scrollY + (r.top - want), 450);
+    }).then(function () {
+      return Promise.all([jobContactHead(a), jobContactBody(b)]);
+    }).then(function () {
+      return wait(320);
+    }).then(function () {
+      cs.forEach(function (c, i) {
+        c.move(clamp(c.x + rnd(-60, 60), 30, W() - 30), H() * (0.2 + 0.12 * i), { dur: 1300, overshoot: false }).catch(function () {});
+      });
+      return glide(0, 1700);
+    }).then(function () { return wait(200); });
+  }
+
+  /* The build is the loading. While the cursors work, everything further
+     down the page that waits to be scrolled to (screenshots, photos, video
+     posters) is fetched a few at a time, so by the time the view travels
+     down — and when anyone scrolls for themselves — it is already there. */
+  function warm() {
+    var imgs = [];
+    below.forEach(function (sec) {
+      [].slice.call(sec.querySelectorAll('img[loading="lazy"]')).forEach(function (im) { imgs.push(im); });
+    });
+    cards.forEach(function (cd) {
+      [].slice.call(cd.querySelectorAll('img[loading="lazy"]')).forEach(function (im) { imgs.push(im); });
+    });
+    var i = 0;
+    (function batch() {
+      if (dead || i >= imgs.length) return;
+      imgs.slice(i, i + 4).forEach(function (im) { im.loading = 'eager'; });
+      i += 4;
+      setTimeout(batch, 260);
+    })();
+  }
+
   /* ------------------------------------------------------------ set up */
 
-  var text = { name: [], where: [], word: [], nav: [] };
+  var text = { name: [], where: [], word: [], nav: [], head: [], mail: [] };
+  var contact = document.getElementById('contact');
+  var note = null;
   var NAV_DX = W() > 680 ? 26 : 0, NAV_DY = W() > 680 ? 3 : 0;
   var WORD_S0 = 0.44, WORD_DY = 18;
 
@@ -999,6 +1135,15 @@
       return charify(a.querySelector('.side-' + side()) || a);
     }) : [];
     hide(markWhere && markWhere.querySelector('.dot'));
+    if (contact) {
+      text.head = [].slice.call(contact.querySelectorAll('h2 .line')).map(function (l) {
+        return charify(l.querySelector('.side-' + side()) || l);
+      });
+      text.mail = charify(contact.querySelector('.contact-mail'));
+      var n = contact.querySelector('.contact-note');
+      note = n && (n.querySelector('.side-' + side()) || n);
+      hide(note);
+    }
 
     /* and the things that start out of place, for the cursors to fix */
     if (nav && (NAV_DX || NAV_DY)) setS(nav, 'translate', (-NAV_DX) + 'px ' + NAV_DY + 'px');
@@ -1127,7 +1272,8 @@
         else return cs[i].idleUntil(allDone);
       }).catch(fail);
     });
-    return allDone.then(function () { return reveal(cs); });
+    warm();
+    return allDone.then(function () { return tour(cs); }).then(function () { return reveal(cs); });
   }
 
   function fail(e) {
@@ -1150,20 +1296,6 @@
         c.el.classList.add('leaving');
         c.move(tx, ty, { dur: rnd(520, 700), overshoot: false, exit: true }).catch(function () {});
       });
-      /* the panel below comes up over the bottom of the hero */
-      var path = below[0];
-      if (path) {
-        var pr = rect(path);
-        if (pr.top < H()) {
-          setS(path, 'translate', '0px 120px');
-          show(path);
-          if (strap) { setS(strap, 'translate', '0px 120px'); show(strap); }
-          tween(700, function (e) {
-            setS(path, 'translate', '0px ' + (120 * (1 - e)).toFixed(2) + 'px');
-            if (strap) setS(strap, 'translate', '0px ' + (120 * (1 - e)).toFixed(2) + 'px');
-          }, ease.out).catch(function () {});
-        }
-      }
       return wait(720);
     }).then(function () { finish(false); });
   }
@@ -1208,6 +1340,10 @@
     }
 
     if (instant) {
+      if (window.scrollY > 0) {
+        if (JH.lenis) JH.lenis.scrollTo(0, { immediate: true, force: true });
+        window.scrollTo(0, 0);
+      }
       cancelAnimationFrame(raf);
       root.remove();
       canvas.remove();
@@ -1216,7 +1352,9 @@
       canvas.classList.remove('on');
       setTimeout(function () { cancelAnimationFrame(raf); root.remove(); canvas.remove(); }, 520);
     }
-    document.dispatchEvent(new Event('introdone'));
+    /* built: the cursors finished, so the face and its lines (app.js) take
+       over from here. A skip goes straight to the finished page. */
+    document.dispatchEvent(new CustomEvent('introdone', { detail: { built: !instant } }));
   }
 
   function bail() {

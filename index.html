@@ -16,15 +16,19 @@
      plain files with no build step behind them, so nothing in their URLs
      ever changes when their contents do, and a browser holding an old
      copy has no way to know. Bump it whenever either one changes. -->
-<link rel="stylesheet" href="styles.css?v=20261102a">
+<link rel="stylesheet" href="styles.css?v=20261102b">
 <script>
   /* Runs before the first paint, which is the whole point of it.
 
      app.js is deferred, so between the body painting and that script running
-     there is a frame or two where the changing line under the spiral has not
-     been told what it is doing yet. `pre` holds it (and the switch) back
-     until app.js takes it off in its first statement. The timer is only for
-     the case where app.js never arrives at all. */
+     there is a frame or two where the name and the changing line are both up:
+     the loading screen has not been raised yet and the line has not been told
+     to wait its turn. On a warm cache that gap is invisible; on a cold one it
+     showed as WEB APPLICATIONS sitting under the name.
+
+     app.js takes this off in its first statement, before it does anything
+     else, so nothing is ever painted with it half handled. The timer is only
+     for the case where app.js never arrives at all. */
   (function () {
     var d = document.documentElement;
     d.classList.add('pre');
@@ -84,8 +88,8 @@
 <header class="site-head">
   <div class="head-inner">
 
-    <!-- The first thing the intro builds (intro.js): the face is dropped in
-         and the name typed out beside it. -->
+    <!-- Where the boot name lands. app.js flies the title into the face,
+         then this whole lockup fades up. -->
     <a class="mark" href="#top">
       <span class="mark-face">
         <img src="assets/portrait.jpg?v=3" width="1100" height="1489" fetchpriority="high" decoding="async"
@@ -103,6 +107,9 @@
       <a href="#contact"><span class="duo duo-mono"><span class="side side-pro">Contact</span><span class="side side-fun">Say hi</span></span></a>
     </nav>
 
+    <!-- The third thing the name splits into. app.js lands a line on the
+         middle icon, shimmers it, then runs the other two in from the
+         right. -->
     <div class="head-social">
       <a class="soc" href="https://github.com/JeffreyHamilton6399" target="_blank" rel="noopener" aria-label="GitHub">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 .5C5.73.5.9 5.33.9 11.6c0 4.9 3.18 9.06 7.59 10.53.56.1.76-.24.76-.53v-2.06c-3.09.67-3.74-1.3-3.74-1.3-.51-1.29-1.24-1.63-1.24-1.63-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15.99 1.7 2.6 1.21 3.24.93.1-.72.39-1.21.71-1.49-2.47-.28-5.06-1.24-5.06-5.5 0-1.22.43-2.21 1.14-2.99-.11-.28-.5-1.42.11-2.95 0 0 .93-.3 3.05 1.14a10.5 10.5 0 0 1 5.56 0c2.12-1.44 3.05-1.14 3.05-1.14.61 1.53.22 2.67.11 2.95.71.78 1.14 1.77 1.14 2.99 0 4.27-2.6 5.21-5.08 5.49.4.35.76 1.03.76 2.08v3.08c0 .29.2.64.77.53 4.4-1.47 7.58-5.63 7.58-10.53C23.1 5.33 18.27.5 12 .5z"/></svg>
@@ -151,11 +158,24 @@
               data-skills-fun='["SOCCER","SWIMMING","BLENDER","GAME DEV","YOUTUBE","DANCES","AI IDEAS"]'><span class="type-out">WEB APPLICATIONS</span></span>
       </p>
 
-      <!-- The page heading. The name is set in the header; this is for
-           everyone who reads the page rather than sees it. -->
-      <div class="hero-center">
+      <!-- Layer 8: the loading screen. Covers the spiral while the name is
+           on its own, then fades out from under it. -->
+      <span class="boot" aria-hidden="true"></span>
+
+      <!-- Layer 10: the face the opening starts on. Outside the spiral because
+           it has to sit over the loading sheet, and because it leaves — it
+           gathers, spirals into the travelling dot, and is gone. The name is
+           the page heading underneath it, hidden from sight only. -->
+      <div class="hero-center" data-intro>
         <h1 class="hero-title vh" id="hero-heading">Jeffrey Hamilton</h1>
+        <span class="boot-face" aria-hidden="true">
+          <img src="assets/portrait.jpg?v=3" width="1100" height="1489" fetchpriority="high" decoding="async" alt="">
+        </span>
       </div>
+
+      <!-- The glowing dot the name becomes, and the line it draws. Both are
+           positioned by app.js and removed when the trip is over. -->
+      <span class="boot-dot" aria-hidden="true"></span>
 
       <!-- The end of the strap, showing above the fold. It is the first
            thing the watch is: a tab at the bottom of the screen that gets
@@ -1267,11 +1287,11 @@
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <script src="assets/vendor/lenis.min.js" defer></script>
-<script src="app.js?v=20261102a" defer></script>
-<script src="intro.js?v=20261102a" defer></script>
+<script src="app.js?v=20261102b" defer></script>
+<script src="intro.js?v=20261102b" defer></script>
 <!-- A module, so it runs after app.js, once the watch has lifted the eras
      onto the dial. -->
-<script type="module" src="fun.js?v=20261102a"></script>
+<script type="module" src="fun.js?v=20261102b"></script>
 
 </body>
 </html>
