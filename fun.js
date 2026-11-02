@@ -626,10 +626,10 @@ function attach(now) {
 /* ---- inking what is in view ---------------------------------------------- */
 
 function booting() {
-  return doc.classList.contains('pre') || doc.classList.contains('booting') || doc.classList.contains('sheet-held');
+  return doc.classList.contains('pre') || doc.classList.contains('bi-on');
 }
 
-/* Nothing is inked under the loading sheet. A look that lands while it is
+/* Nothing is inked while the intro is building the page. A look that lands while it is
    up comes back once, the moment it lifts. */
 let waiting = null;
 function afterBoot() {
@@ -1107,7 +1107,7 @@ if (side === 'fun') {
   attach(true);
   ribbon(true);
   watchPanels(true);
-  /* nothing is inked under the loading sheet; the first look is when it lifts */
+  /* nothing is inked while the intro is building; the first look is when it ends */
   if (booting()) {
     const lifted = new MutationObserver(() => {
       if (!booting()) { lifted.disconnect(); schedulePump(); }

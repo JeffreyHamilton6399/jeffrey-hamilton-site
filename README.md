@@ -13,6 +13,7 @@ browser and that is the site.
 | `index.html` | The whole page |
 | `styles.css` | All of the styling |
 | `app.js` | Scroll motion, the panel handoff, and the loop |
+| `intro.js` | The first-visit intro: a loading bar, then cursors that build the page |
 | `assets/vendor/` | GSAP, ScrollTrigger and Lenis, vendored |
 | `assets/portrait.jpg` | Headshot |
 | `assets/shots/` | A screenshot of each project, and of each game |
@@ -42,6 +43,33 @@ measured a screen wide enough to hold it.
   so the wrap has no seam. It turns on its own, scrolling adds to it, and you
   can throw it left or right with the pointer. The maths, and why the spacing
   and depth curve are what they are, is written up above the module.
+
+## The intro
+
+A first visit opens on a loading bar, then a blank canvas, and then a few
+coloured cursors build the first screen in front of you, at the same time:
+one draws the header's frame and drops the face into it and types the name,
+one types the nav labels and drags the group onto the centre line, one types
+the word under the spiral (with a typo it takes back) and pulls it out to
+size, one drags the cards in and pastes the rest, and one clicks the icons
+in, brings up the switch and tightens the spacing. Phones get three cursors
+sharing the same jobs.
+
+None of it is a copy. The cursors work on the page's own elements: text is
+typed by uncovering the real characters one at a time, and anything dragged
+or resized moves through the CSS `translate` and `scale` properties, which
+never touch layout. The ending takes those off, so the finished page is the
+page — and **Skip intro** (or Esc) runs the same clean-up at any moment.
+
+* The bar measures real work: the three faces of type, the portrait and the
+  first screen's screenshots. It never runs faster than about two seconds
+  and never waits on a slow line for more than a few.
+* It plays once per browser session (`sessionStorage`), never with reduced
+  motion, and never when the visit is aimed at a section further down.
+* **Replay the intro** in the footer, or `?intro` on the URL, plays it again.
+* The head script decides before the first paint, so the finished page is
+  never glimpsed first. If `intro.js` never arrives, the page is handed
+  back after a few seconds.
 
 ## Two sides
 

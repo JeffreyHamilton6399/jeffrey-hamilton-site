@@ -293,51 +293,7 @@ body.head-dark { --head-scrim: var(--void); }
 .soc svg { width: 1rem; height: 1rem; fill: currentColor; display: block; }
 .soc:hover { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); transform: translateY(-1px); }
 
-/* The line lands on the furthest icon; the other two come out from behind it
-   and travel left, so the row builds inward from the edge. They start
-   stacked underneath it, which is why the offsets are positive.
-
-   The open selectors carry .is-held too: :not() lends its argument's weight,
-   so .is-held .soc:not(:nth-child(3)) outweighs a plain .is-open .soc and
-   the icons would never come back. */
-.head-social.is-held .soc:not(:nth-child(3)) { opacity: 0; }
-.head-social.is-held .soc:nth-child(1) { transform: translateX(74px); }
-.head-social.is-held .soc:nth-child(2) { transform: translateX(37px); }
-.head-social.is-held .soc:nth-child(3) { opacity: 0; }
-.head-social.is-held.is-lit .soc:nth-child(3) { opacity: .62; }
-.head-social.is-held.is-open .soc { opacity: .62; transform: none; }
-.head-social.is-held.is-open .soc:nth-child(2) { transition-delay: .04s; }
-.head-social.is-held.is-open .soc:nth-child(1) { transition-delay: .13s; }
-/* The gold lands on the one the line hit, then runs through the rest as
-   they arrive — the same shimmer on the middle cluster and the right one,
-   so the three landings read as one event. */
-@keyframes shimmerGold {
-  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--glow) 90%, transparent),
-                     0 0 22px 8px color-mix(in srgb, var(--glow) 78%, transparent);
-         color: var(--glow); }
-  70%  { box-shadow: 0 0 0 0 transparent, 0 0 14px 4px color-mix(in srgb, var(--glow) 30%, transparent); }
-  100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; }
-}
-
-.head-social.is-held.is-lit .soc:nth-child(3) { animation: shimmerGold 1s var(--ease-out); }
-.head-social.is-held.is-open .soc:nth-child(2) { animation: shimmerGold .9s .04s var(--ease-out); }
-.head-social.is-held.is-open .soc:nth-child(1) { animation: shimmerGold .9s .13s var(--ease-out); }
-
-.nav.is-held.is-lit a:nth-child(2) { animation: shimmerGold 1s var(--ease-out); }
-.nav.is-held.is-open a:nth-child(1) { animation: shimmerGold .9s .06s var(--ease-out); }
-.nav.is-held.is-open a:nth-child(3) { animation: shimmerGold .9s .06s var(--ease-out); }
-
-/* And the nav opens out of its middle button, left and right. */
-.nav.is-held a:not(:nth-child(2)) { opacity: 0; }
-.nav.is-held a:nth-child(1) { transform: translateX(28px); }
-.nav.is-held a:nth-child(3) { transform: translateX(-28px); }
-.nav.is-held a:nth-child(2) { opacity: 0; }
 .nav a { transition: opacity .45s var(--ease-out), transform .45s var(--ease-out), background-color .3s var(--ease), color .3s var(--ease); }
-.nav.is-held.is-lit a:nth-child(2) { opacity: 1; }
-.nav.is-held.is-open a { opacity: .6; transform: none; }
-.nav.is-held.is-open a:nth-child(2) { opacity: 1; }
-.nav.is-held.is-open a:nth-child(1),
-.nav.is-held.is-open a:nth-child(3) { transition-delay: .06s; }
 
 .mark {
   position: relative;
@@ -349,37 +305,6 @@ body.head-dark { --head-scrim: var(--void); }
   text-decoration: none;
   --face: 2rem;
 }
-/* The ring that pings out of the face the moment the name lands in it. */
-.mark::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: var(--face);
-  height: var(--face);
-  margin-top: calc(var(--face) / -2);
-  border-radius: 50%;
-  border: 2px solid var(--glow);
-  opacity: 0;
-  pointer-events: none;
-}
-.mark.is-arriving::before { animation: markPing 1s var(--ease-out) forwards; }
-@keyframes markPing {
-  0%   { opacity: 1;  transform: scale(.7); }
-  100% { opacity: 0;  transform: scale(1.9); }
-}
-
-/* And the face itself takes the warm glow for a moment as it catches the
-   name, then settles back to nothing. */
-.mark.is-arriving .mark-face { animation: markShimmer 1.15s var(--ease-out) forwards; }
-@keyframes markShimmer {
-  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--glow) 92%, transparent),
-                     0 0 26px 10px color-mix(in srgb, var(--glow) 78%, transparent); }
-  55%  { box-shadow: 0 0 0 2px color-mix(in srgb, var(--glow) 55%, transparent),
-                     0 0 20px 6px color-mix(in srgb, var(--glow) 42%, transparent); }
-  100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; }
-}
-
 .mark-face {
   display: block;
   width: var(--face);
@@ -388,25 +313,12 @@ body.head-dark { --head-scrim: var(--void); }
   overflow: hidden;
   flex: none;
   border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-  /* Springs up as the name arrives — the text becoming the picture. */
-  transition: transform .5s cubic-bezier(.2, 1.5, .4, 1);
 }
-html.head-wait .mark-face { transform: scale(.28); }
 
-/* The lockup is tucked behind the face and slides out once it has landed.
-   is-tucked is set by app.js and only when the boot is actually going to
-   run — without it the lockup is simply visible, which is what has to
-   happen with the script off or reduced motion on, where nothing ever
-   arrives to add is-open. */
 .mark-text { overflow: hidden; }
-.mark-text > * { transition: transform .55s var(--ease-out), opacity .55s var(--ease-out); }
-.mark.is-tucked .mark-text > * { transform: translateX(-14px); opacity: 0; }
-.mark.is-tucked.is-open .mark-name  { transform: none; opacity: 1; transition-delay: .04s; }
-.mark.is-tucked.is-open .mark-where { transform: none; opacity: 1; transition-delay: .16s; }
 .mark-face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 17%; }
 
 .mark-text { display: grid; gap: .125rem; }
-/* (overflow and the slide live in the block above) */
 .mark-name {
   font-family: var(--display);
   font-weight: 400;
@@ -473,113 +385,6 @@ body.head-dark .nav a.is-here { background: var(--on-dark); color: var(--void); 
 .hero-inner { display: block; }
 .hero-veil { display: none; }
 
-/* The dot the name packs itself into, and rides to the face on. Positioned
-   per frame by app.js from the drawn path, so it always sits exactly on the
-   line it is drawing. */
-.boot-dot {
-  position: absolute;
-  left: 0;
-  top: 0;
-  z-index: 11;
-  width: 14px;
-  height: 14px;
-  margin: -7px 0 0 -7px;
-  border-radius: 50%;
-  background: var(--glow);
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--glow) 34%, transparent),
-    0 0 18px 5px color-mix(in srgb, var(--glow) 70%, transparent),
-    0 0 42px 12px color-mix(in srgb, var(--glow) 34%, transparent);
-  opacity: 0;
-  pointer-events: none;
-}
-/* The line the name draws on its way into the face. Built and removed by
-   app.js; sits above the shield and under the dot, so the dot always rides
-   on the leading end of its own trail. */
-.boot-trail {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 10;
-  overflow: visible;
-  pointer-events: none;
-}
-.boot-trail path {
-  fill: none;
-  stroke: var(--void);
-  stroke-width: 2.25;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: .82;
-}
-
-/* ---- the loading screen ------------------------------------------------
-   A sheet of page colour over the spiral, under the name. It sits inside the
-   hero rather than over the whole document, because the hero owns a stacking
-   context of its own and nothing inside it can paint above a sibling section
-   anyway; at scroll zero the hero is all you can see, which is all this has
-   to cover. */
-.boot {
-  position: fixed;
-  inset: 0;
-  z-index: 8;
-  background: var(--paper);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity .9s var(--ease-out);
-}
-/* transition:none on the way in — the sheet has to be there on the first
-   frame, not fade up over a spiral you were never meant to see. Dropping
-   the class lets the base transition above fade it out. */
-html.booting .boot { opacity: 1; transition: none; }
-/* and it stays up, now fading, until the three points have all landed */
-html.sheet-held .boot { opacity: 1; }
-
-/* Same on both counts: gone instantly while the name has the screen to
-   itself. head-wait outlives booting so the header is still absent while the
-   name is in flight — it only appears when the name lands in the face. */
-html.booting .site-head { opacity: 0; pointer-events: none; transition: none; }
-html.head-wait .site-head { opacity: 0; pointer-events: none; }
-.site-head { transition: opacity .45s var(--ease-out); }
-
-/* The opening starts on a face, not a name: the portrait in a circle, in
-   the middle of the loading sheet. It rises in, gathers a ring of the dot's
-   gold (--charge), then spirals in on itself and turns gold all over
-   (--gold) as it shrinks to exactly the dot it becomes. app.js drives both.
-   The name is still the page's heading, for everyone who reads it rather
-   than sees it. */
-.boot-face {
-  --charge: 0;
-  --gold: 0;
-  position: relative;
-  display: block;
-  width: clamp(9rem, 22vw, 15rem);
-  aspect-ratio: 1;
-  margin: 0 auto;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--shell);
-  box-shadow:
-    0 0 0 calc(var(--charge) * 5px) color-mix(in srgb, var(--glow) 60%, transparent),
-    0 0 calc(var(--charge) * 46px) calc(var(--charge) * 12px) color-mix(in srgb, var(--glow) 45%, transparent),
-    0 24px 60px color-mix(in srgb, var(--void) 18%, transparent);
-}
-.boot-face img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 17%;
-}
-.boot-face::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--glow);
-  opacity: var(--gold);
-}
 
 
 /* Held back until the script has decided what the opening is doing. See the
@@ -636,31 +441,6 @@ html.pre .hero-skills { opacity: 0; }
 .ch.is-space { -webkit-text-stroke: 0; }
 
 
-/* ---- the staged open --------------------------------------------------
-   app.js arms the centre (everything hidden), then adds boot-in and
-   intro-line in turn. With no script, or reduced motion, none of this is
-   set and the name and line just sit there. */
-/* The face carries its own arrival, on its image, so the circle itself is
-   left free for the gather and the spiral into the dot that follow. */
-html.motion [data-intro] .boot-face img {
-  transition: opacity .95s var(--ease-out), transform 1.1s var(--ease-out);
-}
-html.motion .hero-skills {
-  transition: opacity .8s var(--ease-out), transform .8s var(--ease-out);
-}
-html.motion [data-intro].intro-armed .boot-face { opacity: 0; transition: opacity .6s var(--ease-out); }
-html.motion [data-intro].intro-armed .boot-face img { opacity: 0; transform: scale(1.18); }
-html.motion .hero-skills.is-held {
-  opacity: 0;
-  transform: translateY(22px);
-}
-html.motion [data-intro].boot-in .boot-face,
-html.motion [data-intro].boot-in .boot-face img { opacity: 1; transform: none; }
-html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
-
-
-/* Once the face has gone into the dot there is nothing left to show. */
-[data-intro].name-gone { display: none; }
 
 .hero.is-spiral .hero-stage {
   height: 100vh;
@@ -1969,7 +1749,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   .head-inner { grid-template-columns: auto 1fr; }
   .head-social { display: none; }
   /* The location stays on a phone too — it is the thing that slides out of
-     the face at the end of the boot, so dropping it loses the beat. */
+     the face as the header is built, so dropping it loses the beat. */
   .nav { justify-self: end; }
 
   .hero-stage { padding-top: 6.5rem; }
@@ -2136,7 +1916,7 @@ html[data-font="fun"], .side-fun, .card-fun {
 /* For a switch the header goes up off the top of the screen and comes back
    down once it has changed. fun.js animates that, so the drop always follows
    the lift however busy the page is; here it only keeps its own fades. The
-   boot's rules for the header still win while the opening is running. */
+   intro's rules for the header still win while the opening is running. */
 .site-head { transition: opacity .45s var(--ease-out), color .45s var(--ease); }
 
 /* The word under the spiral is not dipped: taking it down is its own
@@ -2273,9 +2053,8 @@ html.sides-ready .side-switch {
 }
 html[data-side="fun"] .side-switch { background: var(--glow); color: var(--void); }
 .side-switch:focus-visible { outline: 2px solid var(--haze); outline-offset: 3px; }
-/* Held back through the opening, like the header. */
-html.pre .side-switch,
-html.booting .side-switch { opacity: 0; transform: translateY(12px); pointer-events: none; }
+/* Held back until the script has decided what the opening is doing. */
+html.pre .side-switch { opacity: 0; transform: translateY(12px); pointer-events: none; }
 
 /* One button. It says which side you are on, and a press takes you to the
    other: the word rolls up and out of the pill as the new one rolls up into
@@ -2516,6 +2295,318 @@ html[data-side="fun"] :is(.era-now, .pn-list) strong {
   grid-template: 100% / 100%;
 }
 
+
+/* --------------------------------------------------------- The intro
+
+   intro.js: a loading bar, a blank canvas, and a few cursors that build the
+   first screen out of the page's own elements. html.bi-on is set before the
+   first paint (the head script) and only covers the page until intro.js has
+   put its loading screen up and taken over (bi-live). Everything the intro
+   hides stays in the flow — visibility, never display — so nothing moves
+   when it is shown. */
+
+html.bi-on:not(.bi-live) body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: var(--paper);
+}
+/* The page holds still while it is built. The gutter keeps the width the
+   page has with its scrollbar, so nothing shifts when it comes back; the
+   root takes the paper colour so the empty gutter is not a dark stripe. */
+html.bi-live { overflow: hidden; scrollbar-gutter: stable; background: var(--paper); }
+
+[data-bi="off"] { visibility: hidden !important; }
+.bi-c { visibility: hidden; }
+.bi-c.on { visibility: inherit; }
+
+/* the header's scrim is the frame being drawn; the current page's pill is
+   the style applied to it */
+html.bi-live .site-head::before { transition: opacity .5s var(--ease-out), background .45s var(--ease); }
+.site-head.bi-noscrim::before { opacity: 0; }
+.nav.bi-plain a.is-here { background: transparent; color: inherit; opacity: .6; }
+
+/* the canvas: a dot grid on the paper, under everything in the hero */
+.bi-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 17%, transparent) 1px, transparent 1.6px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 45%, transparent 100%);
+          mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 45%, transparent 100%);
+  opacity: 0;
+  transition: opacity .7s var(--ease-out);
+}
+.bi-canvas.on { opacity: 1; }
+
+/* the layer the cursors and their selections live on; it also takes every
+   click, so nothing underneath is pressed by accident mid-build */
+.bi {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: auto;
+  cursor: default;
+  transition: opacity .5s var(--ease-out);
+}
+.bi.out { opacity: 0; pointer-events: none; }
+.bi-layer, .bi-cursors { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+.bi-cur {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 24px;
+  height: 26px;
+  margin: -2px 0 0 -3px;   /* the tip of the arrow is the point */
+  will-change: transform;
+  filter: drop-shadow(0 1px 1.5px rgba(20, 18, 28, .28)) drop-shadow(0 4px 10px rgba(20, 18, 28, .12));
+  transition: opacity .55s var(--ease-out);
+}
+.bi-cur svg { display: block; transform-origin: 3px 2px; transition: transform .09s ease-out; }
+.bi-cur.down svg, .bi-cur.grab svg { transform: scale(.86); }
+.bi-cur.leaving { opacity: 0; }
+
+.bi-ring {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border: 2px solid var(--c);
+  border-radius: 50%;
+  animation: biRing .45s var(--ease-out) forwards;
+}
+@keyframes biRing {
+  from { transform: scale(.2); opacity: .9; }
+  to   { transform: scale(1);  opacity: 0; }
+}
+
+.bi-box {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: 1.5px solid var(--c);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity .2s var(--ease-out);
+}
+.bi-box.on { opacity: 1; }
+.bi-box.fill { background: color-mix(in srgb, var(--c) 6%, transparent); }
+.bi-box.on.faint { opacity: .4; border-style: dashed; border-width: 1px; }
+.bi-h {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -4px;
+  background: #fff;
+  border: 1.5px solid var(--c);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.bi-h.tl { left: 0; top: 0; }
+.bi-h.tr { left: 100%; top: 0; }
+.bi-h.bl { left: 0; top: 100%; }
+.bi-h.br { left: 100%; top: 100%; }
+.bi-box.handles .bi-h { opacity: 1; }
+
+.bi-badge, .bi-chip, .bi-measure-lab {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: .02em;
+  color: #fff;
+  background: var(--c);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.bi-badge {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 7px);
+  padding: 3px 5px;
+  transform: translateX(-50%);
+  opacity: 0;
+}
+.bi-badge.on { opacity: 1; }
+
+.bi-caret {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--c);
+  opacity: 0;
+}
+.bi-caret.on { opacity: 1; }
+.bi-caret.on.blink { animation: biBlink 1s steps(1) infinite; }
+@keyframes biBlink { 50% { opacity: 0; } }
+
+.bi-guide {
+  position: absolute;
+  background: var(--c);
+  opacity: 0;
+  transition: opacity .15s;
+}
+.bi-guide.on { opacity: .85; }
+
+.bi-measure {
+  position: absolute;
+  background: var(--c);
+  opacity: 0;
+  transition: opacity .18s;
+}
+.bi-measure.on { opacity: 1; }
+.bi-measure::before, .bi-measure::after {
+  content: "";
+  position: absolute;
+  background: var(--c);
+  width: 1px;
+  height: 7px;
+  top: -3px;
+}
+.bi-measure::before { left: 0; }
+.bi-measure::after { right: 0; }
+.bi-measure.v::before, .bi-measure.v::after { width: 7px; height: 1px; left: -3px; top: auto; right: auto; }
+.bi-measure.v::before { top: 0; }
+.bi-measure.v::after { bottom: 0; }
+.bi-measure-lab {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  padding: 2px 4px;
+  transform: translateX(-50%);
+}
+.bi-measure.v .bi-measure-lab { left: -8px; top: 50%; transform: translate(-100%, -50%); }
+
+.bi-chip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 4px 6px;
+  border-radius: 4px;
+  animation: biChip .9s var(--ease-out) forwards;
+}
+@keyframes biChip {
+  0%   { opacity: 0; margin-top: 4px; }
+  15%  { opacity: 1; margin-top: 0; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; margin-top: -4px; }
+}
+
+/* the loading screen */
+.bi-loader {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  transition: opacity .55s var(--ease-out);
+}
+.bi-loader.gone { opacity: 0; }
+.bi-load {
+  display: grid;
+  justify-items: center;
+  gap: .875rem;
+  width: min(15rem, 70vw);
+  transition: opacity .35s var(--ease-out), transform .45s var(--ease-out);
+  animation: biRise .6s var(--ease-out) both;
+}
+.bi-loader.done .bi-load { opacity: 0; transform: translateY(-10px); }
+@keyframes biRise { from { opacity: 0; transform: translateY(8px); } }
+.bi-load-label, .bi-pct {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: .625rem;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.bi-load-label { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink-soft); }
+.bi-load-dot {
+  width: .3125rem;
+  height: .3125rem;
+  border-radius: 50%;
+  background: var(--iris);
+  animation: biPulse 1.2s ease-in-out infinite;
+}
+@keyframes biPulse { 50% { opacity: .25; transform: scale(.7); } }
+.bi-bar {
+  position: relative;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--rule);
+  overflow: hidden;
+}
+.bi-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--void);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.bi-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--iris) 85%, #fff) 50%, transparent);
+  transform: translateX(-100%);
+  animation: biSheen 1.3s ease-in-out infinite;
+}
+@keyframes biSheen { to { transform: translateX(100%); } }
+.bi-pct { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+/* skip: always there while the intro is */
+.bi-skip {
+  position: fixed;
+  left: clamp(.875rem, 2.5vw, 1.5rem);
+  bottom: clamp(.875rem, 2.5vw, 1.5rem);
+  z-index: 9001;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .625rem 1rem;
+  border: 1px solid var(--frame);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: .625rem;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  animation: biRise .6s .3s var(--ease-out) both;
+  transition: background-color .25s var(--ease), border-color .25s var(--ease);
+}
+.bi-skip:hover { background: var(--shell); border-color: color-mix(in srgb, var(--ink) 30%, transparent); }
+.bi-skip:focus-visible { outline: 2px solid var(--iris); outline-offset: 3px; }
+
+/* the footer's way back in */
+.replay-intro {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-dark);
+  text-underline-offset: .2em;
+  transition: color .25s var(--ease), text-decoration-color .25s var(--ease);
+}
+.replay-intro:hover, .replay-intro:focus-visible { color: var(--on-dark); text-decoration-color: currentColor; }
+.replay-intro[hidden] { display: none; }
+
 /* --------------------------------------------------------- Reduced motion */
 
 @media (prefers-reduced-motion: reduce) {
@@ -2527,8 +2618,6 @@ html[data-side="fun"] :is(.era-now, .pn-list) strong {
   }
   html.motion [data-reveal],
   html.motion .line > span { opacity: 1; transform: none; }
-  html.motion [data-intro] .boot-face,
-  html.motion [data-intro] .boot-face img,
   html.motion .hero-skills { opacity: 1 !important; transform: none !important; filter: none !important; }
   .slab-inner { transform: none !important; opacity: 1 !important; }
 }
