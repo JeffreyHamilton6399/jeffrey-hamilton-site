@@ -832,7 +832,9 @@
 
     function spacing() {
       var fun = doc.getAttribute('data-side') === 'fun';
-      var live = cards.filter(function (c) { return !(fun && c.classList.contains('fun-skip')); });
+      var live = cards.filter(function (c) {
+        return fun ? !c.classList.contains('fun-skip') : !c.classList.contains('pro-skip');
+      });
       return cards.map(function (c) {
         var r = live.indexOf(c);
         /* a card that is going keeps its place; nobody sees it there */
@@ -2197,6 +2199,9 @@
     var mail  = document.querySelector('.contact-mail');
     var contact = document.querySelector('#contact');
     if (!panel || !contact || reduced || !hasGsap) return;
+    var copy = contact.querySelector('.wrap');
+    /* taken on: the address (and now the copy) wait for the leather */
+    contact.classList.add('is-drawn');
 
     /* The width the strap has on screen, worked out the same way the watch
        works it out — the drawing is 1000 units wide across a box whose height
@@ -2220,6 +2225,19 @@
       var narrow = strapWidth();
       var w = narrow + (Math.min(window.innerWidth * 0.92, 1100) - narrow) * wide;
       panel.style.setProperty('--lw', w.toFixed(0) + 'px');
+      /* The words are written inside the leather, not on top of it: they
+         are only ever shown across the width the band has opened to, so as
+         it widens they are uncovered from the middle outward — a book being
+         opened — and while it is still a strap there is nothing over it. */
+      if (copy) {
+        if (wide >= 0.999) copy.style.clipPath = '';
+        else if (wide <= 0.001) copy.style.clipPath = 'inset(0 50% 0 50%)';
+        else {
+          var room = Math.max(0, panel.offsetWidth - 48);
+          var cut = Math.max(0, (copy.offsetWidth - room) / 2);
+          copy.style.clipPath = 'inset(-60px ' + cut.toFixed(1) + 'px -60px ' + cut.toFixed(1) + 'px)';
+        }
+      }
       if (mail) {
         /* The address opens outward from the middle, in step with the
            leather widening under it — the same move at a smaller scale. */

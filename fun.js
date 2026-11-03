@@ -1020,6 +1020,7 @@ const skillsLine = document.querySelector('.hero-skills');
 const certList = document.querySelector('.path-certs');
 const pileList = document.querySelector('.pile');
 const skipped = [].slice.call(document.querySelectorAll('.spiral-card.fun-skip'));
+const gamesOnly = [].slice.call(document.querySelectorAll('.spiral-card.pro-skip'));
 /* A card whose fun face has somewhere of its own to go — the YouTube one,
    to the channel — carries that address and wears it on the fun side. */
 const funLinks = [].slice.call(document.querySelectorAll('a[data-fun-href]'));
@@ -1036,6 +1037,7 @@ function sync() {
   labelled(skillsLine);
   labelled(pileList);
   skipped.forEach((card) => { card.inert = side === 'fun'; });
+  gamesOnly.forEach((card) => { card.inert = side !== 'fun'; });
   if (certList) certList.inert = side === 'fun';
   funLinks.forEach((a) => a.setAttribute('href', side === 'fun' ? a.dataset.funHref : a.dataset.proHref));
 }

@@ -2087,6 +2087,10 @@ html[data-font="fun"] .nav .side-pro {
    is going. In the grid on a phone it simply leaves the grid. */
 html[data-side="fun"] .spiral-card.fun-skip > a { pointer-events: none; }
 html[data-side="fun"] .spiral-fallback .fun-skip { display: none; }
+/* And the other way round: a card that is only a game (pro-skip) has no
+   work face, so on the work side it is out of the tube and the grid. */
+html:not([data-side="fun"]) .spiral-card.pro-skip > a { pointer-events: none; }
+html:not([data-side="fun"]) .spiral-fallback .pro-skip { display: none; }
 
 /* The certificates are the work side's. On the dial app.js fades the coil
    out; in the flow, where they are just a list, the list goes. */

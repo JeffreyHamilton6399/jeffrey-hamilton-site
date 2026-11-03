@@ -963,7 +963,7 @@
      turning. */
   function jobCards(c) {
     var fun = side() === 'fun';
-    var live = cards.filter(function (cd) { return !(fun && cd.classList.contains('fun-skip')); });
+    var live = cards.filter(function (cd) { return fun ? !cd.classList.contains('fun-skip') : !cd.classList.contains('pro-skip'); });
     var spiral = hero.classList.contains('is-spiral');
     function score(cd) {
       var r = rect(cd);
