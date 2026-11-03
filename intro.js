@@ -326,48 +326,51 @@
       click: function () {
         return wait(rnd(60, 150)).then(c.press).then(c.release);
       },
-      /* the hand resting on the mouse: tiny drifts while thinking */
-      idle: function (ms) {
-        var end = performance.now() + ms;
-        var ax = c.x, ay = c.y;
-        function step() {
-          var left = end - performance.now();
-          if (left < 60) return wait(Math.max(left, 0));
-          var dur = Math.min(left, rnd(260, 520));
-          return c.move(ax + rnd(-12, 12), ay + rnd(-8, 8), { dur: dur, bend: 0, overshoot: false }).then(step);
-        }
-        return step();
+      /* At rest. Not a series of little moves — those read as a twitch —
+         but one slow, continuous drift round where the hand stopped, the
+         way a hand on a mouse never quite holds still. It runs on the real
+         clock, whatever speed the session plays at, and lets go the moment
+         the hand is given anything else to do. Resolves when `until` says
+         so (a test, or a number of milliseconds). */
+      rest: function (until_) {
+        var id = ++c.mid;
+        var ax = c.x, ay = c.y, t0 = performance.now();
+        var p1 = Math.random() * 6.28, p2 = Math.random() * 6.28;
+        return new Promise(function (resolve) {
+          var f = function () {
+            if (id !== c.mid || dead) { off(); resolve(); return; }
+            var t = (performance.now() - t0) / 1000;
+            /* a slow loop, a few pixels across, eased in from where it is */
+            var tx = ax + Math.sin(t * 0.8 + p1) * 6 + Math.sin(t * 0.31 + p2) * 4;
+            var ty = ay + Math.cos(t * 0.6 + p2) * 4 + Math.sin(t * 0.23 + p1) * 3;
+            c.x += (tx - c.x) * 0.04;
+            c.y += (ty - c.y) * 0.04;
+            c.place();
+            var over = typeof until_ === 'number' ? performance.now() - t0 >= until_ : until_();
+            if (over) { off(); resolve(); }
+          };
+          function off() { var k = followers.indexOf(f); if (k >= 0) followers.splice(k, 1); }
+          followers.push(f);
+        });
       },
-      /* Waiting on someone else is never standing still: the hand goes and
-         looks at something on the page, now and then picks it up to check
-         it, and comes back when it is needed. */
+      /* a short pause, at rest */
+      idle: function (ms) { return c.rest(ms * TIME); },
+      /* waiting on someone else: at rest until they are done */
       idleUntil: function (promise) {
         var done = false;
         promise.then(function () { done = true; });
-        var cut = function () { return done || c.halt; };
-        function step() {
-          if (cut()) return Promise.resolve();
-          return c.roam(cut).then(step);
-        }
-        return step();
+        return c.rest(function () { return done || c.halt; });
       },
-      /* nothing to make right now: the hand rests, drifting */
+      /* nothing to make right now: at rest until there is */
       roam: function (cut) {
-        var fx = clamp(c.x + rnd(-36, 36), 24, W() - 24), fy = clamp(c.y + rnd(-26, 26), 24, H() - 24);
-        return c.move(fx, fy, { overshoot: false, dur: rnd(420, 700) });
+        return c.rest(function () { return !cut || cut(); });
       },
-      /* the hand off the mouse but not still: small drifts around a spot,
-         first moved aside by `off`, until the returned stop is called */
+      /* the hand off the mouse while it works at a distance: moved aside
+         by `off`, then at rest there until the returned stop is called */
       wander: function (r, off) {
-        var on = true, first = true;
-        var ax = c.x + (off ? off.x : 0), ay = c.y + (off ? off.y : 0);
-        (function step() {
-          if (!on || dead) return;
-          var tx = first ? ax : ax + rnd(-r, r), ty = first ? ay : ay + rnd(-r * 0.6, r * 0.6);
-          first = false;
-          c.move(tx, ty, { dur: rnd(340, 620), bend: 0, overshoot: false })
-            .then(function () { if (on) step(); }, function () {});
-        })();
+        var on = true;
+        var go = off ? c.move(c.x + off.x, c.y + off.y, { overshoot: false }) : Promise.resolve();
+        go.then(function () { if (on) return c.rest(function () { return !on; }); }, function () {});
         return function () { on = false; };
       },
       /* stay on a moving point — a line being drawn, a hand going round —
@@ -388,8 +391,8 @@
           }
           var t = (performance.now() - t0) / 1000;
           var k = lag || 0.22;
-          c.x += (p.x + Math.sin(t * 5.3) * 2 - c.x) * k;
-          c.y += (p.y + Math.cos(t * 4.1) * 2 - c.y) * k;
+          c.x += (p.x + Math.sin(t * 1.1) * 1.5 - c.x) * k;
+          c.y += (p.y + Math.cos(t * 0.9) * 1.5 - c.y) * k;
           c.place();
           el.classList.toggle('down', !!p.down);
         };
