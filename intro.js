@@ -89,6 +89,10 @@
     linear: function (t) { return t; },
     /* minimum jerk: how a hand actually gets from one place to another */
     hand: function (t) { return t * t * t * (10 + t * (-15 + 6 * t)); },
+    /* a flick: speed builds almost at once and most of the way is covered
+       early, then a long soft landing — snappy, with no jolt at either end
+       (its speed is zero at both, peaking a quarter of the way in) */
+    flick: function (t) { var u = 1 - t; return 1 - u * u * u * u * (1 + 4 * t); },
     out: function (t) { return 1 - Math.pow(1 - t, 3); },
     inOut: function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; },
     back: function (t) { var c = 1.7, u = t - 1; return 1 + (c + 1) * u * u * u + c * u * u; }
@@ -284,25 +288,23 @@
         var id = ++c.mid;
         var x0 = c.x, y0 = c.y, dx = x - x0, dy = y - y0, d = Math.hypot(dx, dy);
         if (d < 0.5) return wait(30);
-        var dur = o.dur || clamp(170 + 135 * Math.log2(1 + d / 26), 200, 1150) * c.speed * rnd(0.9, 1.12);
+        var dur = o.dur || clamp(150 + 120 * Math.log2(1 + d / 28), 180, 1000) * c.speed * rnd(0.94, 1.08);
         var bend = (o.bend != null ? o.bend : rnd(-0.14, 0.14) + c.hand * 0.07) * d;
         var nx = -dy / d, ny = dx / d;
-        var os = (o.overshoot !== false && d > 240 && Math.random() < 0.5) ? rnd(5, 11) : 0;
+        var os = (o.overshoot !== false && d > 260 && Math.random() < 0.35) ? rnd(4, 8) : 0;
         var tx = x + (dx / d) * os, ty = y + (dy / d) * os;
         var c1x = x0 + dx * 0.3 + nx * bend, c1y = y0 + dy * 0.3 + ny * bend;
         var c2x = x0 + dx * 0.75 + nx * bend * 0.45, c2y = y0 + dy * 0.75 + ny * bend * 0.45;
-        var ph = Math.random() * 6;
         var p = tween(dur, function (e, raw) {
           if (id !== c.mid) return;
           var q = 1 - e;
           var px = q * q * q * x0 + 3 * q * q * e * c1x + 3 * q * e * e * c2x + e * e * e * tx;
           var py = q * q * q * y0 + 3 * q * q * e * c1y + 3 * q * e * e * c2y + e * e * e * ty;
-          var tr = Math.sin(Math.PI * raw) * 0.7;
-          c.x = px + Math.sin(raw * 23 + ph) * tr;
-          c.y = py + Math.cos(raw * 19 + ph) * tr;
+          c.x = px;
+          c.y = py;
           c.place();
           if (o.onMove) o.onMove(c.x, c.y);
-        }, ease.hand);
+        }, o.ease || ease.flick);
         if (!os) return p;
         return p.then(function () {
           return tween(rnd(110, 160), function (e) {
@@ -324,28 +326,17 @@
       },
       /* a beat to aim, then the click */
       click: function () {
-        return wait(rnd(60, 150)).then(c.press).then(c.release);
+        return wait(rnd(30, 70)).then(c.press).then(c.release);
       },
-      /* At rest. Not a series of little moves — those read as a twitch —
-         but one slow, continuous drift round where the hand stopped, the
-         way a hand on a mouse never quite holds still. It runs on the real
-         clock, whatever speed the session plays at, and lets go the moment
-         the hand is given anything else to do. Resolves when `until` says
-         so (a test, or a number of milliseconds). */
+      /* At rest: a hand with nothing to make holds still. Lets go the
+         moment the hand is given anything else to do. Resolves when `until`
+         says so (a test, or a number of milliseconds). */
       rest: function (until_) {
         var id = ++c.mid;
-        var ax = c.x, ay = c.y, t0 = performance.now();
-        var p1 = Math.random() * 6.28, p2 = Math.random() * 6.28;
+        var t0 = performance.now();
         return new Promise(function (resolve) {
           var f = function () {
             if (id !== c.mid || dead) { off(); resolve(); return; }
-            var t = (performance.now() - t0) / 1000;
-            /* a slow loop, a few pixels across, eased in from where it is */
-            var tx = ax + Math.sin(t * 0.8 + p1) * 6 + Math.sin(t * 0.31 + p2) * 4;
-            var ty = ay + Math.cos(t * 0.6 + p2) * 4 + Math.sin(t * 0.23 + p1) * 3;
-            c.x += (tx - c.x) * 0.04;
-            c.y += (ty - c.y) * 0.04;
-            c.place();
             var over = typeof until_ === 'number' ? performance.now() - t0 >= until_ : until_();
             if (over) { off(); resolve(); }
           };
@@ -365,14 +356,6 @@
       roam: function (cut) {
         return c.rest(function () { return !cut || cut(); });
       },
-      /* the hand off the mouse while it works at a distance: moved aside
-         by `off`, then at rest there until the returned stop is called */
-      wander: function (r, off) {
-        var on = true;
-        var go = off ? c.move(c.x + off.x, c.y + off.y, { overshoot: false }) : Promise.resolve();
-        go.then(function () { if (on) return c.rest(function () { return !on; }); }, function () {});
-        return function () { on = false; };
-      },
       /* stay on a moving point — a line being drawn, a hand going round —
          with a hand's lag and a little life in it; down while the point
          says it is drawing */
@@ -389,10 +372,9 @@
             el.classList.add('down');
             return;
           }
-          var t = (performance.now() - t0) / 1000;
-          var k = lag || 0.22;
-          c.x += (p.x + Math.sin(t * 1.1) * 1.5 - c.x) * k;
-          c.y += (p.y + Math.cos(t * 0.9) * 1.5 - c.y) * k;
+          var k = lag || 0.3;
+          c.x += (p.x - c.x) * k;
+          c.y += (p.y - c.y) * k;
           c.place();
           el.classList.toggle('down', !!p.down);
         };
@@ -1591,20 +1573,20 @@
     IMG = wide ? 3 : 1;   /* the one hand that handles every image */
     var img = cs[IMG];
 
+    /* Nobody waits at the start: the jobs that need the header frame go to
+       hands that have something else to make first, and the frame is the
+       first thing drawn. */
     var scripts = wide ? [
-      after(150, seq(function () { return jobFrame(cs[0]); }, function () { return jobMarkText(cs[0]); })),
-      after(260, function () { return cs[1].move(w * 0.5 + rnd(-40, 40), 90).then(function () { return jobNav(cs[1]); }); }),
-      after(420, function () { return jobWord(cs[2]); }),
-      after(0, seq(function () { return jobMarkPhoto(img); }, function () { return jobCards(img); })),
-      after(380, function () {
-        return cs[4].move(w * 0.86, 110).then(function () { return jobSocial(cs[4]); })
-          .then(function () { return jobSwitch(cs[4]); });
-      })
+      after(0, seq(function () { return jobFrame(cs[0]); }, function () { return jobMarkText(cs[0]); })),
+      after(60, function () { return jobWord(cs[1]); }),
+      after(30, seq(function () { return jobSwitch(cs[2]); }, function () { return jobSocial(cs[2]); })),
+      after(0, seq(function () { return jobCards(img); }, function () { return jobMarkPhoto(img); })),
+      after(90, function () { return cs[4].move(w * 0.5 + rnd(-40, 40), 90).then(function () { return jobNav(cs[4]); }); })
     ] : [
-      after(150, seq(function () { return jobFrame(cs[0]); }, function () { return jobMarkText(cs[0]); }, function () { return jobNav(cs[0]); })),
-      after(0, seq(function () { return jobMarkPhoto(img); }, function () { return jobCards(img); })),
-      after(300, function () { return jobWord(cs[2]); }),
-      after(500, function () { return jobSwitch(cs[3]); })
+      after(0, seq(function () { return jobFrame(cs[0]); }, function () { return jobMarkText(cs[0]); }, function () { return jobNav(cs[0]); })),
+      after(0, seq(function () { return jobCards(img); }, function () { return jobMarkPhoto(img); })),
+      after(60, function () { return jobWord(cs[2]); }),
+      after(30, function () { return jobSwitch(cs[3]); })
     ];
 
     /* Each collaborator works through their own list. One who finishes
