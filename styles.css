@@ -1296,7 +1296,14 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   overflow: hidden;
   pointer-events: none;
 }
-.path-orbit.is-still .path-orbit-in {
+.path-orbit.is-still .path-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.path-orbit-in {
+  z-index: 1;
   position: absolute;
   inset: 0;
   display: grid;
@@ -1398,21 +1405,36 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 }
 .path-tick  { stroke: var(--on-dark-faint); stroke-width: 1.5; }
 .path-tick.is-major { stroke: var(--haze); stroke-width: 2.5; }
-.path-hand {
-  stroke: var(--glow);
-  stroke-width: 4;
-  stroke-linecap: round;
-  opacity: .9;
+/* The hands. Each group keeps a line for its axis (the fun side inks over
+   it), which is never painted; on the work side the hand is the shape next
+   to it. Two tones of the same metal, one per facet, read as a ridge down
+   the middle catching the light — which is what makes a hand look made
+   rather than drawn. A hairline in the case colour keeps the edges crisp
+   against the engine-turned face. */
+.path-hand > line, .path-hand-sm > line { visibility: hidden; }
+.hand-pro path, .hand-pro rect, .hand-pro circle {
+  stroke: color-mix(in srgb, var(--void) 55%, transparent);
+  stroke-width: .8;
+  stroke-linejoin: round;
 }
-/* The short one. It is in place from the moment the dial is drawn — a hand
-   that fades up out of nothing is the one thing a watch never does. */
-.path-hand-sm {
-  stroke: var(--haze);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  opacity: .75;
-}
-.path-hub { fill: var(--glow); }
+.path-hand .hand-hi    { fill: #FFE08A; }
+.path-hand .hand-lo    { fill: #D49A22; }
+.path-hand .hand-tail  { fill: #D49A22; }
+.path-hand .hand-weight { fill: var(--void); stroke: #E9B33F; stroke-width: 2.6; }
+.path-hand-sm .hand-hi { fill: #E6DEFF; }
+.path-hand-sm .hand-lo { fill: #A593EC; }
+.path-hand-sm .hand-slot { fill: var(--void); stroke: none; opacity: .7; }
+/* the cap they turn on */
+.hub-boss  { fill: #1F1B2B; stroke: color-mix(in srgb, #E9B33F 70%, transparent); stroke-width: 1.4; }
+.hub-ring  { fill: #E9B33F; }
+.hub-jewel { fill: var(--void); }
+/* the bezel round the dial */
+.face-ring { fill: none; pointer-events: none; }
+.face-ring-band { stroke: color-mix(in srgb, var(--on-dark) 6%, transparent); stroke-width: 12; }
+.face-ring-line { stroke: color-mix(in srgb, var(--haze) 30%, transparent); stroke-width: 1; }
+html[data-side="fun"] .face-ring,
+html[data-side="fun"] .hand-pro { opacity: 0; visibility: hidden; transition: opacity .5s var(--ease-out), visibility 0s linear .5s; }
+.face-ring, .hand-pro { transition: opacity .5s var(--ease-out), visibility 0s linear 0s; }
 
 /* the numbers are part of the watch, so they arrive with it */
 .path-dial, .path-ticks { opacity: 0; }
@@ -1479,12 +1501,15 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
 .path-mark {
   position: absolute;
   left: 0; top: 0;
-  width: 12px;
-  height: 12px;
-  margin: -6px 0 0 -6px;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
   border-radius: 50%;
-  background: var(--glow);
-  box-shadow: 0 0 16px 5px color-mix(in srgb, var(--glow) 65%, transparent);
+  background: #FFE08A;
+  box-shadow:
+    0 0 0 2px var(--void),
+    0 0 0 3.5px color-mix(in srgb, #E9B33F 80%, transparent),
+    0 0 12px 2px color-mix(in srgb, var(--glow) 35%, transparent);
   opacity: 0;
 }
 

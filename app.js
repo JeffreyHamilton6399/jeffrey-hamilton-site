@@ -2216,6 +2216,197 @@
     });
   })();
 
+  /* ---------------------------------------------------------- The field
+
+     Behind the watch, a quiet field of characters — brackets, slashes,
+     quotes and the like, set in the mono face. At rest it is barely there
+     and now and then a character turns over. Near the pointer the field
+     wakes: the characters there shuffle and brighten, warming towards the
+     gold of the hand, and settle back as it moves on. The intro's cursors
+     stir it too (JH.field.poke).
+
+     It is drawn on a canvas, and cheaply: the resting field is a picture,
+     touched up a cell at a time, and only the cells that are warm are drawn
+     each frame — and only while the section is on screen. With reduced
+     motion it is drawn once and left. */
+
+  (function () {
+    var orbit = document.querySelector('.path-orbit.is-live');
+    if (!orbit) return;
+
+    var GLYPHS = '}{|?/><\':;~^*+=-_.,!][)(\\';
+    var cv = document.createElement('canvas');
+    cv.className = 'path-field';
+    cv.setAttribute('aria-hidden', 'true');
+    orbit.insertBefore(cv, orbit.firstChild);
+    var ctx = cv.getContext('2d');
+    var base = document.createElement('canvas');
+    var bctx = base.getContext('2d');
+
+    var CW = 15, CH = 20, R = 130;            /* cell, and how far the pointer reaches */
+    var cols = 0, rows = 0, dpr = 1, glyph = [], heat = [];
+    var ink = '#F4F1EA', warm = [255, 201, 60], bg = '#14121C';
+    var FONT = '500 12px "JetBrains Mono", ui-monospace, Menlo, monospace';
+    var pokes = {};
+    var on = false, running = false, lastAmbient = 0;
+
+    function rgb(str) {
+      var m = String(str).match(/\d+(\.\d+)?/g);
+      return m ? [+m[0], +m[1], +m[2]] : [244, 241, 234];
+    }
+    function colours() {
+      var cs = getComputedStyle(orbit.closest('section') || orbit);
+      bg = cs.backgroundColor || bg;
+      ink = cs.color || ink;
+    }
+    var inkRGB = [244, 241, 234];
+
+    function pick() { return Math.floor(Math.random() * GLYPHS.length); }
+
+    function cellAt(i, c) {
+      var x = (i % cols) * CW, y = Math.floor(i / cols) * CH;
+      c.fillText(GLYPHS[glyph[i]], x + CW / 2, y + CH / 2 + 0.5);
+    }
+
+    function paintBase() {
+      bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      bctx.fillStyle = bg;
+      bctx.fillRect(0, 0, cols * CW, rows * CH);
+      bctx.font = FONT;
+      bctx.textAlign = 'center';
+      bctx.textBaseline = 'middle';
+      bctx.fillStyle = 'rgba(' + inkRGB.join(',') + ',0.07)';
+      for (var i = 0; i < glyph.length; i++) cellAt(i, bctx);
+    }
+    function repaintCell(i) {
+      var x = (i % cols) * CW, y = Math.floor(i / cols) * CH;
+      bctx.fillStyle = bg;
+      bctx.fillRect(x, y, CW, CH);
+      bctx.fillStyle = 'rgba(' + inkRGB.join(',') + ',0.07)';
+      cellAt(i, bctx);
+    }
+
+    function size() {
+      var r = orbit.getBoundingClientRect();
+      var w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height || window.innerHeight));
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      [cv, base].forEach(function (c) {
+        c.width = Math.round(w * dpr);
+        c.height = Math.round(h * dpr);
+      });
+      cv.style.width = w + 'px';
+      cv.style.height = h + 'px';
+      CW = w < 700 ? 18 : 15;
+      CH = w < 700 ? 24 : 20;
+      cols = Math.ceil(w / CW);
+      rows = Math.ceil(h / CH);
+      var n = cols * rows;
+      glyph = new Array(n);
+      heat = new Float32Array(n);
+      for (var i = 0; i < n; i++) glyph[i] = pick();
+      colours();
+      inkRGB = rgb(ink);
+      paintBase();
+      frame(performance.now(), true);
+    }
+
+    function frame(now, force) {
+      var any = false;
+
+      /* the pointer, and anything else poking the field, warms the cells
+         under and around it */
+      var r = orbit.getBoundingClientRect();
+      for (var k in pokes) {
+        var p = pokes[k];
+        if (now - p.t > 140) { delete pokes[k]; continue; }
+        var px = p.x - r.left, py = p.y - r.top;
+        var c0 = Math.max(0, Math.floor((px - R) / CW)), c1 = Math.min(cols - 1, Math.ceil((px + R) / CW));
+        var r0 = Math.max(0, Math.floor((py - R) / CH)), r1 = Math.min(rows - 1, Math.ceil((py + R) / CH));
+        for (var yy = r0; yy <= r1; yy++) {
+          for (var xx = c0; xx <= c1; xx++) {
+            var dx = xx * CW + CW / 2 - px, dy = yy * CH + CH / 2 - py;
+            var d = Math.sqrt(dx * dx + dy * dy);
+            if (d > R) continue;
+            var f = 1 - d / R;
+            f = f * f;
+            var i = yy * cols + xx;
+            if (f > heat[i]) heat[i] = f;
+          }
+        }
+      }
+
+      /* now and then, a character turns over on its own */
+      if (!reduced && now - lastAmbient > 110) {
+        lastAmbient = now;
+        var turns = Math.max(1, Math.round(glyph.length * 0.004));
+        for (var t = 0; t < turns; t++) {
+          var j = Math.floor(Math.random() * glyph.length);
+          glyph[j] = pick();
+          repaintCell(j);
+        }
+        any = true;
+      }
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(base, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = FONT;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (var q = 0; q < heat.length; q++) {
+        var hq = heat[q];
+        if (hq < 0.01) { heat[q] = 0; continue; }
+        any = true;
+        /* warm cells shuffle, faster the warmer they are */
+        if (Math.random() < hq * 0.35) {
+          glyph[q] = pick();
+          repaintCell(q);
+        }
+        var x = (q % cols) * CW, y = Math.floor(q / cols) * CH;
+        ctx.fillStyle = bg;
+        ctx.fillRect(x, y, CW, CH);
+        var a = 0.07 + hq * 0.55;
+        var m = Math.min(1, hq * 1.3);
+        var col = [0, 1, 2].map(function (z) { return Math.round(inkRGB[z] + (warm[z] - inkRGB[z]) * m * 0.8); });
+        ctx.fillStyle = 'rgba(' + col.join(',') + ',' + a.toFixed(3) + ')';
+        ctx.fillText(GLYPHS[glyph[q]], x + CW / 2, y + CH / 2 + 0.5);
+        heat[q] = hq * 0.9;
+      }
+      return any || force;
+    }
+
+    function loop(now) {
+      if (!on) { running = false; return; }
+      frame(now);
+      requestAnimationFrame(loop);
+    }
+    function start() { if (!running && !reduced) { running = true; requestAnimationFrame(loop); } }
+
+    function poke(id, x, y) {
+      if (!on) return;
+      pokes[id] = { x: x, y: y, t: performance.now() };
+    }
+
+    window.addEventListener('pointermove', function (e) { poke('pointer', e.clientX, e.clientY); }, { passive: true });
+    JH.field = { poke: function (id, x, y) { poke(id, x, y); } };
+
+    if (window.IntersectionObserver) {
+      new IntersectionObserver(function (entries) {
+        on = !!(entries[0] && entries[0].isIntersecting);
+        if (on) start();
+      }, { threshold: 0 }).observe(orbit);
+    } else { on = true; start(); }
+
+    var resized = 0;
+    window.addEventListener('resize', function () {
+      clearTimeout(resized);
+      resized = setTimeout(size, 200);
+    });
+    document.addEventListener('sidechange', function () { setTimeout(function () { colours(); inkRGB = rgb(ink); paintBase(); }, 600); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { paintBase(); });
+    size();
+  })();
+
   /* ---------------------------------------------------------- The strap ends
 
      The leather runs off the bottom of the watch and squares off into the

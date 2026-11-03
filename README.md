@@ -98,6 +98,22 @@ clean-up takes those off, so the page it leaves is the page.
   never glimpsed first. If `intro.js` never arrives, the page is handed back
   after a few seconds.
 
+## Behind the watch
+
+The watch sits on a quiet field of characters — brackets, slashes, quotes —
+in the mono face (`app.js`, "The field"). At rest it is barely there and a
+character turns over now and then; near the pointer the characters shuffle
+and brighten, warming towards the gold of the hand, and settle back as it
+moves on. The intro's cursors stir it as they work. It is a canvas: the
+resting field is a picture touched up a cell at a time, only warm cells are
+drawn each frame, and nothing runs while the section is off screen.
+
+The hands are drawn as hands: a faceted dauphine for the long one, lit on
+one face and shaded on the other, with a counterweight; a broader leaf for
+the short one with a channel down its middle; a cap they turn on; a bezel
+round the dial. Each keeps its old line as an axis, unpainted, because the
+fun side inks over it.
+
 ## Two sides
 
 The pill in the bottom corner switches the page between the work and the

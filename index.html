@@ -16,7 +16,7 @@
      plain files with no build step behind them, so nothing in their URLs
      ever changes when their contents do, and a browser holding an old
      copy has no way to know. Bump it whenever either one changes. -->
-<link rel="stylesheet" href="styles.css?v=20261103g">
+<link rel="stylesheet" href="styles.css?v=20261104a">
 <script>
   /* Runs before the first paint, which is the whole point of it.
 
@@ -699,12 +699,42 @@
             <g class="watch-face">
               <image class="face-pro" href="assets/watch/face-pro.svg" x="208" y="408" width="584" height="584"/>
               <image class="face-fun" href="assets/watch/face-fun.svg" x="208" y="408" width="584" height="584"/>
+              <!-- a bezel: a band just inside the case, and a hairline inside
+                   that, so the dial sits in something -->
+              <circle class="face-ring face-ring-band" cx="500" cy="700" r="283"/>
+              <circle class="face-ring face-ring-line" cx="500" cy="700" r="270"/>
             </g>
             <g class="watch-case-ink"></g>
             <g class="path-ticks"></g>
-            <g class="path-hand"><line x1="500" y1="736" x2="500" y2="452"/></g>
-            <g class="path-hand-sm"><line x1="500" y1="722" x2="500" y2="560"/></g>
-            <circle class="path-hub" cx="500" cy="700" r="7"/>
+            <!-- Each hand keeps its line: it is the hand's axis, which the fun
+                 side inks over (fun.js), and it is not painted. What is
+                 painted on the work side is the hand itself — a faceted
+                 dauphine for the long one, lit on one face and shaded on the
+                 other, with a counterweight; a broader leaf for the short
+                 one, with a channel down its middle. -->
+            <g class="path-hand">
+              <line x1="500" y1="736" x2="500" y2="452"/>
+              <g class="hand-pro">
+                <rect class="hand-tail" x="498" y="700" width="4" height="40" rx="2"/>
+                <circle class="hand-weight" cx="500" cy="744" r="6.5"/>
+                <path class="hand-lo" d="M500 446 L507.5 698 L500 711 Z"/>
+                <path class="hand-hi" d="M500 446 L492.5 698 L500 711 Z"/>
+              </g>
+            </g>
+            <g class="path-hand-sm">
+              <line x1="500" y1="722" x2="500" y2="560"/>
+              <g class="hand-pro">
+                <path class="hand-lo" d="M500 556 L511 690 L500 718 Z"/>
+                <path class="hand-hi" d="M500 556 L489 690 L500 718 Z"/>
+                <path class="hand-slot" d="M500 590 L502.6 676 L500 684 L497.4 676 Z"/>
+              </g>
+            </g>
+            <!-- the cap the hands turn on: a dark boss, a gold ring, a jewel -->
+            <g class="path-hub">
+              <circle class="hub-boss" cx="500" cy="700" r="12"/>
+              <circle class="hub-ring" cx="500" cy="700" r="7.5"/>
+              <circle class="hub-jewel" cx="500" cy="700" r="2.4"/>
+            </g>
           </g>
 
         </svg>
@@ -1259,11 +1289,11 @@
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <script src="assets/vendor/lenis.min.js" defer></script>
-<script src="app.js?v=20261103f" defer></script>
-<script src="intro.js?v=20261103i" defer></script>
+<script src="app.js?v=20261104a" defer></script>
+<script src="intro.js?v=20261104a" defer></script>
 <!-- A module, so it runs after app.js, once the watch has lifted the eras
      onto the dial. -->
-<script type="module" src="fun.js?v=20261103f"></script>
+<script type="module" src="fun.js?v=20261104a"></script>
 
 </body>
 </html>
