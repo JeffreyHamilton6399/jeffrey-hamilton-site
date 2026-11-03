@@ -46,15 +46,13 @@ measured a screen wide enough to hold it.
 
 ## The intro
 
-A first visit runs in two parts.
+A first visit is built in front of you, then opens.
 
 1. **The build** (`intro.js`). There is no loading screen: the page opens on
-   a blank canvas and a few coloured cursors build it in front of you, all at
-   once and never standing still — a hand waiting on another goes and looks
-   the page over.
-   * One hand handles every image. It draws the intro face with the ellipse
-     tool and drops the photo into it, option-drags a copy up into the
-     header, then drags the project cards in and pastes the rest.
+   a blank canvas and a few coloured cursors build it, all at once. A hand
+   that is moving is making something.
+   * One hand handles every image: it drags the photo into the header, then
+     drags the project cards in and pastes the rest.
    * The others draw the header frame and type the name, type the nav and
      drag it onto the centre line, type the word under the spiral (with a
      typo taken back) and pull it out to size, click the icons in, bring up
@@ -63,16 +61,19 @@ A first visit runs in two parts.
      by frame, so the watch builds exactly as it does under a hand on the
      wheel: one cursor pulls the strap down, one traces the case as its line
      is drawn on, one the crown, one sets the hands going and rides the hand
-     round the dial. Each era opens at its marker with its title typed in,
-     then Now, then the watch folds away. The contact panel is built (heading
-     typed, note pasted, address typed) and the view comes back up. On a
-     narrower screen the watch is still and the eras are in the flow; the
-     walk stops at each.
+     round the dial. The others are already waiting where each era's title
+     will appear and type it as the panel opens, then the headings of Now.
+     The contact panel is built as the leather opens (heading typed, note
+     pasted, address typed) and the view comes back up. On a narrower screen
+     the watch is still and the eras are in the flow; the walk stops at each.
+   * Last of all the image hand makes the intro face — the circle drawn with
+     the ellipse tool, the photo option-dragged down out of the header into
+     it — and every cursor goes in to the middle and slips behind it.
    * The build is the loading: while it runs, the images further down the
      page are fetched a few at a time.
-2. **The opening** (`app.js`). The cursors hand over to the face they built:
-   the sheet fades up behind it, it spins into a gold dot, and three lines
-   carry it to the face, the nav and the icons, which open as they land.
+2. **The opening** (`app.js`). The face the cursors made spins into a gold
+   dot, and three lines carry it to the face, the nav and the icons, which
+   open as they land.
 
 The cursors work on the page's own elements: text is typed by uncovering the
 real characters, and anything dragged or resized moves through the CSS

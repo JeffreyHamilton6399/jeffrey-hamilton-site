@@ -133,7 +133,7 @@
 
   /* The whole session runs a little faster than life, the way a screen
      recording of one is played back. */
-  var TIME = 0.62;
+  var TIME = 0.42;
 
   function tween(dur, fn, e) {
     return new Promise(function (res, rej) {
@@ -424,27 +424,10 @@
         }
         return step();
       },
+      /* nothing to make right now: the hand rests, drifting */
       roam: function (cut) {
-        var t = pickTarget(c);
-        if (!t) {
-          var fx = clamp(c.x + rnd(-140, 140), 24, W() - 24), fy = clamp(c.y + rnd(-100, 100), 24, H() - 24);
-          return c.move(fx, fy, { overshoot: false }).then(function () { return c.idle(rnd(140, 260)); });
-        }
-        c.target = t;
-        var r = rect(t);
-        var px = clamp(r.left + r.width * rnd(0.25, 0.75), 16, W() - 16);
-        var py = clamp(r.top + r.height * rnd(0.3, 0.7), 16, H() - 16);
-        return c.move(px, py).then(function () {
-          if (cut && cut()) return;
-          if (Math.random() < 0.45) {
-            var b = Box(c.color);
-            b.track(function () { return rect(t); }, 3);
-            b.on();
-            return c.click().then(function () { return c.idle(rnd(220, 380)); })
-              .then(function () { b.remove(); }, function (e) { b.remove(); throw e; });
-          }
-          return c.idle(rnd(160, 300));
-        }).then(function () { c.target = null; });
+        var fx = clamp(c.x + rnd(-36, 36), 24, W() - 24), fy = clamp(c.y + rnd(-26, 26), 24, H() - 24);
+        return c.move(fx, fy, { overshoot: false, dur: rnd(420, 700) });
       },
       /* the hand off the mouse but not still: small drifts around a spot,
          first moved aside by `off`, until the returned stop is called */
@@ -588,31 +571,6 @@
 
   function center(r) { return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
 
-  /* Something worth a look: on screen, built already, not faded out, and
-     not where another hand already is. */
-  var ROAM = '.mark, .nav a, .soc, .skills-type, .spiral-card, .side-switch, .boot-face, ' +
-    '.path-svg .watch-case, .path-dial li, .path-year, .era-title, .era-media img, .pcard, ' +
-    '.pn-title, .group-title, .path-certs li, #contact h2, .contact-mail, .contact-note';
-  function pickTarget(c) {
-    var list = [].slice.call(document.querySelectorAll(ROAM)).filter(function (el) {
-      if (el.closest('[data-bi]')) return false;
-      if (el.closest('.side') && !el.closest('.side-' + side())) return false;
-      var faded = el.closest('.era, .path-now, .path-picks, .path-right, .path-certs, .path-dial, .path-year');
-      if (faded && faded.style.opacity !== '' && +faded.style.opacity < 0.5) return false;
-      var r = rect(el);
-      if (r.width < 8 || r.height < 8) return false;
-      if (r.right < 30 || r.left > W() - 30 || r.bottom < 30 || r.top > H() - 30) return false;
-      var cc = center(r);
-      for (var i = 0; i < crew.length; i++) {
-        var o = crew[i];
-        if (o === c) continue;
-        if (o.target === el || Math.hypot(o.x - cc.x, o.y - cc.y) < 90) return false;
-      }
-      return true;
-    });
-    return list.length ? list[Math.floor(Math.random() * list.length)] : null;
-  }
-
   /* What a design tool shows while an image is dragged: a small copy under
      the hand. The real element is filled when it is dropped. */
   function Ghost(src, color) {
@@ -685,9 +643,9 @@
     if (!bootFace || !bootImg || !shown(bootFace)) { show(bootFace); show(bootImg); emit('face'); return Promise.resolve(); }
     var r = rect(bootFace), cc = center(r);
     var sel = Box(c.color);
-    return c.move(r.left - rnd(40, 70), r.top - rnd(30, 50)).then(function () {
+    return c.move(r.left - rnd(30, 50), r.top - rnd(20, 40)).then(function () {
       c.chip('O');                         /* the ellipse tool */
-      return c.idle(rnd(160, 240));
+      return wait(rnd(90, 140));
     }).then(function () {
       return c.move(r.left + 2, r.top + 2, { overshoot: false });
     }).then(c.press).then(function () {
@@ -709,13 +667,14 @@
       sel.badge(null).handles(true);
       return c.release();
     }).then(function () {
-      return c.idle(rnd(220, 300));
+      return wait(rnd(120, 180));
     }).then(function () {
       sel.remove();
-      /* the photo, from the nearer edge of the screen */
-      var sx = cc.x < W() / 2 ? 6 : W() - 6;
-      return c.move(sx, clamp(cc.y + rnd(-90, 90), 60, H() - 60));
+      /* the photo: an option-drag of the one already in the header */
+      var src = face && shown(face) ? center(rect(face)) : { x: cc.x < W() / 2 ? 6 : W() - 6, y: cc.y };
+      return c.move(src.x, src.y);
     }).then(c.press).then(function () {
+      c.chip('⌥');
       var g = Ghost(bootImg.currentSrc || bootImg.src, c.color);
       g.at(c.x, c.y);
       var drop = Box(c.color), over = false;
@@ -740,42 +699,42 @@
       var s2 = Box(c.color).handles(true);
       s2.track(function () { return rect(bootFace); }, 2);
       s2.on();
-      return c.idle(rnd(260, 360)).then(function () { s2.remove(); });
+      return wait(rnd(200, 260)).then(function () { s2.remove(); });
     }).then(function () { emit('face'); });
   }
 
-  /* The same hand takes a copy of the photo up into the header: an
-     option-drag off the face, dropped on the frame's left end. */
+  /* The photo, dragged in from the edge of the screen and dropped on the
+     left end of the header frame. The hand that does this does every image. */
   function jobMarkPhoto(c) {
     if (!face || !shown(face)) { show(face); emit('markPhoto'); return Promise.resolve(); }
-    return c.idleUntil(Promise.all([when('frame'), when('face')])).then(function () {
-      var fr = rect(face), fc = center(fr), hi = rect(headInner);
-      var src = bootImg ? (bootImg.currentSrc || bootImg.src) : face.querySelector('img').src;
-      var from = bootFace && shown(bootFace) ? center(rect(bootFace)) : { x: W() / 2, y: H() / 2 };
-      var gs = [];
-      return c.move(from.x + rnd(-24, 24), from.y + rnd(-24, 24)).then(c.press).then(function () {
-        c.chip('⌥');
-        var g = Ghost(src, c.color);
-        g.at(c.x, c.y);
-        return c.move(fc.x, fc.y, {
-          onMove: function (x, y) {
-            g.at(x, y);
-            if (!gs.length && Math.hypot(x - fc.x, y - fc.y) < 46) {
-              gs = [guide(c.color, hi.left - 8, fc.y, hi.right + 8, fc.y),
-                    guide(c.color, fr.left, hi.top - 7, fr.left, hi.bottom + 7)];
-            }
+    var fr = rect(face), fc = center(fr);
+    var src = (face.querySelector('img') || bootImg);
+    src = src ? (src.currentSrc || src.src) : '';
+    var gs = [];
+    return c.move(6, clamp(fc.y + rnd(110, 170), 60, H() - 60)).then(function () {
+      return c.idleUntil(when('frame'));
+    }).then(c.press).then(function () {
+      var hi = rect(headInner);
+      var g = Ghost(src, c.color);
+      g.at(c.x, c.y);
+      return c.move(fc.x, fc.y, {
+        onMove: function (x, y) {
+          g.at(x, y);
+          if (!gs.length && Math.hypot(x - fc.x, y - fc.y) < 46) {
+            gs = [guide(c.color, hi.left - 8, fc.y, hi.right + 8, fc.y),
+                  guide(c.color, fr.left, hi.top - 7, fr.left, hi.bottom + 7)];
           }
-        }).then(function () { g.remove(); return c.release(); });
-      }).then(function () {
-        show(face);
-        tween(260, function (e) { setS(face, 'scale', (0.5 + 0.5 * e).toFixed(3)); }, ease.back).catch(function () {});
-        var sel = Box(c.color).handles(true);
-        sel.track(function () { return rect(face); }, 2);
-        sel.on();
-        return c.idle(rnd(300, 380)).then(function () {
-          sel.remove();
-          gs.forEach(function (g) { g.remove(); });
-        });
+        }
+      }).then(function () { g.remove(); return c.release(); });
+    }).then(function () {
+      show(face);
+      tween(260, function (e) { setS(face, 'scale', (0.5 + 0.5 * e).toFixed(3)); }, ease.back).catch(function () {});
+      var sel = Box(c.color).handles(true);
+      sel.track(function () { return rect(face); }, 2);
+      sel.on();
+      return wait(rnd(220, 280)).then(function () {
+        sel.remove();
+        gs.forEach(function (g) { g.remove(); });
       });
     }).then(function () { emit('markPhoto'); });
   }
@@ -1186,7 +1145,7 @@
         var sel = Box(c.color);
         sel.track(function () { return rect(note); }, 4);
         sel.on();
-        return c.idle(rnd(300, 360)).then(function () { sel.remove(); });
+        return wait(rnd(240, 300)).then(function () { sel.remove(); });
       });
     }).then(function () {
       var cs = text.mail;
@@ -1228,46 +1187,39 @@
     return p;
   }
 
-  /* An era panel built: its title typed in, the panel selected, let go. */
-  function jobEra(c, era) {
-    var item = null;
-    text.eras.forEach(function (e) { if (e.era === era) item = e; });
-    var copy = era.querySelector('.era-copy') || era;
-    var start = item && item.chars.length ? item.chars[0] : (item && item.title) || copy;
-    var sel = Box(c.color);
-    sel.track(function () { return rect(copy); }, 8);
-    var r0 = rect(start);
-    return c.move(r0.left + 2, r0.top + r0.height / 2).then(c.click).then(function () {
-      sel.on();
-      if (!item || !item.chars.length) return c.idle(rnd(360, 460));
-      var tb = TextBox(c.color, [item.chars]);
-      tb.show();
-      var stop = c.wander(14, { x: rnd(24, 40), y: rnd(28, 44) });
-      return type(item.chars, tb, { base: 34 }).then(function () {
-        stop();
-        return wait(rnd(80, 120));
-      }).then(function () { tb.done(); });
+  /* A title in a panel that is still on its way in: the hand gets to where
+     it will be, waits for the panel to open, and types it the moment it
+     does. Used for each era and for the pieces of Now. */
+  function typeOpening(c, panel, chars, title) {
+    var lead = chars.length ? chars[0] : title || panel;
+    var r0 = rect(lead);
+    var open = function () { return panel.style.opacity === '' || +panel.style.opacity > 0.4; };
+    return c.move(r0.left + 2, r0.top + r0.height / 2).then(function () {
+      return c.idleUntil(until(open));
     }).then(function () {
-      sel.remove();
-      return c.move(c.x + rnd(60, 120), c.y + rnd(30, 70));
+      var r1 = rect(lead);
+      return c.move(r1.left + 2, r1.top + r1.height / 2, { overshoot: false, dur: 160 });
+    }).then(c.click).then(function () {
+      var copy = panel.querySelector('.era-copy') || panel;
+      var sel = Box(c.color);
+      sel.track(function () { return rect(copy); }, 8);
+      sel.on();
+      if (!chars.length) return wait(200).then(function () { sel.remove(); });
+      var tb = TextBox(c.color, [chars]);
+      tb.show();
+      var stop = c.wander(12, { x: rnd(20, 34), y: rnd(24, 36) });
+      return type(chars, tb, { base: 46 }).then(function () {
+        stop();
+        tb.done();
+        sel.remove();
+      });
     });
   }
 
-  /* A few things looked over in turn: each picked up, checked, let go. */
-  function jobCheck(c, els) {
-    var i = 0;
-    function next() {
-      if (i >= els.length) return Promise.resolve();
-      var el = els[i++];
-      if (!shown(el)) return next();
-      var r = rect(el);
-      var sel = Box(c.color);
-      sel.track(function () { return rect(el); }, 4);
-      return c.move(clamp(r.left + r.width * rnd(0.3, 0.6), 20, W() - 20), clamp(r.top + rnd(14, 30), 20, H() - 20))
-        .then(c.click).then(function () { sel.on(); return c.idle(rnd(240, 320)); })
-        .then(function () { sel.remove(); return next(); });
-    }
-    return next();
+  function jobEra(c, era) {
+    var item = null;
+    text.eras.forEach(function (e) { if (e.era === era) item = e; });
+    return typeOpening(c, era, item ? item.chars : [], item && item.title);
   }
 
   /* Where a stroke is being drawn on: the end of the visible part of an
@@ -1288,10 +1240,11 @@
 
   /* The watch, made in front of you. The intro scrolls the page itself, so
      the watch's own scroll-driven build runs exactly as it does for anyone
-     scrolling: one hand pulls the strap down out of the hero, one traces
-     the case as its line is drawn on, one the crown, one sets the hands
-     going and rides the hand round the dial. Each era opens at its marker
-     with its title typed in; then Now; then the watch folds away. */
+     scrolling: one hand pulls the strap down out of the hero, one traces the
+     case as its line is drawn on, one the crown, one sets the hands going
+     and rides the hand round the dial. The others are already waiting where
+     each era's title will appear, and type it as the panel opens; then the
+     same for Now. Every hand is making something the whole way down. */
   function walkWatch(cs) {
     var Wt = JH.watch;
     var n = cs.length;
@@ -1312,44 +1265,51 @@
 
     var A = {};
     A.p = new Promise(function (r) { A.r = r; });
+    var B = {};
+    B.p = new Promise(function (r) { B.r = r; });
     function followUntil(c, fn, p) { return task(c, function () { var stop = c.follow(fn); return p.then(stop); }); }
 
     if (strapEl) followUntil(cs[0], strapTip, A.p);
     if (kase) followUntil(cs[1 % n], tipOf(kase), A.p);
     if (crown && n > 2) followUntil(cs[2], tipOf(crown), A.p);
-    /* the hands go on once the face is there */
+    /* the hands go on once the face is there, and then that hand rides one */
     if (Wt.hub) task(hand, function () {
       return hand.idleUntil(until(function () { return +Wt.hub.style.opacity > 0.3; })).then(function () {
         var q = center(rect(Wt.hub));
         return hand.move(q.x, q.y).then(hand.click);
       });
     });
+    if (Wt.mark) followUntil(hand, function () { return center(rect(Wt.mark)); }, B.p);
 
-    var B = {};
-    B.p = new Promise(function (r) { B.r = r; });
+    /* Every title is queued now, each on the hand that will type it, so a
+       hand is already over the next one before its panel opens. The free
+       hand (the fifth) takes the first era, the strap/case/crown hands the
+       rest as they come free. */
+    var lanes = [4, 0, 1, 2].filter(function (i) { return i < n; }).map(function (i) { return cs[i]; })
+      .filter(function (c) { return c !== hand; });
+    var eraJobs = Wt.eras.map(function (e, i) {
+      var who = lanes[i % lanes.length];
+      return task(who, function () { return jobEra(who, e.el); });
+    });
+    var nowJobs = text.now.map(function (t, i) {
+      var who = lanes[(Wt.eras.length + i) % lanes.length];
+      return task(who, function () { return typeOpening(who, t.panel, t.chars, t.title); });
+    });
 
-    return scrollTo(Wt.build.end, 4200).then(function () {
-      return wait(520);
+    return scrollTo(Wt.build.end, 3400).then(function () {
+      return wait(700);
     }).then(function () {
       A.r();
-      if (Wt.mark) followUntil(hand, function () { return center(rect(Wt.mark)); }, B.p);
-      var lanes = [0, 1, 2, 4].filter(function (i) { return i < n && cs[i] !== hand; });
       var i = 0;
       function nextEra() {
         if (i >= Wt.eras.length) return Promise.resolve();
-        var e = Wt.eras[i];
-        var who = cs[lanes[i % lanes.length]];
+        var e = Wt.eras[i], job = eraJobs[i];
         i++;
-        return scrollTo(at(e.at), 1500).then(function () { return wait(420); })
-          .then(function () { return task(who, function () { return jobEra(who, e.el); }); })
-          .then(nextEra);
+        return scrollTo(at(e.at), 1500).then(function () { return job; }).then(nextEra);
       }
       return nextEra();
     }).then(function () {
-      return scrollTo(at(Wt.now.at), 1400).then(function () { return wait(420); }).then(function () {
-        var who = cs[4 % n] === hand ? cs[0] : cs[4 % n];
-        return task(who, function () { return jobCheck(who, Wt.now.els); });
-      });
+      return scrollTo(at(Wt.now.at), 1500).then(function () { return Promise.all(nowJobs); });
     }).then(function () {
       B.r();
       return scrollTo(Wt.rev.end, 1700);
@@ -1368,8 +1328,8 @@
     if (kase) {
       go = go.then(function () {
         var r = rect(kase);
-        return scrollTo(Math.max(0, r.top + window.scrollY - (H() - r.height) / 2), 2200);
-      }).then(function () { return wait(250); }).then(function () {
+        return scrollTo(Math.max(0, r.top + window.scrollY - (H() - r.height) / 2), 1700);
+      }).then(function () {
         var who = cs[1 % n];
         return task(who, function () {
           var r = rect(kase), cc = center(r), R = r.width / 2;
@@ -1387,8 +1347,8 @@
     eras.forEach(function (era, i) {
       go = go.then(function () {
         var t = era.querySelector('.era-copy') || era;
-        return scrollTo(Math.max(0, rect(t).top + window.scrollY - H() * 0.16), 1800);
-      }).then(function () { return wait(200); }).then(function () {
+        return scrollTo(Math.max(0, rect(t).top + window.scrollY - H() * 0.16), 1400);
+      }).then(function () {
         var who = cs[[0, 2, 1][i % 3] % n];
         return task(who, function () { return jobEra(who, era); });
       });
@@ -1427,7 +1387,7 @@
       return live ? walkWatch(cs) : walkFlow(cs);
     }).then(function () {
       if (!contact) return;
-      return scrollTo(contactY(), 1400).then(function () { return wait(380); }).then(function () {
+      return scrollTo(contactY(), 1700).then(function () { return wait(500); }).then(function () {
         /* the panels below move as they arrive; settle on the copy */
         var wrap = contact.querySelector('.wrap') || contact;
         var r = rect(wrap);
@@ -1439,10 +1399,10 @@
                             task(b, function () { return jobContactBody(b); })]);
       });
     }).then(function () {
-      return wait(320);
+      return wait(200);
     }).then(function () {
-      return scrollTo(0, 2400);
-    }).then(function () { return wait(250); });
+      return scrollTo(0, 2600);
+    }).then(function () { return wait(150); });
   }
 
   /* The build is the loading. While the cursors work, everything further
@@ -1468,7 +1428,7 @@
 
   /* ------------------------------------------------------------ set up */
 
-  var text = { name: [], where: [], word: [], nav: [], head: [], mail: [], eras: [] };
+  var text = { name: [], where: [], word: [], nav: [], head: [], mail: [], eras: [], now: [] };
   var contact = document.getElementById('contact');
   var note = null;
   var NAV_DX = W() > 680 ? 26 : 0, NAV_DY = W() > 680 ? 3 : 0;
@@ -1512,6 +1472,15 @@
       })[0];
       text.eras.push({ era: era, title: t || null, chars: t && side() === 'pro' ? charify(t) : [] });
     });
+    /* and the headings of Now, typed as it opens */
+    ['.path-now', '.path-picks'].forEach(function (sel) {
+      var panel = document.querySelector(sel);
+      if (!panel) return;
+      var t = [].slice.call(panel.querySelectorAll('.pn-title, .group-title')).filter(function (h) {
+        return !h.closest('.side') || h.closest('.side-pro');
+      })[0];
+      if (t) text.now.push({ panel: panel, title: t, chars: side() === 'pro' ? charify(t) : [] });
+    });
     if (contact) {
       text.head = [].slice.call(contact.querySelectorAll('h2 .line')).map(function (l) {
         return charify(l.querySelector('.side-' + side()) || l);
@@ -1542,6 +1511,7 @@
 
   /* ------------------------------------------------------------ the run */
 
+  var IMG = 1;
   var PALETTE = ['#5B3CE8', '#0B93D6', '#0E9F6E', '#E08A00', '#E23D8A'];
 
   function run() {
@@ -1570,14 +1540,14 @@
       var fns = [].slice.call(arguments);
       return function () { return fns.reduce(function (p, f) { return p.then(f); }, Promise.resolve()); };
     }
-    var IMG = wide ? 3 : 1;   /* the one hand that handles every image */
+    IMG = wide ? 3 : 1;   /* the one hand that handles every image */
     var img = cs[IMG];
 
     var scripts = wide ? [
       after(150, seq(function () { return jobFrame(cs[0]); }, function () { return jobMarkText(cs[0]); })),
       after(260, function () { return cs[1].move(w * 0.5 + rnd(-40, 40), 90).then(function () { return jobNav(cs[1]); }); }),
       after(420, function () { return jobWord(cs[2]); }),
-      after(0, seq(function () { return jobFace(img); }, function () { return jobMarkPhoto(img); }, function () { return jobCards(img); })),
+      after(0, seq(function () { return jobMarkPhoto(img); }, function () { return jobCards(img); })),
       after(380, function () {
         return cs[4].move(w * 0.86, 110).then(function () { return jobSocial(cs[4]); })
           .then(function () { return jobSwitch(cs[4]); })
@@ -1585,7 +1555,7 @@
       })
     ] : [
       after(150, seq(function () { return jobFrame(cs[0]); }, function () { return jobMarkText(cs[0]); }, function () { return jobNav(cs[0]); })),
-      after(0, seq(function () { return jobFace(img); }, function () { return jobMarkPhoto(img); }, function () { return jobCards(img); })),
+      after(0, seq(function () { return jobMarkPhoto(img); }, function () { return jobCards(img); })),
       after(300, seq(function () { return jobWord(cs[2]); }, function () { return jobSwitch(cs[2]); }))
     ];
 
@@ -1611,21 +1581,45 @@
     finish(true);
   }
 
-  /* All hands off. A beat to look it over, then the scaffolding goes — the
-     grid, the frames, the cursors — and the page below rises into place. */
+  /* The end. Back at the top, the image hand makes the face last of all —
+     the circle drawn, the photo option-dragged down out of the header into
+     it — while the others gather round. Then every hand goes in to the
+     middle and slips behind the face, which is what the opening (app.js)
+     spins into the gold dot. */
+  var under = null;
   function reveal(cs) {
-    return wait(420).then(function () {
-      frames.forEach(function (b) { b.remove(); });
-      canvas.classList.remove('on');
-      cs.forEach(function (c) {
-        var q = { x: c.x, y: c.y };
-        var tx = q.x < W() / 2 ? -40 : W() + 40;
-        var ty = q.y + rnd(-40, 40);
-        c.halt = true;
-        c.el.classList.add('leaving');
-        c.move(tx, ty, { dur: rnd(520, 700), overshoot: false, exit: true }).catch(function () {});
+    frames.forEach(function (b) { b.remove(); });
+    canvas.classList.remove('on');
+    var img = cs[IMG % cs.length];
+    var target = bootFace && shown(bootFace) ? center(rect(bootFace)) : { x: W() / 2, y: H() / 2 };
+    var R = bootFace ? rect(bootFace).width / 2 : 80;
+    var jobs = cs.map(function (c, i) {
+      if (c === img) return task(c, function () { return jobFace(c); });
+      /* round the circle, each from its own side */
+      var a = (i / cs.length) * Math.PI * 2 + rnd(-0.3, 0.3);
+      return task(c, function () {
+        return c.move(target.x + Math.cos(a) * (R + rnd(40, 80)), target.y + Math.sin(a) * (R + rnd(30, 60)));
       });
-      return wait(720);
+    });
+    return Promise.all(jobs).then(function () {
+      /* under the face: the hands' layer goes in just beneath it */
+      var center_ = bootFace && bootFace.closest('[data-intro]');
+      if (center_ && center_.parentNode) {
+        under = make('div', 'bi-under');
+        var z = parseInt(getComputedStyle(center_).zIndex, 10);
+        under.style.zIndex = String((isNaN(z) ? 10 : z) - 1);
+        var sr = rect(center_.parentNode);
+        under.style.left = (-sr.left) + 'px';
+        under.style.top = (-sr.top) + 'px';
+        center_.parentNode.insertBefore(under, center_);
+        cs.forEach(function (c) { under.appendChild(c.el); });
+      }
+      cs.forEach(function (c) { c.halt = true; });
+      return Promise.all(cs.map(function (c) {
+        return c.move(target.x + rnd(-6, 6), target.y + rnd(-6, 6), { dur: rnd(1500, 1900), overshoot: false, exit: true, bend: rnd(-0.25, 0.25) });
+      }));
+    }).then(function () {
+      return wait(120);
     }).then(function () { finish(false); });
   }
 
@@ -1668,6 +1662,7 @@
       if (first) first.focus({ preventScroll: true });
     }
 
+    if (under) { under.remove(); under = null; }
     if (instant) {
       if (window.scrollY > 0) {
         if (JH.lenis) JH.lenis.scrollTo(0, { immediate: true, force: true });
