@@ -382,7 +382,7 @@
           if (r.height && dy > 24 && r.top >= 0) gsap.set(portrait, { y: dy });
         }
         if (!handoff) setTimeout(function () { center.classList.add('boot-in'); }, 420);
-        setTimeout(dip, handoff ? 900 : HOLD_FACE);
+        setTimeout(dip, handoff ? 450 : HOLD_FACE);
       });
     }
 
