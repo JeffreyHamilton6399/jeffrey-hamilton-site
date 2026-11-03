@@ -100,13 +100,18 @@ clean-up takes those off, so the page it leaves is the page.
 
 ## Behind the watch
 
-The watch sits on a quiet field of characters — brackets, slashes, quotes —
-in the mono face (`app.js`, "The field"). At rest it is barely there and a
-character turns over now and then; near the pointer the characters shuffle
-and brighten, warming towards the gold of the hand, and settle back as it
-moves on. The intro's cursors stir it as they work. It is a canvas: the
-resting field is a picture touched up a cell at a time, only warm cells are
-drawn each frame, and nothing runs while the section is off screen.
+The watch sits on a dense field of monospace letters and numbers drifting
+in cloudlike bands. It uses the MIT-licensed renderer from
+[Henry Fan's Claude Code Background Lab](https://github.com/Henry-fan88/claude-code-background),
+vendored with its license in `assets/vendor/glyph-wind/`. `field.js` connects
+it to the page. Pointer movement leaves a wake; clicks make blue ripples,
+with a heart on every third click. Each intro cursor has its own wake.
+
+During the intro, one cursor draws the field's bounds before the watch is
+assembled. Skipping leaves the complete background. The WebGL2 renderer
+pauses off screen and in hidden tabs, respects reduced motion with a still
+frame, and caps its backing buffer at four million pixels. Without WebGL2,
+the watch keeps its plain background and the intro still completes.
 
 The hands are drawn as hands: a faceted dauphine for the long one, lit on
 one face and shaded on the other, with a counterweight; a broader leaf for

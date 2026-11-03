@@ -1134,6 +1134,35 @@
     };
   }
 
+  /* One hand draws the background's bounds. The real glyph field is revealed
+     under the selection as it grows, then stays behind the finished watch. */
+  function makeField(c) {
+    var F = JH.field;
+    if (!F) return Promise.resolve();
+    return F.ready.then(function () {
+      if (dead) throw ABORT;
+      var r = rect(F.element);
+      if (r.width < 1 || r.height < 1) { F.reveal(1); return; }
+      var b = Box(c.color);
+      var x0 = Math.max(8, r.left + 8), y0 = Math.max(8, r.top + 8);
+      var x1 = Math.min(W() - 8, r.right - 8), y1 = Math.min(H() - 8, r.bottom - 8);
+      return c.move(x0, y0).then(c.press).then(function () {
+        b.set(x0, y0, 1, 1);
+        b.on();
+        return c.move(x1, y1, {
+          overshoot: false, bend: 0, dur: 1800, ease: ease.inOut,
+          onMove: function (x, y) {
+            b.set(x0, y0, Math.max(1, x - x0), Math.max(1, y - y0));
+            F.reveal((x - x0) / Math.max(1, x1 - x0), (y - y0) / Math.max(1, y1 - y0));
+          }
+        });
+      }).then(function () {
+        F.reveal(1);
+        return c.release();
+      }).then(function () { b.remove(); });
+    });
+  }
+
   /* The watch, made in front of you. The intro scrolls the page itself, so
      the watch's own scroll-driven build runs exactly as it does for anyone
      scrolling: one hand pulls the strap down out of the hero, one traces the
@@ -1248,6 +1277,8 @@
       if (pulling) pulling.r();
       return wait(120);
     }).then(function () {
+      return task(cs[4 % n], function () { return makeField(cs[4 % n]); });
+    }).then(function () {
       var jobs = [task(cs[0], function () { return dragStrap(cs[0], 0, 650); })];
       if (crown && n > 2) jobs.push(task(cs[2], function () { return trace(cs[2], crown, 500); }));
       if (kase) jobs.push(task(cs[1 % n], function () { return trace(cs[1 % n], kase, 950); }));
@@ -1327,6 +1358,8 @@
       go = go.then(function () {
         var r = rect(kase);
         return scrollTo(Math.max(0, r.top + window.scrollY - (H() - r.height) / 2), 1500);
+      }).then(function () {
+        return task(cs[0], function () { return makeField(cs[0]); });
       }).then(function () {
         var who = cs[1 % n];
         var dials = makeAll(cs.filter(function (c) { return c !== who; }), text.dial);

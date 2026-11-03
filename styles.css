@@ -1296,12 +1296,16 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   overflow: hidden;
   pointer-events: none;
 }
-.path-orbit.is-still .path-field {
+.path-field {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  overflow: hidden;
+  color: var(--on-dark);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
+.path-field canvas { display: block; position: absolute; inset: 0; }
 .path-orbit-in {
   z-index: 1;
   position: absolute;
