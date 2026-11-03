@@ -1275,7 +1275,7 @@
       if (Wt.mark) followUntil(hand, function () { return center(rect(Wt.mark)); }, B.p, true);
       Wt.dial(1);
       /* the years go on while the first era opens */
-      makeAll(crew.slice(-2), text.dial);
+      makeAll(crew.slice(-2), text.dial).catch(function () {});   /* a skip cancels it */
     }).then(function () {
       var i = 0;
       function nextEra() {
