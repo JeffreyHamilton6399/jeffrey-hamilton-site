@@ -276,6 +276,8 @@
       el: el, color: color, x: x, y: y, speed: speed, hand: hand, mid: 0, halt: false, done: false,
       place: function () {
         el.style.transform = 'translate3d(' + c.x.toFixed(1) + 'px,' + c.y.toFixed(1) + 'px,0)';
+        /* the field behind the watch feels the hands go by too */
+        if (JH.field) JH.field.poke(color, c.x, c.y);
       },
       /* A human reach: a slight arc, quick in the middle and slow at both
          ends, the time growing with the log of the distance (Fitts), a
