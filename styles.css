@@ -1361,7 +1361,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   transform-origin: 50% 0;
   border-left: 3px solid var(--rule-dark);
   border-right: 3px solid var(--rule-dark);
-  background: color-mix(in srgb, var(--on-dark) 4%, transparent);
+  background: color-mix(in srgb, var(--on-dark) 4%, var(--void));
   pointer-events: none;
 }
 .path-lead::before, .path-lead::after {
@@ -1383,7 +1383,8 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   transition: stroke .55s var(--ease-out);
 }
 .watch-strap {
-  fill: color-mix(in srgb, var(--on-dark) 4%, transparent);
+  /* solid: the leather lies over the field behind the watch, not under it */
+  fill: color-mix(in srgb, var(--on-dark) 4%, var(--void));
   stroke: var(--rule-dark);
   stroke-width: 3;
   stroke-linejoin: round;
