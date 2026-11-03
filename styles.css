@@ -1282,6 +1282,13 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
    leather widens. */
 #path.is-watch { margin-bottom: -66vh; }
 
+/* Story copy stays legible over the moving gold field. Use opaque ink here
+   so the letters behind it cannot show through the text itself. */
+#path {
+  --on-dark-soft: #E8E2D7;
+  --on-dark-faint: #C4BDCD;
+}
+
 .path-orbit { display: none; }
 
 /* The still watch, at the head of the timeline on a narrow screen. Same
@@ -1552,7 +1559,7 @@ html[data-side="fun"] .hand-pro { opacity: 0; visibility: hidden; transition: op
   border-top: 1px solid var(--rule-dark);
 }
 .pn-list strong { font-size: .9375rem; font-weight: 600; color: var(--on-dark); }
-.pn-list span { font-size: .8125rem; color: var(--on-dark-soft); }
+.pn-list span { font-size: .875rem; color: var(--on-dark-soft); }
 
 .path-certs {
   list-style: none;
@@ -1598,7 +1605,7 @@ html[data-side="fun"] .hand-pro { opacity: 0; visibility: hidden; transition: op
   color: var(--on-dark-soft);
 }
 .pg-text:last-child { margin-bottom: 0; }
-.path-orbit.is-live .path-picks .pg-text { font-size: .75rem; line-height: 1.5; margin-bottom: .625rem; }
+.path-orbit.is-live .path-picks .pg-text { font-size: .875rem; line-height: 1.6; margin-bottom: .625rem; }
 .path-orbit.is-live .path-picks .group-title { margin-bottom: .625rem; }
 
 /* On the dial: the Now card takes one side, the three picks the other, and
@@ -1804,7 +1811,7 @@ html[data-side="fun"] .hand-pro { opacity: 0; visibility: hidden; transition: op
 .is-live-era .ship-desc { display: none; }
 .is-live-era .ship-tag { margin-top: .375rem; }
 .is-live-era .pn-about { display: none; }
-.is-live-era .era-text { font-size: .9375rem; }
+.is-live-era .era-text { font-size: 1rem; line-height: 1.65; }
 .is-live-era .era-title { font-size: clamp(1.25rem, 2.4vw, 2rem); }
 .is-live-era .vid-cap { margin-top: .375rem; }
 .is-live-era .vid-title { font-size: .75rem; }
@@ -1843,6 +1850,29 @@ html[data-side="fun"] .hand-pro { opacity: 0; visibility: hidden; transition: op
 }
 .era-text { color: var(--on-dark-soft); max-width: 46ch; }
 .era-text + .era-text { margin-top: .875rem; }
+
+/* Feather the field away under each reading column without adding a visible
+   card or changing the dimensions used by the watch's scroll animation. */
+.is-live-era .era-copy,
+.is-live-era .era-media {
+  position: relative;
+  isolation: isolate;
+}
+.path-orbit.is-live .path-now,
+.path-orbit.is-live .path-picks { isolation: isolate; }
+.is-live-era .era-copy::before,
+.is-live-era .era-media::before,
+.path-orbit.is-live .path-now::before,
+.path-orbit.is-live .path-picks::before {
+  content: "";
+  position: absolute;
+  inset: -.75rem -1rem;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 1rem;
+  background: var(--void);
+  filter: blur(14px);
+}
 
 /* What the third era actually is, right now. */
 .era-now {
