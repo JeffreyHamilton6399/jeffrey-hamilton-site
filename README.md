@@ -49,23 +49,27 @@ measured a screen wide enough to hold it.
 A first visit is built in front of you, then opens.
 
 1. **The build** (`intro.js`). There is no loading screen: the page opens on
-   a blank canvas and a few coloured cursors build it, all at once. A hand
-   that is moving is making something.
+   a blank canvas and a few coloured cursors build it, all at once. Nothing
+   is typed out letter by letter and nothing appears on its own: every
+   element is made by a cursor, which draws its box from corner to corner
+   and lets go, and the element is there, whole. A hand that is moving is
+   making something; free hands take the nearest piece still to be made.
    * One hand handles every image: it drags the photo into the header, then
      drags the project cards in and pastes the rest.
-   * The others draw the header frame and type the name, type the nav and
-     drag it onto the centre line, type the word under the spiral (with a
-     typo taken back) and pull it out to size, click the icons in, bring up
-     the switch and tighten the spacing.
+   * The others draw the header frame and make the name, make the nav and
+     drag it onto the centre line, make the word under the spiral and pull
+     it out to size, click the icons in, bring up the switch and tighten
+     the spacing.
    * Then the view walks down the page. The intro scrolls it itself, frame
      by frame, so the watch builds exactly as it does under a hand on the
      wheel: one cursor pulls the strap down, one traces the case as its line
      is drawn on, one the crown, one sets the hands going and rides the hand
-     round the dial. The others are already waiting where each era's title
-     will appear and type it as the panel opens, then the headings of Now.
-     The contact panel is built as the leather opens (heading typed, note
-     pasted, address typed) and the view comes back up. On a narrower screen
-     the watch is still and the eras are in the flow; the walk stops at each.
+     round the dial, and another makes the years round the dial. As each era
+     opens the crew makes it — title, paragraphs, video rows, links — then
+     Now and what I'm aiming at, and the certificates are pasted in. The
+     contact panel is made once the leather has opened, and the view comes
+     back up. On a narrower screen the watch is still and the story is in
+     the flow; the walk goes down it a screenful at a time.
    * Last of all the image hand makes the intro face — the circle drawn with
      the ellipse tool, the photo option-dragged down out of the header into
      it — and every cursor goes in to the middle and slips behind it.
