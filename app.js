@@ -1819,44 +1819,59 @@
       scrub: 0.5,
       invalidateOnRefresh: true,
       onRefresh: measure,
-      onUpdate: function (self) {
-        var p = self.progress;
-
-        /* the leather comes down first, out of the tab, and the watch is
-           made on the end of it */
-        growStrap(straps[0], STRAP_HEAD, ramp(p, 0.10, 0.46));
-        growStrap(straps[1], STRAP_TOP, ramp(p, 0.56, 0.82));
-
-        /* then the rest, part after part */
-        var bp = ramp(p, 0.44, 0.86);
-        built.forEach(function (part, i) {
-          var slice = 1 / built.length;
-          var k = clamp01((bp - i * slice * 0.72) / slice);
-          part.el.style.strokeDashoffset = part.len * (1 - k);
-          /* the fun side's pen version of this part, if fun.js has drawn it,
-             walked on in step with this one */
-          if (part.el.jotInk) part.el.jotInk(k);
-          if (part.el.classList.contains('watch-case')) part.el.style.fillOpacity = String(k);
-          /* lit while it is being drawn, and cooling to its own colour once
-             it lands — the shimmer is the line arriving, not a loop */
-          var hot = k > 0.001 && k < 0.999;
-          if (hot !== part.hot) {
-            part.hot = hot;
-            if (hot) part.el.style.stroke = 'var(--glow)';
-            else part.el.style.removeProperty('stroke');
-          }
-        });
-
-        if (stitching) stitching.style.opacity = String(ramp(p, 0.46, 0.68));
-        ticks.style.opacity = String(ramp(p, 0.72, 0.88));
-        /* the face comes up with the ticks, once the case is closed */
-        if (face) face.style.opacity = ticks.style.opacity;
-        if (hand) hand.style.opacity = String(ramp(p, 0.84, 0.98) * 0.9);
-        if (hub) hub.style.opacity = String(ramp(p, 0.84, 0.98));
-        if (year) year.style.opacity = String(ramp(p, 0.86, 1));
-        if (dial) dial.style.opacity = String(ramp(p, 0.76, 0.94));
-      }
+      onUpdate: function (self) { if (!buildByHand) paintBuild(self.progress); }
     });
+
+    /* One part of the build at k (0…1). The intro (intro.js) calls these
+       itself while its cursors make the watch, so a part only grows as far
+       as the hand making it has got; the scroll drives them otherwise. */
+    var buildByHand = false;
+    function drawPart(part, k) {
+      part.el.style.strokeDashoffset = part.len * (1 - k);
+      /* the fun side's pen version of this part, if fun.js has drawn it,
+         walked on in step with this one */
+      if (part.el.jotInk) part.el.jotInk(k);
+      if (part.el.classList.contains('watch-case')) part.el.style.fillOpacity = String(k);
+      /* the crown's notches come with the crown */
+      if (knurl && part.el.classList.contains('watch-crown')) knurl.style.opacity = String(k);
+      /* lit while it is being drawn, and cooling to its own colour once it
+         lands — the shimmer is the line arriving, not a loop */
+      var hot = k > 0.001 && k < 0.999;
+      if (hot !== part.hot) {
+        part.hot = hot;
+        if (hot) part.el.style.stroke = 'var(--glow)';
+        else part.el.style.removeProperty('stroke');
+      }
+    }
+    function paintFace(k) {
+      ticks.style.opacity = String(k);
+      /* the face comes up with the ticks, once the case is closed */
+      if (face) face.style.opacity = String(k);
+    }
+    function paintHands(k) {
+      if (hand) hand.style.opacity = String(k * 0.9);
+      if (hand2) hand2.style.opacity = String(k * 0.9);
+      if (hub) hub.style.opacity = String(k);
+    }
+    function paintBuild(p) {
+      /* the leather comes down first, out of the tab, and the watch is made
+         on the end of it */
+      growStrap(straps[0], STRAP_HEAD, ramp(p, 0.10, 0.46));
+      growStrap(straps[1], STRAP_TOP, ramp(p, 0.56, 0.82));
+
+      /* then the rest, part after part */
+      var bp = ramp(p, 0.44, 0.86);
+      built.forEach(function (part, i) {
+        var slice = 1 / built.length;
+        drawPart(part, clamp01((bp - i * slice * 0.72) / slice));
+      });
+
+      if (stitching) stitching.style.opacity = String(ramp(p, 0.46, 0.68));
+      paintFace(ramp(p, 0.72, 0.88));
+      paintHands(ramp(p, 0.84, 0.98));
+      if (year) year.style.opacity = String(ramp(p, 0.86, 1));
+      if (dial) dial.style.opacity = String(ramp(p, 0.76, 0.94));
+    }
 
     /* ---- 2. the revolution, while pinned --------------------------------- */
     var revST = ScrollTrigger.create({
@@ -2071,7 +2086,26 @@
         var hold = i === eras.length - 1 ? Math.max(NOW - a0, 0.08) : HOLD;
         return { el: era, at: (a0 + hold * 0.5) * HOME };
       }),
-      now: { at: (NOW + 0.10) * HOME, els: [now, picks, certs].filter(Boolean) }
+      now: { at: (NOW + 0.10) * HOME, els: [now, picks, certs].filter(Boolean) },
+      /* by hand: the scroll stops drawing the watch, and these do */
+      byHand: function (on) {
+        buildByHand = !!on;
+        if (!on) paintBuild(buildST.progress);
+      },
+      paint: paintBuild,
+      strap: function (i, k) {
+        growStrap(straps[i], i ? STRAP_TOP : STRAP_HEAD, clamp01(k));
+        if (!i && stitching) stitching.style.opacity = String(clamp01(k));
+      },
+      part: function (el, k) {
+        built.forEach(function (b) { if (b.el === el) drawPart(b, clamp01(k)); });
+      },
+      face: function (k) { paintFace(clamp01(k)); },
+      hands: function (k) { paintHands(clamp01(k)); },
+      dial: function (k) {
+        if (dial) dial.style.opacity = String(clamp01(k));
+        if (year) year.style.opacity = String(clamp01(k));
+      }
     };
 
     /* The coil keeps turning after the scroll stops. Only while it is worth
@@ -2220,8 +2254,14 @@
          the leather it is. The section is a full screen tall now, so this
          ramp has somewhere to happen: before, the whole of it was over by
          the time the panel had finished rising. */
-      var wide = clamp((p - 0.50) / 0.45);
-      wide = wide * wide * (3 - 2 * wide);
+      open(clamp((p - 0.50) / 0.45));
+    }
+
+    /* How far open, 0 (a strap) to 1 (the panel). The scroll drives it, or
+       — during the intro — a pair of hands pulling the edges apart. */
+    function open(lin) {
+      var p = 0.50 + 0.45 * lin;
+      var wide = lin * lin * (3 - 2 * lin);
       var narrow = strapWidth();
       var w = narrow + (Math.min(window.innerWidth * 0.92, 1100) - narrow) * wide;
       panel.style.setProperty('--lw', w.toFixed(0) + 'px');
@@ -2251,6 +2291,16 @@
 
     paint(0);
 
+    var byHand = false;
+    JH.leather = {
+      byHand: function (on) { byHand = !!on; },
+      open: function (k) { open(clamp(k)); },
+      panel: panel,
+      /* the widths it goes between, in pixels on screen */
+      narrow: function () { return strapWidth(); },
+      full: function () { return Math.min(window.innerWidth * 0.92, 1100, window.innerWidth <= 680 ? window.innerWidth * 0.94 : Infinity); }
+    };
+
     ScrollTrigger.create({
       trigger: contact,
       start: 'top bottom',
@@ -2262,7 +2312,7 @@
       end: 'bottom bottom',
       scrub: 0.6,
       invalidateOnRefresh: true,
-      onUpdate: function (self) { paint(self.progress); }
+      onUpdate: function (self) { if (!byHand) paint(self.progress); }
     });
   })();
 
