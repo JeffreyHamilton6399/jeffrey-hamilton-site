@@ -2541,7 +2541,11 @@ html.bi-on:not(.bi-live) body::after {
    root takes the paper colour so the empty gutter is not a dark stripe. */
 html.bi-live { overflow: hidden; scrollbar-gutter: stable; background: var(--paper); }
 
-[data-bi="off"] { visibility: hidden !important; }
+/* Everything inside too: some children set visibility: visible of their
+   own (the two sides of the nav labels do, for the switch), and a visible
+   child shows through a hidden parent. */
+[data-bi="off"],
+[data-bi="off"] * { visibility: hidden !important; }
 .bi-c { visibility: hidden; }
 .bi-c.on { visibility: inherit; }
 
