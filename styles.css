@@ -770,7 +770,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   position: absolute;
   inset: 0;
   z-index: 600;
-  background: var(--paper);
+  background: linear-gradient(180deg, transparent 0%, rgba(20, 18, 28, .18) 42%, var(--void) 100%);
   opacity: 0;
   pointer-events: none;
 }
@@ -1275,12 +1275,10 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
    and by then everything in it has gone — so it was a blank screen between
    the watch coming apart and the leather starting again. The section is
    pulled up by exactly that height, which puts the two together. */
-/* The pinned scene keeps a screen of its own height after the pin lets go.
-   Swallowing all of it put the contact panel straight over the line the hand
-   turns into, so the line was drawn and then immediately covered; leaving
-   about a third of that screen gives it somewhere to be read before the
-   leather widens. */
-#path.is-watch { margin-bottom: -66vh; }
+/* Leave a short length of strap after the pin releases. The contact panel
+   catches it while the watch finishes collapsing, without an empty screen
+   between the two parts of the same piece of leather. */
+#path.is-watch { margin-bottom: -84vh; }
 
 /* Story copy stays legible over the moving gold field. Use opaque ink here
    so the letters behind it cannot show through the text itself. */
@@ -1311,6 +1309,7 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   overflow: hidden;
   color: #D2BD86;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  opacity: calc(var(--field-arrival, 1) * var(--field-presence, 1));
 }
 .path-field canvas { display: block; position: absolute; inset: 0; }
 .path-orbit-in {

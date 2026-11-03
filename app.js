@@ -1147,7 +1147,7 @@
           }
         }
       });
-      tl.to(inner, { scale: 0.9, ease: 'none' }, 0);
+      tl.to(inner, { scale: 0.94, yPercent: -4, duration: 1, ease: 'sine.inOut' }, 0);
       /* The strap begins here, as a tab above the fold.
 
          It rides the top edge of the panel that climbs over the hero rather
@@ -1159,6 +1159,10 @@
          leather below the bevel is obviously the same strap. */
       var strap = hero.querySelector('.hero-strap');
       var next = hero.nextElementSibling;
+      if (next) tl.to(next, {
+        borderTopLeftRadius: 0, borderTopRightRadius: 0,
+        duration: 0.8, ease: 'sine.inOut'
+      }, 0.2);
       if (strap) {
         /* the tab is the strap, so it is the strap's width — worked out the
            same way rather than guessed at in a clamp */
@@ -1173,7 +1177,7 @@
         strap.style.top = (edge - 48) + 'px';
       }
       rideTheBevel();
-      if (veil) tl.to(veil, { opacity: 0.92, ease: 'none' }, 0);
+      if (veil) tl.to(veil, { opacity: 0.78, duration: 0.9, ease: 'sine.inOut' }, 0.1);
       pin = tl;
 
       /* No ticker and no decoding while the spiral is off screen. */
@@ -1199,6 +1203,7 @@
         pin = null;
       }
       gsap.set([inner, veil].filter(Boolean), { clearProps: 'all' });
+      if (hero.nextElementSibling) gsap.set(hero.nextElementSibling, { clearProps: 'borderTopLeftRadius,borderTopRightRadius' });
       stage.style.removeProperty('perspective-origin');
       if (skills) skills.style.cssText = '';
 
@@ -1804,6 +1809,10 @@
 
     function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
     function ramp(v, a, b) { return clamp01((v - a) / (b - a)); }
+    function softRamp(v, a, b) {
+      var k = ramp(v, a, b);
+      return k * k * (3 - 2 * k);
+    }
 
     measure();
 
@@ -1812,15 +1821,20 @@
        the section's top enters the bottom of the screen to the moment it
        reaches the top — so the watch is finished and readable before the
        part where scrolling drives the hand. */
-    var buildST = ScrollTrigger.create({
-      trigger: orbit,
-      start: 'top bottom',
-      end: 'top top',
-      scrub: 0.5,
-      invalidateOnRefresh: true,
-      onRefresh: measure,
-      onUpdate: function (self) { if (!buildByHand) paintBuild(self.progress); }
-    });
+    var buildProgress = { value: 0 };
+    var buildST = gsap.to(buildProgress, {
+      value: 1,
+      ease: 'none',
+      onUpdate: function () { if (!buildByHand) paintBuild(buildProgress.value); },
+      scrollTrigger: {
+        trigger: orbit,
+        start: 'top bottom',
+        end: 'top top',
+        scrub: 0.5,
+        invalidateOnRefresh: true,
+        onRefresh: measure
+      }
+    }).scrollTrigger;
 
     /* One part of the build at k (0…1). The intro (intro.js) calls these
        itself while its cursors make the watch, so a part only grows as far
@@ -1854,10 +1868,11 @@
       if (hub) hub.style.opacity = String(k);
     }
     function paintBuild(p) {
+      if (!buildByHand) orbit.style.setProperty('--field-arrival', softRamp(p, 0.15, 0.78).toFixed(3));
       /* the leather comes down first, out of the tab, and the watch is made
          on the end of it */
-      growStrap(straps[0], STRAP_HEAD, ramp(p, 0.10, 0.46));
-      growStrap(straps[1], STRAP_TOP, ramp(p, 0.56, 0.82));
+      growStrap(straps[0], STRAP_HEAD, softRamp(p, 0.10, 0.46));
+      growStrap(straps[1], STRAP_TOP, softRamp(p, 0.56, 0.82));
 
       /* then the rest, part after part */
       var bp = ramp(p, 0.44, 0.86);
@@ -1867,8 +1882,8 @@
       });
 
       if (stitching) stitching.style.opacity = String(ramp(p, 0.46, 0.68));
-      paintFace(ramp(p, 0.72, 0.88));
-      paintHands(ramp(p, 0.84, 0.98));
+      paintFace(softRamp(p, 0.68, 0.88));
+      paintHands(softRamp(p, 0.80, 0.98));
       if (year) year.style.opacity = String(ramp(p, 0.86, 1));
       if (dial) dial.style.opacity = String(ramp(p, 0.76, 0.94));
     }
@@ -1896,7 +1911,6 @@
            schedule was written against a progress that ended when the hand
            came home, and it still is. */
         var p = clamp01(raw / HOME);
-        detent(p, self.direction);
 
         /* One revolution, twelve back round to twelve. The short hand runs
            two turns in the same span, so both of them come home together on
@@ -2014,7 +2028,8 @@
            that was the hand runs on down the strap and off the bottom of the
            frame — where the contact panel takes it up. The strap is the one
            thing that does not go, because it is what carries on. */
-        var o = ramp(raw, HOME, 1);
+        var o = softRamp(raw, HOME, 1);
+        orbit.style.setProperty('--field-presence', (1 - softRamp(raw, HOME + 0.02, HOME + 0.16)).toFixed(3));
         certPull = o;
         windCerts(certDrift, certLit);
 
@@ -2024,7 +2039,7 @@
            top edge rather than scaling the whole path is what keeps it
            attached to where the case was — it grows away from the watch, not
            away from the middle of the drawing. */
-        var shrink = ramp(raw, HOME + 0.03, HOME + 0.15);
+        var shrink = softRamp(raw, HOME + 0.03, HOME + 0.15);
         dialBits.forEach(function (el) { el.style.opacity = String(1 - shrink); });
         if (core) {
           var k = 1 - shrink * 0.92;
@@ -2033,7 +2048,7 @@
             ') scale(' + k.toFixed(4) + ')');
         }
 
-        var part = ramp(raw, HOME + 0.02, HOME + 0.20);
+        var part = softRamp(raw, HOME + 0.02, HOME + 0.20);
         /* the top strap draws back up out of the frame; the bottom one keeps
            growing the way it grew in, on down past where the case was */
         if (lead) lead.style.setProperty('--lead-k', (1 - part).toFixed(3));
@@ -2054,7 +2069,7 @@
            whenever the build had not updated since load. */
         if (raw > HOME) {
           if (!held) { held = true; yearIn = +year.style.opacity || 1; dialIn = +dial.style.opacity || 1; }
-          var gone = ramp(raw, HOME, HOME + 0.12);
+          var gone = softRamp(raw, HOME, HOME + 0.12);
           if (year) year.style.opacity = String(yearIn * (1 - gone));
           if (dial) dial.style.opacity = String(dialIn * (1 - gone));
         } else {
@@ -2062,9 +2077,10 @@
         }
         if (o > 0 && mark) mark.style.opacity = '0';
 
-        if (now && o > 0) now.style.opacity = String((1 - o) * (+now.style.opacity || 0));
-        if (picks && o > 0) picks.style.opacity = String((1 - o) * (+picks.style.opacity || 0));
-        if (right && o > 0) right.style.opacity = String((1 - o) * (+right.style.opacity || 0));
+        var copyExit = 1 - softRamp(raw, HOME + 0.005, HOME + 0.11);
+        if (now && o > 0) now.style.opacity = String(copyExit * (+now.style.opacity || 0));
+        if (picks && o > 0) picks.style.opacity = String(copyExit * (+picks.style.opacity || 0));
+        if (right && o > 0) right.style.opacity = String(copyExit * (+right.style.opacity || 0));
       }
     });
 
@@ -2090,6 +2106,7 @@
       /* by hand: the scroll stops drawing the watch, and these do */
       byHand: function (on) {
         buildByHand = !!on;
+        if (on) orbit.style.setProperty('--field-arrival', '1');
         if (!on) paintBuild(buildST.progress);
       },
       paint: paintBuild,
@@ -2146,22 +2163,6 @@
       dialBits.forEach(function (el) { el.style.opacity = '0'; });
       certItems.forEach(function (el) { el.style.opacity = '0'; });
       eras.forEach(function (era) { era.style.opacity = '0'; era.style.pointerEvents = 'none'; });
-    }
-
-    /* A notch at Now. The hand coming home is the one moment on this page
-       worth stopping at, so the scroll is held for a beat as it crosses —
-       once, forwards only, and never long enough to read as a hang. Skipped
-       entirely without Lenis: taking the native scroll away from someone
-       mid-gesture is a worse thing than not having the detent at all. */
-    var notched = false;
-
-    function detent(q, dir) {
-      if (!lenis || notched || dir < 0) return;
-      if (doc.classList.contains('bi-live')) return;
-      if (q < NOW || q > NOW + 0.06) return;
-      notched = true;
-      lenis.stop();
-      setTimeout(function () { lenis.start(); }, 420);
     }
 
     /* The ticker runs for as long as the scene is on screen and simply does
@@ -2248,23 +2249,19 @@
     }
 
     function paint(p) {
-      /* It stays a strap while the section is still coming up, and only
-         widens once it is in place. Widening on the way in reads as a box
-         being pushed onto the screen; widening after it has arrived reads as
-         the leather it is. The section is a full screen tall now, so this
-         ramp has somewhere to happen: before, the whole of it was over by
-         the time the panel had finished rising. */
-      open(clamp((p - 0.50) / 0.45));
+      /* Catch the descending strap while the watch is finishing its exit.
+         Opening over most of the approach avoids a pause on an empty band. */
+      open(clamp((p - 0.16) / 0.74));
     }
 
     /* How far open, 0 (a strap) to 1 (the panel). The scroll drives it, or
        — during the intro — a pair of hands pulling the edges apart. */
     function open(lin) {
       var p = 0.50 + 0.45 * lin;
-      var wide = lin * lin * (3 - 2 * lin);
+      var wide = lin * lin * lin * (10 + lin * (-15 + 6 * lin));
       var narrow = strapWidth();
       var w = narrow + (Math.min(window.innerWidth * 0.92, 1100) - narrow) * wide;
-      panel.style.setProperty('--lw', w.toFixed(0) + 'px');
+      panel.style.setProperty('--lw', w.toFixed(2) + 'px');
       /* The words are written inside the leather, not on top of it: they
          are only ever shown across the width the band has opened to, so as
          it widens they are uncovered from the middle outward — a book being
@@ -2301,18 +2298,20 @@
       full: function () { return Math.min(window.innerWidth * 0.92, 1100, window.innerWidth <= 680 ? window.innerWidth * 0.94 : Infinity); }
     };
 
-    ScrollTrigger.create({
-      trigger: contact,
-      start: 'top bottom',
-      /* Its own bottom edge, not a line partway up the screen: this is the
-         last section on the page, and on a short one there is not enough
-         scroll left below it to ever reach 'top 18%' — the address stayed
-         half-drawn at the very end of the document. The bottom reaching the
-         bottom is always reachable, because it is where the page stops. */
-      end: 'bottom bottom',
-      scrub: 0.6,
-      invalidateOnRefresh: true,
-      onUpdate: function (self) { if (!byHand) paint(self.progress); }
+    var opening = { value: 0 };
+    gsap.to(opening, {
+      value: 1,
+      ease: 'none',
+      onUpdate: function () { if (!byHand) paint(opening.value); },
+      scrollTrigger: {
+        trigger: contact,
+        start: 'top bottom',
+        /* The bottom reaching the bottom is always reachable, even on short
+           pages, so the final address is completely uncovered at the end. */
+        end: 'bottom bottom',
+        scrub: 0.65,
+        invalidateOnRefresh: true
+      }
     });
   })();
 
