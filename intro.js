@@ -102,6 +102,7 @@
     el.style.setProperty(prop, val);
   }
   function hide(el) { if (el) el.setAttribute('data-bi', 'off'); }
+  function hidePiece(p) { if (p.nodeType) hide(p); else { hide(p.el); (p.also || []).forEach(hide); } }
   function show(el) { if (el) el.removeAttribute('data-bi'); }
 
   /* ------------------------------------------------------------ the clock
@@ -133,7 +134,7 @@
 
   /* The whole session runs a little faster than life, the way a screen
      recording of one is played back. */
-  var TIME = 0.66;
+  var TIME = 0.4;
 
   function tween(dur, fn, e) {
     return new Promise(function (res, rej) {
@@ -423,14 +424,27 @@
      and the element there, whole, the moment the hand lets go. Text is not
      typed out; it arrives in its box, the way it does when you draw a text
      box and paste into it. */
-  function jobMake(c, el) {
+  function unionRect(els) {
+    var l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+    els.forEach(function (e) {
+      var q = rect(e);
+      if (q.width < 1 && q.height < 1) return;
+      l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom);
+    });
+    return l === Infinity ? { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 }
+      : { left: l, top: t, right: r, bottom: b, width: r - l, height: b - t };
+  }
+  function jobMake(c, el, also) {
     if (!el) return Promise.resolve();
-    var r = rect(el);
-    if (r.width < 2 || r.height < 2) { show(el); return Promise.resolve(); }
+    var group = [el].concat(also || []);
+    var area = function () { return unionRect(group); };
+    var appear = function () { group.forEach(show); };
+    var r = area();
+    if (r.width < 2 || r.height < 2) { appear(); return Promise.resolve(); }
     var pad = 4, b = Box(c.color, { fill: true });
     var x0 = r.left - pad, y0 = r.top - pad;
     return c.move(x0, y0, { overshoot: false }).then(c.press).then(function () {
-      var q = rect(el);                      /* where it is now, panels settle */
+      var q = area();                        /* where it is now, panels settle */
       x0 = q.left - pad; y0 = q.top - pad;
       var x1 = q.right + pad, y1 = q.bottom + pad;
       b.set(x0, y0, 1, 1);
@@ -444,7 +458,7 @@
         }
       });
     }).then(function () {
-      show(el);
+      appear();
       b.badge(null);
       b.el.classList.remove('fill');
       return c.release();
@@ -456,7 +470,10 @@
      carry its own way of being made. */
   function makeAll(workers, items) {
     var queue = items.filter(Boolean).map(function (it) { return it.nodeType ? { el: it } : it; });
-    if (!queue.length || !workers.length) { queue.forEach(function (it) { show(it.el); }); return Promise.resolve(); }
+    if (!queue.length || !workers.length) {
+      queue.forEach(function (it) { show(it.el); (it.also || []).forEach(show); });
+      return Promise.resolve();
+    }
     return Promise.all(workers.map(function (c) {
       function next() {
         if (!queue.length || dead) return Promise.resolve();
@@ -467,7 +484,7 @@
           if (dd < bd) { bd = dd; best = i; }
         });
         var it = queue.splice(best, 1)[0];
-        return task(c, function () { return (it.make || jobMake)(c, it.el); }).then(next);
+        return task(c, function () { return it.make ? it.make(c, it.el) : jobMake(c, it.el, it.also); }).then(next);
       }
       return next();
     }));
@@ -489,8 +506,13 @@
       if (el.classList.contains('duo') || el.classList.contains('side')) { pieces(el, out); return; }
       var t = el.tagName;
       var holder = (t === 'DIV' || t === 'UL' || t === 'OL') && el.children.length > 1 && !ownText(el) &&
-        !el.matches('.pile, .fun-doodles, .path-certs, .era-row, .pn-list, ul, ol');
-      if (holder) pieces(el, out); else out.push(el);
+        !el.matches('.pile, .fun-doodles, .path-certs, .era-row, .era-stack, .pn-list, ul, ol');
+      if (holder) pieces(el, out);
+      else if (out.length && out[out.length - 1].kicker) {
+        /* a little label goes in with the heading under it, as one box */
+        out[out.length - 1] = { el: out[out.length - 1].el, also: [el] };
+      } else if (/kicker/.test(el.className)) out.push({ el: el, kicker: true });
+      else out.push(el);
     });
     return out;
   }
@@ -1073,43 +1095,38 @@
     if (!L || !L.panel) return Promise.resolve();
     var a = cs[0], b = cs[1 % cs.length];
     var r = rect(L.panel);
-    var y = clamp(r.top + H() * 0.45, 80, H() - 80);
-    var edge = function () { return rect(L.panel); };
-    return Promise.all([
-      task(a, function () { return a.move(r.left + 3, y).then(a.press); }),
-      task(b, function () { return b.move(r.right - 3, y + rnd(-30, 30)).then(b.press); })
-    ]).then(function () {
-      a.mid++; b.mid++;
-      var yb = b.y;
-      return tween(1100, function (k) {
-        L.open(k);
-        var q = edge();
-        a.x = q.left + 3; a.y = y; a.place();
-        b.x = q.right - 3; b.y = yb; b.place();
-      }, ease.inOut);
-    }).then(function () {
-      L.open(1);
-      return Promise.all([a.release(), b.release()]);
-    });
+    var y = clamp(H() * 0.52, 80, H() - 80);
+    var go = {}, ready = 0;
+    go.p = new Promise(function (res) { go.r = res; });
+    /* each edge is its own hand's job, so nothing else can take the hand
+       while it is pulling; they set off together */
+    function pull(c, left) {
+      return task(c, function () {
+        var yy = y + (left ? 0 : rnd(-26, 26));
+        return c.move(left ? r.left + 3 : r.right - 3, yy).then(c.press).then(function () {
+          if (++ready === 2) go.r();
+          return go.p;
+        }).then(function () {
+          c.mid++;
+          return tween(1700, function (k) {
+            if (left) L.open(k);
+            var q = rect(L.panel);
+            c.x = left ? q.left + 3 : q.right - 3; c.y = yy;
+            c.place();
+          }, ease.inOut);
+        }).then(function () {
+          if (left) L.open(1);
+          return c.release();
+        });
+      });
+    }
+    if (a === b) return pull(a, true);
+    return Promise.all([pull(a, true), pull(b, false)]);
   }
 
   /* Wait for a panel the scroll is bringing in to be up. */
   function opened(panel) {
-    return until(function () { return !panel || panel.style.opacity === '' || +panel.style.opacity > 0.85; });
-  }
-
-  /* The certificates go in in one go: the hand clicks into the coil and
-     pastes them. */
-  function pasteAll(list) {
-    return function (c) {
-      var r = rect(list), cc = center(r);
-      return c.move(clamp(cc.x, 30, W() - 30), clamp(cc.y, 30, H() - 30)).then(c.click).then(function () {
-        c.chip('⌘V');
-        show(list);
-        [].slice.call(list.children).forEach(show);
-        return wait(160);
-      });
-    };
+    return until(function () { return !panel || panel.style.opacity === '' || +panel.style.opacity > 0.3; });
   }
 
   /* Where a stroke is being drawn on: the end of the visible part of an
@@ -1135,7 +1152,7 @@
      and rides the hand round the dial. The others are already waiting where
      each era's title will appear, and type it as the panel opens; then the
      same for Now. Every hand is making something the whole way down. */
-  function walkWatch(cs) {
+  function walkWatch(cs, pulling) {
     var Wt = JH.watch;
     var n = cs.length;
     var hand = cs[3 % n];
@@ -1199,7 +1216,7 @@
         b.set(r.left, r.top, 1, 1);
         b.on();
         return c.move(r.right, r.bottom, {
-          overshoot: false, bend: 0.02, dur: 520,
+          overshoot: false, bend: 0.02, dur: 420,
           onMove: function (x, y) {
             b.set(r.left, r.top, x - r.left, y - r.top);
             Wt.face(Math.min((x - r.left) / r.width, (y - r.top) / r.height));
@@ -1221,22 +1238,35 @@
     }
 
     var crew = cs.filter(function (c) { return c !== hand; });
+    /* two hands a side: the panels open left and right of the dial */
+    var lefts = crew.filter(function (c, i) { return i % 2 === 0; });
+    var rights = crew.filter(function (c, i) { return i % 2 === 1; });
+    function bySides(items) {
+      var L = [], R = [];
+      items.forEach(function (it) { (center(rect(it.nodeType ? it : it.el)).x < W() / 2 ? L : R).push(it); });
+      if (!L.length || !R.length) return makeAll(crew, items);
+      return Promise.all([makeAll(lefts, L), makeAll(rights, R)]);
+    }
+    /* before a panel opens, its hands are already over their side */
+    function standBy() {
+      lefts.forEach(function (c, i) { task(c, function () { return c.move(W() * (0.14 + 0.12 * i), H() * (0.32 + 0.22 * i)); }); });
+      rights.forEach(function (c, i) { task(c, function () { return c.move(W() * (0.74 + 0.12 * i), H() * (0.32 + 0.22 * i)); }); });
+    }
 
     /* The section comes up with nothing on it but the leather from the
        hero; then the watch is made on it, in order, by hand. */
-    return scrollTo(Wt.build.end, 2000).then(function () {
-      return wait(250);
+    return scrollTo(Wt.build.end, 1600).then(function () {
+      if (pulling) pulling.r();
+      return wait(120);
     }).then(function () {
-      return task(cs[0], function () { return dragStrap(cs[0], 0, 900); });
-    }).then(function () {
-      var jobs = [];
-      if (crown && n > 2) jobs.push(task(cs[2], function () { return trace(cs[2], crown, 700); }));
-      if (kase) jobs.push(task(cs[1 % n], function () { return trace(cs[1 % n], kase, 1300); }));
+      var jobs = [task(cs[0], function () { return dragStrap(cs[0], 0, 650); })];
+      if (crown && n > 2) jobs.push(task(cs[2], function () { return trace(cs[2], crown, 500); }));
+      if (kase) jobs.push(task(cs[1 % n], function () { return trace(cs[1 % n], kase, 950); }));
       return Promise.all(jobs);
     }).then(function () {
       var face = cs[4 % n] === hand ? cs[0] : cs[4 % n];
       return Promise.all([
-        task(cs[0], function () { return dragStrap(cs[0], 1, 800); }),
+        task(cs[0], function () { return dragStrap(cs[0], 1, 600); }),
         task(face, function () { return makeFace(face); }),
         task(hand, function () { return setHands(hand); })
       ]);
@@ -1244,25 +1274,53 @@
       /* the hand that put the hands on holds the long one from here */
       if (Wt.mark) followUntil(hand, function () { return center(rect(Wt.mark)); }, B.p, true);
       Wt.dial(1);
-      return makeAll(crew.slice(-2), text.dial);
+      /* the years go on while the first era opens */
+      makeAll(crew.slice(-2), text.dial).catch(function () {});   /* a skip cancels it */
     }).then(function () {
       var i = 0;
       function nextEra() {
         if (i >= text.eras.length) return Promise.resolve();
         var e = text.eras[i], peak = Wt.eras[i];
         i++;
-        return scrollTo(peak ? at(peak.at) : window.scrollY, 800)
+        standBy();
+        return scrollTo(peak ? at(peak.at) : window.scrollY, 700)
           .then(function () { return opened(e.era); })
-          .then(function () { return makeAll(crew, e.pieces); })
+          .then(function () { return bySides(e.pieces); })
           .then(nextEra);
       }
       return nextEra();
     }).then(function () {
-      return scrollTo(at(Wt.now.at), 800).then(function () {
+      standBy();
+      return scrollTo(at(Wt.now.at), 700).then(function () {
+        /* the hand is home at twelve: the hand holding it lets go and
+           joins in */
+        B.r();
+        (lefts.length <= rights.length ? lefts : rights).push(hand);
+        crew.push(hand);
         return Promise.all(Wt.now.els.map(opened));
-      }).then(function () { return makeAll(crew, text.now); });
+      }).then(function () { return bySides(text.now); });
     }).then(function () {
-      B.r();
+      /* one hand takes the bottom of the lower strap and drags it down,
+         through the fold, into the contact panel */
+      var lower = Wt.straps[1], holder = crew[0];
+      var C = {};
+      C.p = new Promise(function (r) { C.r = r; });
+      letGoStrap = C.r;
+      task(holder, function () {
+        var tip = function () {
+          var lr = rect(lower);
+          var band = JH.leather && JH.leather.panel ? rect(JH.leather.panel) : null;
+          if ((lr.height < 2 || lr.bottom > H() - 40) && band && band.top < H()) {
+            return { x: band.left + band.width / 2, y: clamp(band.top + H() * 0.5, 60, H() - 60) };
+          }
+          return { x: lr.left + lr.width / 2, y: clamp(lr.bottom - 4, 60, H() - 60) };
+        };
+        var q = tip();
+        return holder.move(q.x, q.y).then(holder.press).then(function () {
+          var stop = holder.follow(tip, 0.3, true);
+          return C.p.then(stop);
+        }).then(holder.release);
+      });
       return scrollTo(Wt.rev.end, 1000);
     });
   }
@@ -1322,43 +1380,70 @@
      comes back up to the top for the opening. */
   function tour(cs) {
     var path = below[0];
-    below.forEach(show);
-    if (path && rect(path).top < H()) {
-      setS(path, 'translate', '0px 120px');
-      if (strap) setS(strap, 'translate', '0px 120px');
-      tween(700, function (e) {
-        setS(path, 'translate', '0px ' + (120 * (1 - e)).toFixed(2) + 'px');
-        if (strap) setS(strap, 'translate', '0px ' + (120 * (1 - e)).toFixed(2) + 'px');
-      }, ease.out).then(function () {
-        /* Off, not zero. Any transform on this section — even a zero one —
-           makes it the box its pinned watch is fixed to, and the watch
-           scrolls away instead of holding the screen. */
-        path.style.removeProperty('translate');
-        if (strap) strap.style.removeProperty('translate');
-      }, function () {});
-    }
-    show(strap);
+    below.forEach(function (el) { if (el !== path) show(el); });
     cs.forEach(function (c) {
       c.lane = (c.lane || Promise.resolve()).then(function () { return roamFree(c); });
       c.lane.catch(fail);
     });
-
     var live = JH.watch && JH.watch.rev && document.querySelector('.path-orbit.is-live');
     /* From here the watch and the leather are made by hand, not by the
        scroll: both start unmade, and only the cursors move them on. */
     if (live && JH.watch.byHand) { JH.watch.byHand(true); JH.watch.paint(0); }
     if (JH.leather) { JH.leather.byHand(true); JH.leather.open(0); }
-    return wait(700).then(function () {
-      return live ? walkWatch(cs) : walkFlow(cs);
+    /* The dark section is drawn in as a panel across the foot of the
+       screen, the strap's tab is made on the white above it, and a hand
+       takes the tab and pulls: the page comes up with it, the black panel
+       riding up over the hero. */
+    var pr = path ? rect(path) : null;
+    var handover = Promise.resolve();
+    if (path && pr.top < H() - 2) {
+      var painter = cs[0];
+      handover = task(painter, function () {
+        var top = pr.top, b = Box(painter.color, { fill: true });
+        return painter.move(8, top + 2).then(painter.press).then(function () {
+          b.set(8, top, 1, 1);
+          b.on();
+          return painter.move(W() - 8, H() - 6, {
+            overshoot: false, bend: 0.02, dur: 520,
+            onMove: function (x, y) { b.set(8, top, x - 8, y - top); }
+          });
+        }).then(function () {
+          show(path);
+          return painter.release();
+        }).then(function () { b.remove(); });
+      });
+    } else if (path) show(path);
+    var tabbed = strap && live && shown(strap) && rect(strap).top < H();
+    var puller = cs[1 % cs.length];
+    var pulling = null;
+    /* the tab is made on the white while the black panel is drawn in */
+    var tabMade = tabbed ? task(puller, function () { return jobMake(puller, strap); }) : Promise.resolve(show(strap));
+    return Promise.all([handover, tabMade]).then(function () {
+      if (!tabbed) return;
+      var P = {};
+      P.p = new Promise(function (r) { P.r = r; });
+      pulling = P;
+      var grip = function () { var q = rect(strap); return { x: q.left + q.width / 2, y: q.top + 10 }; };
+      task(puller, function () {
+        var q = grip();
+        return puller.move(q.x, q.y).then(puller.press).then(function () {
+          var stop = puller.follow(grip, 0.35, true);
+          return P.p.then(stop);
+        }).then(puller.release);
+      });
+      return until(function () { return puller.el.classList.contains('down'); });
+    }).then(function () {
+      return live ? walkWatch(cs, pulling) : walkFlow(cs);
     }).then(function () {
       if (!contact) return;
-      return scrollTo(contactY(), 1700).then(function () { return wait(500); }).then(function () {
+      return scrollTo(contactY(), 1300).then(function () { return wait(250); }).then(function () {
         /* the panels below move as they arrive; settle on the copy */
         var wrap = contact.querySelector('.wrap') || contact;
         var r = rect(wrap);
         var want = Math.max(70, (H() - r.height) / 2);
         if (Math.abs(r.top - want) > 30) return scrollTo(window.scrollY + (r.top - want), 450);
       }).then(function () {
+        if (letGoStrap) { letGoStrap(); letGoStrap = null; }
         return openLeather(cs).then(function () { return makeAll(cs, contactPieces()); });
       });
     }).then(function () {
@@ -1435,18 +1520,18 @@
       var ps = pieces(era.querySelector('.era-copy'));
       [].slice.call(era.querySelectorAll('.era-media')).forEach(function (m) { pieces(m, ps); });
       if (right && i === eraEls.length - 1) pieces(right, ps);
-      ps.forEach(hide);
+      ps.forEach(hidePiece);
       text.eras.push({ era: era, pieces: ps });
     });
     ['.path-now', '.path-picks'].forEach(function (sel) {
       var ps = pieces(document.querySelector(sel));
-      ps.forEach(hide);
+      ps.forEach(hidePiece);
       text.now = text.now.concat(ps);
     });
+    /* the certificates round the watch, each one made by a hand */
     var certs = document.querySelector('.path-certs');
-    if (certs && shown(certs) && side() === 'pro') {
-      hide(certs);
-      text.now.push({ el: certs, make: pasteAll(certs) });
+    if (certs && side() === 'pro') {
+      [].slice.call(certs.children).forEach(function (li) { hide(li); text.now.push(li); });
     }
     text.dial = [].slice.call(document.querySelectorAll('.path-dial li, .path-year'));
     text.dial.forEach(hide);
@@ -1457,7 +1542,6 @@
       setS(skills, 'scale', String(WORD_S0));
       setS(skills, 'translate', '0px ' + WORD_DY + 'px');
     }
-    if (markText && W() > 680) setS(markText, 'translate', '8px 0px');
 
     skip.addEventListener('click', function () { finish(true); });
     document.addEventListener('keydown', onKey, true);
@@ -1511,8 +1595,7 @@
       after(0, seq(function () { return jobMarkPhoto(img); }, function () { return jobCards(img); })),
       after(380, function () {
         return cs[4].move(w * 0.86, 110).then(function () { return jobSocial(cs[4]); })
-          .then(function () { return jobSwitch(cs[4]); })
-          .then(function () { return jobReview(cs[4]); });
+          .then(function () { return jobSwitch(cs[4]); });
       })
     ] : [
       after(150, seq(function () { return jobFrame(cs[0]); }, function () { return jobMarkText(cs[0]); }, function () { return jobNav(cs[0]); })),
@@ -1549,6 +1632,7 @@
      middle and slips behind the face, which is what the opening (app.js)
      spins into the gold dot. */
   var under = null;
+  var letGoStrap = null;
   function reveal(cs) {
     frames.forEach(function (b) { b.remove(); });
     canvas.classList.remove('on');
@@ -1657,7 +1741,7 @@
      arrive on it. The page loads under them as they build (warm, above). */
   arm();
   canvas.classList.add('on');
-  wait(380).then(run).catch(fail);
+  wait(120).then(run).catch(fail);
 })();
 
 /* Replay, wired whether or not the intro played this time. */

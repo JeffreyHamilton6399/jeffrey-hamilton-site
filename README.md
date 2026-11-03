@@ -60,19 +60,20 @@ A first visit is built in front of you, then opens.
      drag it onto the centre line, make the word under the spiral and pull
      it out to size, click the icons in, bring up the switch and tighten
      the spacing.
-   * Then the view walks down the page. The intro scrolls it itself, frame
-     by frame, so the watch builds exactly as it does under a hand on the
-     wheel — except that here the scroll draws nothing: the section comes up
-     bare and the cursors make the watch by hand (app.js hands them the
-     controls). One pulls the strap down, one traces the crown and one the
-     case as their lines go on, one pulls the lower strap out, one draws the
-     face in, one puts the hands on and holds the long one steady the rest of
-     the way round, and two make the years round the dial. As each era
-     opens the crew makes it — title, paragraphs, video rows, links — then
-     Now and what I'm aiming at, and the certificates are pasted in. At the
-     contact panel two cursors take an edge of the leather each and pull it
-     open like a book, the crew makes the copy inside, and the view comes
-     back up. On a narrower screen the watch is still and the story is in
+   * Then the view goes down the page. One hand draws the dark section in
+     as a panel across the foot of the screen while another makes the
+     strap's tab on the white above it, takes the tab and pulls: the page
+     comes up with it. The scroll draws nothing from here — app.js hands
+     the intro the controls — and the watch is made by hand: the strap
+     pulled down, the crown and the case traced as their lines go on, the
+     lower strap pulled out, the face drawn in, the hands put on and the
+     long one held steady the rest of the way round, the years made round
+     the dial. As each era opens two hands a side are already waiting and
+     make its pieces; at Now the hand lets go of the watch and joins them,
+     and each certificate on the coil is made. One hand then drags the
+     lower strap down into the contact panel, where two hands take the
+     leather's edges and pull it open like a book, and the copy is made
+     inside. On a narrower screen the watch is still and the story is in
      the flow; the walk goes down it a screenful at a time.
    * Last of all the image hand makes the intro face — the circle drawn with
      the ellipse tool, the photo option-dragged down out of the header into
