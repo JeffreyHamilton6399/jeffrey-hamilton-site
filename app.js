@@ -2248,7 +2248,9 @@
     var ink = '#F4F1EA', warm = [255, 201, 60], bg = '#14121C';
     var FONT = '500 12px "JetBrains Mono", ui-monospace, Menlo, monospace';
     var pokes = {};
+    var ripples = [];
     var on = false, running = false, lastAmbient = 0;
+    var SPEED = 560, LIFE = 1.9, BAND = 38;   /* px a second, seconds, px */
 
     function rgb(str) {
       var m = String(str).match(/\d+(\.\d+)?/g);
@@ -2335,6 +2337,30 @@
         }
       }
 
+      /* a ripple is a ring of warmth running outward from a click: the
+         characters on its front turn over and light up as it passes */
+      for (var rp = ripples.length - 1; rp >= 0; rp--) {
+        var rip = ripples[rp];
+        var age = (now - rip.t) / 1000;
+        if (age > LIFE) { ripples.splice(rp, 1); continue; }
+        any = true;
+        var rad = 20 + age * SPEED;
+        var strength = Math.pow(1 - age / LIFE, 1.4) * 0.8;
+        var cx = rip.x - r.left, cy = rip.y - r.top;
+        var ra0 = Math.max(0, Math.floor((cy - rad - BAND) / CH)), ra1 = Math.min(rows - 1, Math.ceil((cy + rad + BAND) / CH));
+        var ca0 = Math.max(0, Math.floor((cx - rad - BAND) / CW)), ca1 = Math.min(cols - 1, Math.ceil((cx + rad + BAND) / CW));
+        for (var ry = ra0; ry <= ra1; ry++) {
+          for (var rx = ca0; rx <= ca1; rx++) {
+            var ddx = rx * CW + CW / 2 - cx, ddy = ry * CH + CH / 2 - cy;
+            var off = Math.abs(Math.sqrt(ddx * ddx + ddy * ddy) - rad);
+            if (off > BAND) continue;
+            var w = strength * (1 - off / BAND);
+            var ci = ry * cols + rx;
+            if (w > heat[ci]) heat[ci] = w;
+          }
+        }
+      }
+
       /* now and then, a character turns over on its own */
       if (!reduced && now - lastAmbient > 110) {
         lastAmbient = now;
@@ -2372,6 +2398,26 @@
         ctx.fillText(GLYPHS[glyph[q]], x + CW / 2, y + CH / 2 + 0.5);
         heat[q] = hq * 0.9;
       }
+
+      /* and the rings themselves: a few thin circles going out with each
+         ripple, the inner ones trailing and fainter */
+      if (ripples.length) {
+        var rr = orbit.getBoundingClientRect();
+        ctx.lineWidth = 1;
+        ripples.forEach(function (rip) {
+          var age = (now - rip.t) / 1000;
+          var fade = Math.pow(1 - Math.min(age / LIFE, 1), 1.6);
+          [1, 0.72, 0.46].forEach(function (lag, n) {
+            var rad = 20 + age * SPEED * lag;
+            var al = fade * (0.42 - n * 0.12);
+            if (al <= 0.01) return;
+            ctx.strokeStyle = 'rgba(' + warm.join(',') + ',' + al.toFixed(3) + ')';
+            ctx.beginPath();
+            ctx.arc(rip.x - rr.left, rip.y - rr.top, rad, 0, Math.PI * 2);
+            ctx.stroke();
+          });
+        });
+      }
       return any || force;
     }
 
@@ -2387,8 +2433,21 @@
       pokes[id] = { x: x, y: y, t: performance.now() };
     }
 
+    function ripple(x, y) {
+      if (!on || reduced) return;
+      var r = orbit.getBoundingClientRect();
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) return;
+      ripples.push({ x: x, y: y, t: performance.now() });
+      if (ripples.length > 6) ripples.shift();
+      start();
+    }
+
     window.addEventListener('pointermove', function (e) { poke('pointer', e.clientX, e.clientY); }, { passive: true });
-    JH.field = { poke: function (id, x, y) { poke(id, x, y); } };
+    window.addEventListener('pointerdown', function (e) { ripple(e.clientX, e.clientY); }, { passive: true });
+    JH.field = {
+      poke: function (id, x, y) { poke(id, x, y); },
+      ripple: ripple
+    };
 
     if (window.IntersectionObserver) {
       new IntersectionObserver(function (entries) {

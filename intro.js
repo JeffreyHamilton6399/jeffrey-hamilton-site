@@ -320,6 +320,8 @@
       press: function () {
         el.classList.add('down');
         ring(c);
+        /* a click on the field behind the watch sends a ripple through it */
+        if (JH.field && JH.field.ripple) JH.field.ripple(c.x, c.y);
         return wait(rnd(60, 100));
       },
       release: function () {
