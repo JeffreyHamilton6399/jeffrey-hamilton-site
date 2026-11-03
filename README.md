@@ -13,7 +13,7 @@ browser and that is the site.
 | `index.html` | The whole page |
 | `styles.css` | All of the styling |
 | `app.js` | Scroll motion, the panel handoff, and the loop |
-| `intro.js` | The first-visit build: a loading bar, then cursors that build the page |
+| `intro.js` | The first-visit build: cursors that build the page, watch and all |
 | `assets/vendor/` | GSAP, ScrollTrigger and Lenis, vendored |
 | `assets/portrait.jpg` | Headshot |
 | `assets/shots/` | A screenshot of each project, and of each game |
@@ -46,36 +46,43 @@ measured a screen wide enough to hold it.
 
 ## The intro
 
-A first visit runs in three parts.
+A first visit runs in two parts.
 
-1. **Loading.** A bar that measures real work: the three faces of type, the
-   portrait and the first screen's screenshots. Never faster than about two
-   seconds, never more than a few seconds' wait on a slow line.
-2. **The build** (`intro.js`). On a blank canvas a few coloured cursors build
-   the first screen at the same time: one draws the header's frame, drops
-   the face in and types the name; one types the nav and drags it onto the
-   centre line; one types the word under the spiral (with a typo it takes
-   back) and pulls it out to size; one drags the cards in and pastes the
-   rest; one clicks the icons in, brings up the switch and tightens the
-   spacing. The page then rises in below, the view glides down to the
-   contact panel while two of them build it, and glides back up. Phones get
-   three cursors sharing the same jobs. While all this runs, the images
-   further down the page are fetched a few at a time, so the build is the
-   loading.
-3. **The boot** (`app.js`). The cursors hand over to the original opening:
-   the face rises over the page, spins into a gold dot, and three lines carry
-   it to the face, the nav and the icons, which open as they land.
+1. **The build** (`intro.js`). There is no loading screen: the page opens on
+   a blank canvas and a few coloured cursors build it in front of you, all at
+   once and never standing still — a hand waiting on another goes and looks
+   the page over.
+   * One hand handles every image. It draws the intro face with the ellipse
+     tool and drops the photo into it, option-drags a copy up into the
+     header, then drags the project cards in and pastes the rest.
+   * The others draw the header frame and type the name, type the nav and
+     drag it onto the centre line, type the word under the spiral (with a
+     typo taken back) and pull it out to size, click the icons in, bring up
+     the switch and tighten the spacing.
+   * Then the view walks down the page. The intro scrolls it itself, frame
+     by frame, so the watch builds exactly as it does under a hand on the
+     wheel: one cursor pulls the strap down, one traces the case as its line
+     is drawn on, one the crown, one sets the hands going and rides the hand
+     round the dial. Each era opens at its marker with its title typed in,
+     then Now, then the watch folds away. The contact panel is built (heading
+     typed, note pasted, address typed) and the view comes back up. On a
+     narrower screen the watch is still and the eras are in the flow; the
+     walk stops at each.
+   * The build is the loading: while it runs, the images further down the
+     page are fetched a few at a time.
+2. **The opening** (`app.js`). The cursors hand over to the face they built:
+   the sheet fades up behind it, it spins into a gold dot, and three lines
+   carry it to the face, the nav and the icons, which open as they land.
 
 The cursors work on the page's own elements: text is typed by uncovering the
 real characters, and anything dragged or resized moves through the CSS
 `translate` and `scale` properties, which never touch layout. The build's
 clean-up takes those off, so the page it leaves is the page.
 
-* **Skip intro** (or Esc) skips the build and the boot and leaves the
-  finished page.
+* **Skip intro** (or Esc) skips everything and leaves the finished page.
 * The build plays once per browser session (`sessionStorage`); later visits
-  in the same session get the boot alone, as before. Never with reduced
-  motion, and never when the visit is aimed at a section further down.
+  in the same session get the opening alone. Never with reduced motion, and
+  never when the visit is aimed at a section further down.
 * **Replay the intro** in the footer, or `?intro` on the URL, plays it again.
 * The head script decides before the first paint, so the finished page is
   never glimpsed first. If `intro.js` never arrives, the page is handed back

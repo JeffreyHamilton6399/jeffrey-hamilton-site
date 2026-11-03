@@ -2087,6 +2087,10 @@ html[data-font="fun"] .nav .side-pro {
    is going. In the grid on a phone it simply leaves the grid. */
 html[data-side="fun"] .spiral-card.fun-skip > a { pointer-events: none; }
 html[data-side="fun"] .spiral-fallback .fun-skip { display: none; }
+/* And the other way round: a card that is only a game (pro-skip) has no
+   work face, so on the work side it is out of the tube and the grid. */
+html:not([data-side="fun"]) .spiral-card.pro-skip > a { pointer-events: none; }
+html:not([data-side="fun"]) .spiral-fallback .pro-skip { display: none; }
 
 /* The certificates are the work side's. On the dial app.js fades the coil
    out; in the flow, where they are just a list, the list goes. */
@@ -2724,69 +2728,36 @@ html.bi-handoff.booting .site-head { transition: opacity .45s var(--ease-out); }
   100% { opacity: 0; margin-top: -4px; }
 }
 
-/* the loading screen */
-.bi-loader {
+/* what an image looks like while it is being dragged: a small copy under
+   the hand, dropped onto the real element */
+.bi-ghost {
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: var(--paper);
-  transition: opacity .55s var(--ease-out);
-}
-.bi-loader.gone { opacity: 0; }
-.bi-load {
-  display: grid;
-  justify-items: center;
-  gap: .875rem;
-  width: min(15rem, 70vw);
-  transition: opacity .35s var(--ease-out), transform .45s var(--ease-out);
-  animation: biRise .6s var(--ease-out) both;
-}
-.bi-loader.done .bi-load { opacity: 0; transform: translateY(-10px); }
-@keyframes biRise { from { opacity: 0; transform: translateY(8px); } }
-.bi-load-label, .bi-pct {
-  margin: 0;
-  font-family: var(--mono);
-  font-size: .625rem;
-  font-weight: 500;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.bi-load-label { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink-soft); }
-.bi-load-dot {
-  width: .3125rem;
-  height: .3125rem;
-  border-radius: 50%;
-  background: var(--iris);
-  animation: biPulse 1.2s ease-in-out infinite;
-}
-@keyframes biPulse { 50% { opacity: .25; transform: scale(.7); } }
-.bi-bar {
-  position: relative;
-  width: 100%;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--rule);
+  left: 0;
+  top: 0;
+  width: 56px;
+  height: 56px;
+  margin: 6px 0 0 6px;
+  border-radius: 10px;
   overflow: hidden;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1.5px var(--c), 0 12px 26px rgba(20, 18, 28, .26);
+  transition: opacity .2s var(--ease-out);
 }
-.bi-fill {
+.bi-ghost img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 17%; }
+.bi-ghost.gone { opacity: 0; }
+
+/* On a phone the hero is a column and the face would sit in the flow,
+   pushing the cards down while it is built. It is lifted out and centred,
+   where the opening uses it, until the opening is over. */
+html.bi-face .hero:not(.is-spiral) .hero-center {
   position: absolute;
-  inset: 0;
-  background: var(--void);
-  transform: scaleX(0);
-  transform-origin: left center;
+  left: 0;
+  right: 0;
+  top: 50vh;
+  top: 50svh;
+  margin-inline: auto;
+  transform: translateY(-50%);
 }
-.bi-fill::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--iris) 85%, #fff) 50%, transparent);
-  transform: translateX(-100%);
-  animation: biSheen 1.3s ease-in-out infinite;
-}
-@keyframes biSheen { to { transform: translateX(100%); } }
-.bi-pct { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 
 /* skip: always there while the intro is */
 .bi-skip {

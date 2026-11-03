@@ -337,13 +337,13 @@
        rather than being there from the first frame. Skipping the build skips
        this too — the face goes and the page is simply finished. */
     if (doc.classList.contains('bi-on')) {
-      center.classList.add('name-gone');
       document.addEventListener('introdone', function (e) {
         if (e.detail && e.detail.built) {
-          center.classList.remove('name-gone');
           arm(true);
         } else {
           landed = true;
+          center.classList.add('name-gone');
+          doc.classList.remove('bi-face');
           started || cycle();
         }
       }, { once: true });
@@ -357,7 +357,10 @@
       /* The first word stays where the markup put it — the morph swaps it
          out later. */
       line.classList.add('is-held');
-      center.classList.add('intro-armed');
+      /* handed over, the face is already there — the cursors made it — so
+         it stays up while the sheet comes in behind it */
+      if (handoff) center.classList.add('boot-in');
+      else center.classList.add('intro-armed');
       doc.classList.add('booting');
       doc.classList.add('head-wait');   /* outlives booting: see fly() */
 
@@ -378,8 +381,8 @@
           var dy = innerHeight / 2 - (r.top + r.height / 2);
           if (r.height && dy > 24 && r.top >= 0) gsap.set(portrait, { y: dy });
         }
-        setTimeout(function () { center.classList.add('boot-in'); }, handoff ? 520 : 420);
-        setTimeout(dip, HOLD_FACE + (handoff ? 200 : 0));
+        if (!handoff) setTimeout(function () { center.classList.add('boot-in'); }, 420);
+        setTimeout(dip, handoff ? 900 : HOLD_FACE);
       });
     }
 
@@ -661,7 +664,7 @@
       if (landed) return;
       landed = true;
       center.classList.add('name-gone');
-      doc.classList.remove('sheet-held', 'bi-handoff');
+      doc.classList.remove('sheet-held', 'bi-handoff', 'bi-face');
       doc.classList.add('booted');
       setTimeout(function () {
         line.classList.remove('is-held');
@@ -829,7 +832,9 @@
 
     function spacing() {
       var fun = doc.getAttribute('data-side') === 'fun';
-      var live = cards.filter(function (c) { return !(fun && c.classList.contains('fun-skip')); });
+      var live = cards.filter(function (c) {
+        return fun ? !c.classList.contains('fun-skip') : !c.classList.contains('pro-skip');
+      });
       return cards.map(function (c) {
         var r = live.indexOf(c);
         /* a card that is going keeps its place; nobody sees it there */
@@ -1807,7 +1812,7 @@
        the section's top enters the bottom of the screen to the moment it
        reaches the top — so the watch is finished and readable before the
        part where scrolling drives the hand. */
-    ScrollTrigger.create({
+    var buildST = ScrollTrigger.create({
       trigger: orbit,
       start: 'top bottom',
       end: 'top top',
@@ -1854,7 +1859,7 @@
     });
 
     /* ---- 2. the revolution, while pinned --------------------------------- */
-    ScrollTrigger.create({
+    var revST = ScrollTrigger.create({
       trigger: orbit,
       start: 'top top',
       end: '+=640%',
@@ -2048,6 +2053,27 @@
       }
     });
 
+    /* What the intro (intro.js) needs to walk the page through the watch:
+       the two triggers, and where in the pinned scroll each panel is fully
+       open — worked from the same schedule the scene uses, so the two can
+       never disagree. Values are fractions of the pinned scroll. */
+    JH.watch = {
+      build: buildST,
+      rev: revST,
+      home: HOME,
+      straps: straps,
+      parts: built.map(function (b) { return b.el; }),
+      hand: hand,
+      hub: hub,
+      mark: mark,
+      eras: eras.map(function (era, i) {
+        var a0 = i === 0 ? OPEN : i * quarter;
+        var hold = i === eras.length - 1 ? Math.max(NOW - a0, 0.08) : HOLD;
+        return { el: era, at: (a0 + hold * 0.5) * HOME };
+      }),
+      now: { at: (NOW + 0.10) * HOME, els: [now, picks, certs].filter(Boolean) }
+    };
+
     /* The coil keeps turning after the scroll stops. Only while it is worth
        looking at — there is no reason to run a ticker for something faded
        out — and only ever adding to what the scroll already set. */
@@ -2097,6 +2123,7 @@
 
     function detent(q, dir) {
       if (!lenis || notched || dir < 0) return;
+      if (doc.classList.contains('bi-live')) return;
       if (q < NOW || q > NOW + 0.06) return;
       notched = true;
       lenis.stop();
@@ -2172,6 +2199,9 @@
     var mail  = document.querySelector('.contact-mail');
     var contact = document.querySelector('#contact');
     if (!panel || !contact || reduced || !hasGsap) return;
+    var copy = contact.querySelector('.wrap');
+    /* taken on: the address (and now the copy) wait for the leather */
+    contact.classList.add('is-drawn');
 
     /* The width the strap has on screen, worked out the same way the watch
        works it out — the drawing is 1000 units wide across a box whose height
@@ -2195,6 +2225,19 @@
       var narrow = strapWidth();
       var w = narrow + (Math.min(window.innerWidth * 0.92, 1100) - narrow) * wide;
       panel.style.setProperty('--lw', w.toFixed(0) + 'px');
+      /* The words are written inside the leather, not on top of it: they
+         are only ever shown across the width the band has opened to, so as
+         it widens they are uncovered from the middle outward — a book being
+         opened — and while it is still a strap there is nothing over it. */
+      if (copy) {
+        if (wide >= 0.999) copy.style.clipPath = '';
+        else if (wide <= 0.001) copy.style.clipPath = 'inset(0 50% 0 50%)';
+        else {
+          var room = Math.max(0, panel.offsetWidth - 48);
+          var cut = Math.max(0, (copy.offsetWidth - room) / 2);
+          copy.style.clipPath = 'inset(-60px ' + cut.toFixed(1) + 'px -60px ' + cut.toFixed(1) + 'px)';
+        }
+      }
       if (mail) {
         /* The address opens outward from the middle, in step with the
            leather widening under it — the same move at a smaller scale. */
