@@ -372,12 +372,19 @@
       /* stay on a moving point — a line being drawn, a hand going round —
          with a hand's lag and a little life in it; down while the point
          says it is drawing */
-      follow: function (fn, lag) {
+      follow: function (fn, lag, steady) {
         c.mid++;
         var t0 = performance.now();
         var f = function () {
           var p = fn();
           if (!p) return;
+          if (steady) {
+            /* holding it: exactly on it, pressed, no drift of its own */
+            c.x = p.x; c.y = p.y;
+            c.place();
+            el.classList.add('down');
+            return;
+          }
           var t = (performance.now() - t0) / 1000;
           var k = lag || 0.22;
           c.x += (p.x + Math.sin(t * 5.3) * 2 - c.x) * k;
@@ -1058,6 +1065,34 @@
     return p;
   }
 
+  /* The leather at the end, pulled open like a book: two hands take an
+     edge each and draw them apart, and the band is only as wide as they
+     have pulled it. */
+  function openLeather(cs) {
+    var L = JH.leather;
+    if (!L || !L.panel) return Promise.resolve();
+    var a = cs[0], b = cs[1 % cs.length];
+    var r = rect(L.panel);
+    var y = clamp(r.top + H() * 0.45, 80, H() - 80);
+    var edge = function () { return rect(L.panel); };
+    return Promise.all([
+      task(a, function () { return a.move(r.left + 3, y).then(a.press); }),
+      task(b, function () { return b.move(r.right - 3, y + rnd(-30, 30)).then(b.press); })
+    ]).then(function () {
+      a.mid++; b.mid++;
+      var yb = b.y;
+      return tween(1100, function (k) {
+        L.open(k);
+        var q = edge();
+        a.x = q.left + 3; a.y = y; a.place();
+        b.x = q.right - 3; b.y = yb; b.place();
+      }, ease.inOut);
+    }).then(function () {
+      L.open(1);
+      return Promise.all([a.release(), b.release()]);
+    });
+  }
+
   /* Wait for a panel the scroll is bringing in to be up. */
   function opened(panel) {
     return until(function () { return !panel || panel.style.opacity === '' || +panel.style.opacity > 0.85; });
@@ -1111,49 +1146,106 @@
       if (el.classList.contains('watch-crown')) crown = el;
       if (el.classList.contains('watch-case')) kase = el;
     });
-    var strapEl = Wt.straps[0];
-    var strapTip = function () {
-      var r = rect(strapEl);
-      if (r.height < 1) return { x: r.left + r.width / 2, y: r.top + 4 };
-      return { x: r.left + r.width / 2, y: r.bottom - 3, down: r.height > 4 };
-    };
-
-    var A = {};
-    A.p = new Promise(function (r) { A.r = r; });
     var B = {};
     B.p = new Promise(function (r) { B.r = r; });
-    function followUntil(c, fn, p) { return task(c, function () { var stop = c.follow(fn); return p.then(stop); }); }
+    function followUntil(c, fn, p, steady) {
+      return task(c, function () { var stop = c.follow(fn, 0.22, steady); return p.then(stop); });
+    }
 
-    if (strapEl) followUntil(cs[0], strapTip, A.p);
-    if (kase) followUntil(cs[1 % n], tipOf(kase), A.p);
-    if (crown && n > 2) followUntil(cs[2], tipOf(crown), A.p);
-    /* the hands go on once the face is there, and then that hand rides one */
-    if (Wt.hub) task(hand, function () {
-      return hand.idleUntil(until(function () { return +Wt.hub.style.opacity > 0.3; })).then(function () {
-        var q = center(rect(Wt.hub));
-        return hand.move(q.x, q.y).then(hand.click);
-      });
-    });
-    if (Wt.mark) followUntil(hand, function () { return center(rect(Wt.mark)); }, B.p);
+    /* A strap pulled down: grabbed at its root and drawn down to its full
+       length, the leather coming with the hand. */
+    function dragStrap(c, i, ms) {
+      var el = Wt.straps[i];
+      Wt.strap(i, 1);
+      var full = rect(el);
+      Wt.strap(i, 0);
+      var x = full.left + full.width / 2;
+      return c.move(x, full.top + 2).then(c.press).then(function () {
+        c.mid++;
+        return tween(ms, function (k) {
+          Wt.strap(i, k);
+          c.x = x; c.y = Math.max(full.top + 2, rect(el).bottom - 2);
+          c.place();
+        }, ease.inOut);
+      }).then(c.release);
+    }
 
-    /* the dial's years and the year in the middle, made as the dial comes up */
-    var dialHand = n > 4 ? cs[4] : null;
-    if (dialHand) task(dialHand, function () {
-      var dial = document.querySelector('.path-dial');
-      return dialHand.idleUntil(until(function () { return dial && +dial.style.opacity > 0.4; })).then(function () {
-        /* made in turn by this hand directly — it is already inside its
-           own job, so queueing more work on itself would wait on itself */
-        return text.dial.reduce(function (p, el) {
-          return p.then(function () { return jobMake(dialHand, el); });
-        }, Promise.resolve());
+    /* A line drawn on: the hand goes round it and the line is there only as
+       far as the hand has gone. */
+    function trace(c, el, ms) {
+      var len = el.getTotalLength();
+      var at0 = function (k) {
+        var m = el.getScreenCTM();
+        return el.getPointAtLength(len * k).matrixTransform(m);
+      };
+      var p0 = at0(0);
+      return c.move(p0.x, p0.y).then(c.press).then(function () {
+        c.mid++;
+        return tween(ms, function (k) {
+          Wt.part(el, k);
+          var q = at0(k);
+          c.x = q.x; c.y = q.y;
+          c.place();
+        }, ease.inOut);
+      }).then(c.release);
+    }
+
+    /* The face of the dial, drawn in as a box over the case. */
+    function makeFace(c) {
+      var r = kase ? rect(kase) : null;
+      if (!r) { Wt.face(1); return Promise.resolve(); }
+      var b = Box(c.color, { fill: true });
+      return c.move(r.left, r.top).then(c.press).then(function () {
+        b.set(r.left, r.top, 1, 1);
+        b.on();
+        return c.move(r.right, r.bottom, {
+          overshoot: false, bend: 0.02, dur: 520,
+          onMove: function (x, y) {
+            b.set(r.left, r.top, x - r.left, y - r.top);
+            Wt.face(Math.min((x - r.left) / r.width, (y - r.top) / r.height));
+          }
+        });
+      }).then(function () {
+        Wt.face(1);
+        return c.release();
+      }).then(function () { b.remove(); });
+    }
+
+    /* The hands, put on at the hub; the same hand then holds the long one
+       for the rest of the way round. */
+    function setHands(c) {
+      var q = center(rect(Wt.hub || kase));
+      return c.move(q.x, q.y).then(c.click).then(function () {
+        return tween(220, function (k) { Wt.hands(k); });
       });
-    });
+    }
+
     var crew = cs.filter(function (c) { return c !== hand; });
 
-    return scrollTo(Wt.build.end, 2200).then(function () {
-      return wait(400);
+    /* The section comes up with nothing on it but the leather from the
+       hero; then the watch is made on it, in order, by hand. */
+    return scrollTo(Wt.build.end, 2000).then(function () {
+      return wait(250);
     }).then(function () {
-      A.r();
+      return task(cs[0], function () { return dragStrap(cs[0], 0, 900); });
+    }).then(function () {
+      var jobs = [];
+      if (crown && n > 2) jobs.push(task(cs[2], function () { return trace(cs[2], crown, 700); }));
+      if (kase) jobs.push(task(cs[1 % n], function () { return trace(cs[1 % n], kase, 1300); }));
+      return Promise.all(jobs);
+    }).then(function () {
+      var face = cs[4 % n] === hand ? cs[0] : cs[4 % n];
+      return Promise.all([
+        task(cs[0], function () { return dragStrap(cs[0], 1, 800); }),
+        task(face, function () { return makeFace(face); }),
+        task(hand, function () { return setHands(hand); })
+      ]);
+    }).then(function () {
+      /* the hand that put the hands on holds the long one from here */
+      if (Wt.mark) followUntil(hand, function () { return center(rect(Wt.mark)); }, B.p, true);
+      Wt.dial(1);
+      return makeAll(crew.slice(-2), text.dial);
+    }).then(function () {
       var i = 0;
       function nextEra() {
         if (i >= text.eras.length) return Promise.resolve();
@@ -1252,6 +1344,10 @@
     });
 
     var live = JH.watch && JH.watch.rev && document.querySelector('.path-orbit.is-live');
+    /* From here the watch and the leather are made by hand, not by the
+       scroll: both start unmade, and only the cursors move them on. */
+    if (live && JH.watch.byHand) { JH.watch.byHand(true); JH.watch.paint(0); }
+    if (JH.leather) { JH.leather.byHand(true); JH.leather.open(0); }
     return wait(700).then(function () {
       return live ? walkWatch(cs) : walkFlow(cs);
     }).then(function () {
@@ -1263,7 +1359,7 @@
         var want = Math.max(70, (H() - r.height) / 2);
         if (Math.abs(r.top - want) > 30) return scrollTo(window.scrollY + (r.top - want), 450);
       }).then(function () {
-        return makeAll(cs, contactPieces());
+        return openLeather(cs).then(function () { return makeAll(cs, contactPieces()); });
       });
     }).then(function () {
       return wait(200);
@@ -1529,6 +1625,8 @@
     }
 
     if (under) { under.remove(); under = null; }
+    if (JH.watch && JH.watch.byHand) JH.watch.byHand(false);
+    if (JH.leather) JH.leather.byHand(false);
     if (instant) {
       if (window.scrollY > 0) {
         if (JH.lenis) JH.lenis.scrollTo(0, { immediate: true, force: true });

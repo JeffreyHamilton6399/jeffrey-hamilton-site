@@ -62,12 +62,16 @@ A first visit is built in front of you, then opens.
      the spacing.
    * Then the view walks down the page. The intro scrolls it itself, frame
      by frame, so the watch builds exactly as it does under a hand on the
-     wheel: one cursor pulls the strap down, one traces the case as its line
-     is drawn on, one the crown, one sets the hands going and rides the hand
-     round the dial, and another makes the years round the dial. As each era
+     wheel — except that here the scroll draws nothing: the section comes up
+     bare and the cursors make the watch by hand (app.js hands them the
+     controls). One pulls the strap down, one traces the crown and one the
+     case as their lines go on, one pulls the lower strap out, one draws the
+     face in, one puts the hands on and holds the long one steady the rest of
+     the way round, and two make the years round the dial. As each era
      opens the crew makes it — title, paragraphs, video rows, links — then
-     Now and what I'm aiming at, and the certificates are pasted in. The
-     contact panel is made once the leather has opened, and the view comes
+     Now and what I'm aiming at, and the certificates are pasted in. At the
+     contact panel two cursors take an edge of the leather each and pull it
+     open like a book, the crew makes the copy inside, and the view comes
      back up. On a narrower screen the watch is still and the story is in
      the flow; the walk goes down it a screenful at a time.
    * Last of all the image hand makes the intro face — the circle drawn with
