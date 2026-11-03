@@ -16,10 +16,10 @@
   var config = GlyphWind.defaults();
   config.seed = 6399;
   config.look = 'mixed';
-  config.glow.color.light = config.glow.color.dark;
+  config.glow.color.light = [233 / 255, 179 / 255, 63 / 255];
+  config.touch.ripple = 0.18;
   config.grid.maxDevicePixels = 4000000;
   config.power.rippleFrameMs = 25;
-  config.wind.revealS = 1;
   var inView = false, ready = false, renderer;
   var built = !doc.classList.contains('bi-on');
   var resolveReady;
@@ -45,7 +45,7 @@
   function poke(id, x, y) { if (contains(x, y)) renderer.poke(id, x, y); }
   function ripple(x, y) { if (contains(x, y)) renderer.ripple(x, y); }
 
-  JH.field = { element: field, ready: readyPromise, reveal: reveal, poke: poke, ripple: ripple };
+  JH.field = { element: field, ready: readyPromise, reveal: reveal, poke: poke };
   renderer = GlyphWind.create({
     element: field,
     settings: function () { return config; },

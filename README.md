@@ -104,8 +104,9 @@ The watch sits on a dense field of monospace letters and numbers drifting
 in cloudlike bands. It uses the MIT-licensed renderer from
 [Henry Fan's Claude Code Background Lab](https://github.com/Henry-fan88/claude-code-background),
 vendored with its license in `assets/vendor/glyph-wind/`. `field.js` connects
-it to the page. Pointer movement leaves a wake; clicks make blue ripples,
-with a heart on every third click. Each intro cursor has its own wake.
+it to the page. The letters are muted gold, with a soft wake under the pointer.
+Visitor clicks use 18% of the reference's ripple strength. The intro cursors
+stir the field as they move, but their clicks do not trigger background ripples.
 
 During the intro, one cursor draws the field's bounds before the watch is
 assembled. Skipping leaves the complete background. The WebGL2 renderer
