@@ -37,7 +37,7 @@
 
   function seen() { try { sessionStorage.setItem(KEY, '1'); } catch (e) {} }
 
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches && !doc.classList.contains('force-motion')) {
     doc.classList.remove('bi-on');
     seen();
     document.dispatchEvent(new Event('introdone'));
@@ -2815,7 +2815,6 @@
 (function () {
   var btn = document.querySelector('.replay-intro');
   if (!btn) return;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   btn.hidden = false;
   btn.addEventListener('click', function () {
     try { sessionStorage.removeItem('jh-intro-seen'); } catch (e) {}

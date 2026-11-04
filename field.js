@@ -10,7 +10,13 @@
   if (typeof GlyphWind === 'undefined') return;
   var doc = document.documentElement;
   var JH = window.JH = window.JH || {};
-  var motion = matchMedia('(prefers-reduced-motion: reduce)');
+  var mq = matchMedia('(prefers-reduced-motion: reduce)');
+  var forced = doc.classList.contains('force-motion');
+  /* reduced motion, unless the intro was asked for by name (?intro) */
+  var motion = {
+    get matches() { return mq.matches && !forced; },
+    addEventListener: function (t, f) { mq.addEventListener(t, f); }
+  };
 
   function config() {
     var c = GlyphWind.defaults();
