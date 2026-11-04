@@ -138,7 +138,7 @@
 
   /* The whole session runs a little faster than life, the way a screen
      recording of one is played back. */
-  var TIME = 0.4;
+  var TIME = 0.5;
 
   function tween(dur, fn, e) {
     return new Promise(function (res, rej) {
@@ -621,9 +621,9 @@
   /* The intro face, first thing: the circle drawn with the ellipse tool,
      then the photo dragged in from the edge of the screen and dropped on
      it. This is the face the opening later spins into the gold dot. */
-  function jobFace(c) {
-    if (!bootFace || !bootImg || !shown(bootFace)) { show(bootFace); show(bootImg); emit('face'); return Promise.resolve(); }
-    var r = rect(bootFace), cc = center(r);
+  function jobFaceCircle(c) {
+    if (!bootFace || !bootImg || !shown(bootFace)) { show(bootFace); show(bootImg); return Promise.resolve(); }
+    var r = rect(bootFace);
     var sel = Box(c.color);
     return c.move(r.left - rnd(30, 50), r.top - rnd(20, 40)).then(function () {
       c.chip('O');                         /* the ellipse tool */
@@ -652,10 +652,17 @@
       return wait(rnd(120, 180));
     }).then(function () {
       sel.remove();
-      /* the photo: an option-drag of the one already in the header */
-      var src = face && shown(face) ? center(rect(face)) : { x: cc.x < W() / 2 ? 6 : W() - 6, y: cc.y };
-      return c.move(src.x, src.y);
-    }).then(c.press).then(function () {
+    });
+  }
+
+  /* the photo: an option-drag of the one already in the header, down into
+     the circle; onGrab runs the moment it is picked up */
+  function jobFacePhoto(c, onGrab) {
+    if (!bootFace || !bootImg) { show(bootImg); return Promise.resolve(); }
+    var r = rect(bootFace), cc = center(r);
+    var src = face && shown(face) ? center(rect(face)) : { x: cc.x < W() / 2 ? 6 : W() - 6, y: cc.y };
+    return c.move(src.x, src.y).then(c.press).then(function () {
+      if (onGrab) onGrab();
       c.chip('⌥');
       var g = Ghost(bootImg.currentSrc || bootImg.src, c.color);
       g.at(c.x, c.y);
@@ -1289,6 +1296,7 @@
         task(hand, function () { return setHands(hand); })
       ]);
     }).then(function () {
+      progress(46, 'The story');
       /* the hand that put the hands on holds the long one from here */
       if (Wt.mark) followUntil(hand, function () { return center(rect(Wt.mark)); }, B.p, true);
       Wt.dial(1);
@@ -1301,9 +1309,11 @@
         var e = text.eras[i], peak = Wt.eras[i];
         i++;
         standBy();
+        var n_ = i;
         return scrollTo(peak ? at(peak.at) : window.scrollY, 700)
           .then(function () { return opened(e.era); })
           .then(function () { return bySides(e.pieces); })
+          .then(function () { progress(46 + 6 * n_, 'The story'); })
           .then(nextEra);
       }
       return nextEra();
@@ -1316,7 +1326,7 @@
         (lefts.length <= rights.length ? lefts : rights).push(hand);
         crew.push(hand);
         return Promise.all(Wt.now.els.map(opened));
-      }).then(function () { return bySides(text.now); });
+      }).then(function () { return bySides(text.now); }).then(function () { progress(76, 'Contact'); });
     }).then(function () {
       /* one hand takes the bottom of the lower strap and drags it down,
          through the fold, into the contact panel */
@@ -1409,6 +1419,7 @@
     /* From here the watch and the leather are made by hand, not by the
        scroll: both start unmade, and only the cursors move them on. */
     if (live && JH.watch.byHand) { JH.watch.byHand(true); JH.watch.paint(0); }
+    progress(32, 'The watch');
     if (JH.leather) { JH.leather.byHand(true); JH.leather.open(0); }
     /* The dark section is drawn in as a panel across the foot of the
        screen, the strap's tab is made on the white above it, and a hand
@@ -1464,7 +1475,8 @@
         if (Math.abs(r.top - want) > 30) return scrollTo(window.scrollY + (r.top - want), 450);
       }).then(function () {
         if (letGoStrap) { letGoStrap(); letGoStrap = null; }
-        return openLeather(cs).then(function () { return makeAll(cs, contactPieces()); });
+        return openLeather(cs).then(function () { return makeAll(cs, contactPieces()); })
+          .then(function () { progress(92, 'Finishing'); });
       });
     }).then(function () {
       return wait(200);
@@ -1504,6 +1516,7 @@
 
   function arm() {
     doc.classList.add('bi-live');
+    fetchAudio();
     document.body.appendChild(root);
     document.body.insertBefore(skip, document.body.firstChild);
     hero.insertBefore(canvas, hero.firstChild);
@@ -1573,31 +1586,429 @@
   var w0 = window.innerWidth;
   function onResize() { if (Math.abs(window.innerWidth - w0) > 2) finish(true); }
 
+  /* ------------------------------------------------------------ act one
+
+     Before anything is built, the visitor sees it asked for. A chat box on
+     the white page; one click (sound needs one) and a cursor comes in,
+     types "Create Jeffrey's portfolio", and holds the mic: my own voice adds
+     "and play Loser by Tame Impala" while the waveform jumps. Sent; a beat
+     of thinking; the answer comes back in writing and out loud; "Spawning
+     agents…" — and five dots fly out of the reply and become the cursors on
+     the beat the band comes in, while the text box folds down into the
+     progress bar. Everything in here runs on the music's own clock. */
+
+  var MUSIC = 'assets/audio/loser-intro.mp3';
+  var VOICE = 'assets/audio/voice-play-loser.mp3';
+  var DROP = 12.0;             /* the band comes in here, in the clip      */
+  var VOICE_AT = 4.25;         /* my voice starts                          */
+  var VOICE_LEN = 3.0;
+  var SPOKEN = ['and', 'play', 'Loser', 'by', 'Tame', 'Impala'];
+
+  var snd = { ctx: null, gain: null, music: null, voice: null, an: null, t0: 0, bufs: null, src: [] };
+  var T0 = 0;
+
+  function clk() {
+    if (snd.ctx && snd.t0) return snd.ctx.currentTime - snd.t0;
+    return (performance.now() - T0) / 1000;
+  }
+  /* resolves on the frame the clock reaches s */
+  function at(s) {
+    return new Promise(function (res, rej) {
+      var f = function () {
+        if (dead) { off(); rej(ABORT); return; }
+        if (clk() >= s) { off(); res(); }
+      };
+      function off() { var k = followers.indexOf(f); if (k >= 0) followers.splice(k, 1); }
+      followers.push(f);
+    });
+  }
+  /* a pause in real milliseconds, whatever speed the session plays at */
+  function real(ms) { return wait(ms / TIME); }
+
+  function fetchAudio() {
+    if (!window.fetch) return;
+    snd.bufs = Promise.all([MUSIC, VOICE].map(function (u) {
+      return fetch(u).then(function (r) { if (!r.ok) throw r; return r.arrayBuffer(); });
+    })).catch(function () { return null; });
+  }
+
+  /* inside the click: the audio has to be woken by the visitor's gesture */
+  function wakeAudio() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    try { if (AC) { snd.ctx = new AC(); snd.ctx.resume(); } } catch (e) { snd.ctx = null; }
+    try {
+      if (window.speechSynthesis) {
+        var u = new SpeechSynthesisUtterance(' ');
+        u.volume = 0;
+        speechSynthesis.speak(u);
+      }
+    } catch (e) {}
+  }
+  function decodeAudio() {
+    if (!snd.ctx || !snd.bufs) return Promise.resolve(false);
+    var ctx = snd.ctx;
+    var timeout = new Promise(function (r) { setTimeout(function () { r(null); }, 4000); });
+    return Promise.race([snd.bufs, timeout]).then(function (bufs) {
+      if (!bufs) return false;
+      return Promise.all(bufs.map(function (b) {
+        return new Promise(function (res, rej) { ctx.decodeAudioData(b.slice(0), res, rej); });
+      })).then(function (d) { snd.music = d[0]; snd.voice = d[1]; return true; }, function () { return false; });
+    });
+  }
+  function startMusic() {
+    T0 = performance.now();
+    if (!snd.ctx || !snd.music) return;
+    var ctx = snd.ctx;
+    snd.gain = ctx.createGain();
+    snd.gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    snd.gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1.4);
+    snd.gain.connect(ctx.destination);
+    var src = ctx.createBufferSource();
+    src.buffer = snd.music;
+    src.connect(snd.gain);
+    snd.t0 = ctx.currentTime + 0.05;
+    src.start(snd.t0);
+    snd.src.push(src);
+  }
+  /* the music to a level, over a time, starting at a point on its clock */
+  function level(v, from, over) {
+    if (!snd.gain) return;
+    var g = snd.gain.gain, t = snd.t0 + from;
+    g.setValueAtTime(g.value, Math.max(snd.ctx.currentTime, t));
+    g.linearRampToValueAtTime(v, Math.max(snd.ctx.currentTime, t) + over);
+  }
+  function playVoice(when) {
+    if (!snd.ctx || !snd.voice) return;
+    var ctx = snd.ctx;
+    var src = ctx.createBufferSource();
+    src.buffer = snd.voice;
+    snd.an = ctx.createAnalyser();
+    snd.an.fftSize = 256;
+    var vg = ctx.createGain();
+    vg.gain.value = 1.0;
+    src.connect(snd.an);
+    snd.an.connect(vg);
+    vg.connect(ctx.destination);
+    src.start(snd.t0 + when);
+    snd.src.push(src);
+  }
+  function say(text) {
+    try {
+      if (!window.speechSynthesis) return;
+      var u = new SpeechSynthesisUtterance(text);
+      var vs = speechSynthesis.getVoices();
+      var en = vs.filter(function (v) { return /^en[-_](US|GB|AU)/i.test(v.lang); });
+      var pick_ = null;
+      ['Samantha', 'Siri', 'Ava', 'Allison', 'Google US English', 'Jenny', 'Aria', 'Zira'].some(function (n) {
+        pick_ = en.filter(function (v) { return v.name.indexOf(n) >= 0; })[0];
+        return !!pick_;
+      });
+      if (pick_ || en[0]) u.voice = pick_ || en[0];
+      u.rate = 1.03;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  function hush(fast) {
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+    if (!snd.ctx) return;
+    var ctx = snd.ctx;
+    var over = fast ? 0.35 : 2.6;
+    try {
+      if (snd.gain) {
+        snd.gain.gain.cancelScheduledValues(ctx.currentTime);
+        snd.gain.gain.setValueAtTime(snd.gain.gain.value, ctx.currentTime);
+        snd.gain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + over);
+      }
+    } catch (e) {}
+    setTimeout(function () {
+      snd.src.forEach(function (s_) { try { s_.stop(); } catch (e) {} });
+      try { ctx.close(); } catch (e) {}
+    }, over * 1000 + 100);
+  }
+
+  var MIC = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-6 9a6 6 0 0 0 12 0M12 18v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  var SEND = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  var chat = null, ui = {};
+  function buildChat() {
+    chat = make('div', 'bi-chat');
+    root.insertBefore(chat, layer);   /* under the cursors */
+    var bars = '';
+    for (var i = 0; i < 26; i++) bars += '<i></i>';
+    chat.innerHTML =
+      '<div class="bi-thread"></div>' +
+      '<div class="bi-composer">' +
+        '<div class="bi-input"><span class="bi-ph">Ask anything…</span><span class="bi-typed"></span><span class="bi-tcaret"></span></div>' +
+        '<span class="bi-wave">' + bars + '</span>' +
+        '<span class="bi-btn bi-mic">' + MIC + '</span>' +
+        '<span class="bi-btn bi-send">' + SEND + '</span>' +
+      '</div>' +
+      '<button type="button" class="bi-start"><span class="bi-start-dot"></span>Watch it build<em>sound on</em></button>';
+    ui.thread = chat.querySelector('.bi-thread');
+    ui.composer = chat.querySelector('.bi-composer');
+    ui.input = chat.querySelector('.bi-input');
+    ui.typed = chat.querySelector('.bi-typed');
+    ui.wave = chat.querySelector('.bi-wave');
+    ui.bars = [].slice.call(ui.wave.children);
+    ui.mic = chat.querySelector('.bi-mic');
+    ui.send = chat.querySelector('.bi-send');
+    ui.start = chat.querySelector('.bi-start');
+  }
+
+  function typeInto(el, text, base) {
+    var i = 0;
+    function next() {
+      if (i >= text.length) return Promise.resolve();
+      el.textContent += text[i++];
+      chat.classList.add('has-text');
+      var d = base * rnd(0.6, 1.5) + (text[i - 1] === ' ' ? 40 : 0);
+      return real(d).then(next);
+    }
+    return next();
+  }
+
+  /* an answer arrives the way they do: a word or two at a time */
+  function streamInto(el, text) {
+    var words = text.split(/(\s+)/), i = 0;
+    function next() {
+      if (i >= words.length) return Promise.resolve();
+      el.textContent += words[i++] + (words[i] && /^\s+$/.test(words[i]) ? words[i++] : '');
+      return real(rnd(55, 95)).then(next);
+    }
+    return next();
+  }
+
+  /* the waveform: the voice's own levels while it plays */
+  var waving = null;
+  function waveOn() {
+    ui.composer.classList.add('is-recording');
+    var data = snd.an ? new Uint8Array(snd.an.frequencyBinCount) : null;
+    waving = function () {
+      var lvl;
+      if (data) { snd.an.getByteFrequencyData(data); }
+      ui.bars.forEach(function (b, k) {
+        if (data) {
+          var v = 0, from = 2 + k * 2;
+          for (var z = from; z < from + 3; z++) v += data[z] || 0;
+          lvl = v / (3 * 255);
+        } else lvl = 0.25 + 0.5 * Math.abs(Math.sin(performance.now() / 140 + k));
+        b.style.transform = 'scaleY(' + Math.max(0.12, Math.min(1, lvl * 1.6)).toFixed(3) + ')';
+      });
+    };
+    followers.push(waving);
+  }
+  function waveOff() {
+    ui.composer.classList.remove('is-recording');
+    var k = followers.indexOf(waving);
+    if (k >= 0) followers.splice(k, 1);
+    ui.bars.forEach(function (b) { b.style.transform = ''; });
+  }
+
+  function bubble(who, html) {
+    var row = make('div', 'bi-msg bi-' + who, ui.thread);
+    if (who === 'me') {
+      var src = (bootImg && (bootImg.currentSrc || bootImg.src)) || '';
+      row.innerHTML = '<span class="bi-text"></span><img class="bi-av" alt="" src="' + src + '">';
+    } else {
+      row.innerHTML = '<span class="bi-av bi-av-ai"></span><span class="bi-text"></span>';
+    }
+    var t = row.querySelector('.bi-text');
+    if (html) t.innerHTML = html;
+    requestAnimationFrame(function () { row.classList.add('on'); });
+    return t;
+  }
+
+  function act1(cs0) {
+    var c = cs0;
+    var started = new Promise(function (res) {
+      ui.start.addEventListener('click', function () { wakeAudio(); res(); }, { once: true });
+    });
+    requestAnimationFrame(function () { chat.classList.add('on'); });
+    setTimeout(function () { try { ui.start.focus({ preventScroll: true }); } catch (e) {} }, 900);
+
+    return started.then(function () {
+      ui.start.classList.add('gone');
+      return decodeAudio();
+    }).then(function () {
+      startMusic();
+      /* the cursor comes in and clicks into the box */
+      var ir = rect(ui.input);
+      return c.move(ir.left + 18, ir.top + ir.height / 2);
+    }).then(c.click).then(function () {
+      chat.classList.add('is-focused');
+      return at(1.15);
+    }).then(function () {
+      return c.move(c.x + 30, c.y + 26, { overshoot: false });
+    }).then(function () {
+      return typeInto(ui.typed, "Create Jeffrey's portfolio", 78);
+    }).then(function () {
+      var mr = center(rect(ui.mic));
+      return at(3.55).then(function () { return c.move(mr.x, mr.y); });
+    }).then(function () {
+      return at(VOICE_AT - 0.12);
+    }).then(c.click).then(function () {
+      /* my voice, with the music ducked under it */
+      playVoice(VOICE_AT);
+      level(0.16, VOICE_AT - 0.1, 0.25);
+      waveOn();
+      SPOKEN.forEach(function (w_, k) {
+        at(VOICE_AT + 0.2 + k * (VOICE_LEN - 0.6) / SPOKEN.length).then(function () {
+          ui.typed.textContent += ' ' + w_;
+        }, function () {});
+      });
+      return at(VOICE_AT + VOICE_LEN + 0.1);
+    }).then(function () {
+      return c.click();
+    }).then(function () {
+      waveOff();
+      level(0.45, VOICE_AT + VOICE_LEN + 0.2, 0.4);
+      var sr = center(rect(ui.send));
+      return c.move(sr.x, sr.y);
+    }).then(c.click).then(function () {
+      /* sent: it goes up into the thread, and the box empties */
+      var said = ui.typed.textContent;
+      ui.typed.textContent = '';
+      chat.classList.remove('has-text');
+      bubble('me').textContent = said;
+      chat.classList.add('has-thread');
+      return real(260);
+    }).then(function () {
+      var t = bubble('ai', '<span class="bi-thinking">Thinking</span>');
+      return at(Math.max(clk() + 0.9, 9.2)).then(function () { return t; });
+    }).then(function (t) {
+      /* the answer, written and spoken */
+      level(0.18, clk(), 0.2);
+      say('Okay. Playing Loser, by Tame Impala.');
+      t.textContent = '';
+      return streamInto(t, 'On it. Creating Jeffrey’s portfolio, and playing Loser by Tame Impala.').then(function () {
+        return at(10.9);
+      }).then(function () {
+        var sp = make('span', 'bi-spawn', t);
+        sp.innerHTML = 'Spawning agents<span class="bi-dots">' +
+          PALETTE.slice(1).map(function (col) { return '<b style="--c:' + col + '"></b>'; }).join('') + '</span>';
+        return at(DROP - 0.6);
+      });
+    }).then(function () {
+      level(0.75, DROP - 0.05, 0.12);
+      return spawn();
+    });
+  }
+
+  /* The handover: the dots fly out of the reply to where each agent starts,
+     the text box folds down into the progress bar, and the white page turns
+     into the canvas. Resolves on the beat with where the dots landed. */
+  function spawn() {
+    var dots = [].slice.call(chat.querySelectorAll('.bi-dots b'));
+    var spots = [[0.16, 0.3], [0.56, 0.16], [0.34, 0.74], [0.84, 0.56], [0.8, 0.22]].slice(1);
+    var landed = dots.map(function (d, i) {
+      var r = rect(d), cc = center(r);
+      var to = { x: W() * spots[i % spots.length][0], y: H() * spots[i % spots.length][1] };
+      var fly = make('span', 'bi-fly', layer);
+      fly.style.setProperty('--c', PALETTE[i + 1]);
+      fly.style.transform = 'translate(' + cc.x + 'px,' + cc.y + 'px)';
+      d.style.visibility = 'hidden';
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          fly.classList.add('go');
+          fly.style.transform = 'translate(' + to.x + 'px,' + to.y + 'px) scale(1.4)';
+        });
+      });
+      return { el: fly, x: to.x, y: to.y };
+    });
+    /* the box becomes the bar */
+    makeBar();
+    var from = rect(ui.composer), to = rect(bar.el);
+    ui.composer.style.transformOrigin = '0 0';
+    ui.composer.style.transition = 'transform .7s cubic-bezier(.6,0,.2,1), border-radius .7s, opacity .5s .35s';
+    var sx = to.width / from.width, sy = to.height / from.height;
+    chat.classList.add('folding');
+    requestAnimationFrame(function () {
+      ui.composer.style.transform = 'translate(' + (to.left - from.left) + 'px,' + (to.top - from.top) + 'px) scale(' + sx + ',' + sy + ')';
+      ui.composer.style.opacity = '0';
+    });
+    canvas.classList.add('on');
+    return at(DROP).then(function () {
+      bar.el.classList.add('on');
+      setTimeout(function () { if (chat) chat.remove(); chat = null; }, 700);
+      landed.forEach(function (l) { setTimeout(function () { l.el.remove(); }, 200); });
+      return landed;
+    });
+  }
+
+  /* ---- the progress bar ---- */
+  var bar = null;
+  function makeBar() {
+    if (bar) return bar;
+    var el = make('div', 'bi-progress');
+    root.insertBefore(el, layer);
+    el.innerHTML =
+      '<span class="bi-pg-row"><span class="bi-pg-label">Building jeffreyhamilton.com</span>' +
+      '<span class="bi-pg-stage"></span><span class="bi-pg-pct">0%</span></span>' +
+      '<span class="bi-pg-track"><span class="bi-pg-fill"></span></span>' +
+      '<span class="bi-pg-x" aria-hidden="true">×</span>';
+    bar = { el: el, p: 0, fill: el.querySelector('.bi-pg-fill'), pct: el.querySelector('.bi-pg-pct'),
+            stage: el.querySelector('.bi-pg-stage'), x: el.querySelector('.bi-pg-x') };
+    return bar;
+  }
+  function progress(p, stage) {
+    if (!bar) return;
+    bar.p = Math.max(bar.p, Math.min(100, p));
+    bar.fill.style.transform = 'scaleX(' + (bar.p / 100).toFixed(3) + ')';
+    bar.pct.textContent = Math.round(bar.p) + '%';
+    if (stage) bar.stage.textContent = stage;
+  }
+  /* done: it says so, a hand clicks it, then its × — and it drops away */
+  function dismissBar(c) {
+    if (!bar) return Promise.resolve();
+    progress(100, '');
+    bar.el.classList.add('done');
+    bar.pct.textContent = 'Complete ✓';
+    var r = rect(bar.el);
+    return c.move(r.left + r.width * 0.42, r.top + r.height / 2).then(c.click).then(function () {
+      bar.el.classList.add('picked');
+      return real(380);
+    }).then(function () {
+      var xr = center(rect(bar.x));
+      return c.move(xr.x, xr.y);
+    }).then(c.click).then(function () {
+      bar.el.classList.add('gone');
+      return real(420);
+    });
+  }
+
   /* ------------------------------------------------------------ the run */
 
   var IMG = 1;
   var PALETTE = ['#5B3CE8', '#0B93D6', '#0E9F6E', '#E08A00', '#E23D8A'];
 
-  function run() {
+  function run(first, spots) {
     var wide = W() > 680;
     var w = W(), h = H();
     var cs;
+    var sp = function (i, fx, fy) { var p = spots && spots[i - 1]; return p ? [p.x, p.y] : [fx, fy]; };
+    var mk = function (i, col, fx, fy, speed, hand) {
+      var q = sp(i, fx, fy);
+      var c = Cursor(col, q[0], q[1], speed, hand);
+      c.el.classList.add('pop');
+      return c;
+    };
     if (wide) {
       cs = [
-        Cursor(PALETTE[0], -30, h * 0.18, 1.0, 1),
-        Cursor(PALETTE[1], w * 0.62, -30, 0.92, -1),
-        Cursor(PALETTE[2], w * 0.32, h + 30, 1.06, 1),
-        Cursor(PALETTE[3], w + 30, h * 0.55, 0.96, -1),
-        Cursor(PALETTE[4], w + 30, h * 0.12, 1.04, 1)
+        first || Cursor(PALETTE[0], -30, h * 0.18, 1.0, 1),
+        mk(1, PALETTE[1], w * 0.62, -30, 0.92, -1),
+        mk(2, PALETTE[2], w * 0.32, h + 30, 1.06, 1),
+        mk(3, PALETTE[3], w + 30, h * 0.55, 0.96, -1),
+        mk(4, PALETTE[4], w + 30, h * 0.12, 1.04, 1)
       ];
     } else {
       cs = [
-        Cursor(PALETTE[0], -30, h * 0.14, 1.0, 1),
-        Cursor(PALETTE[1], w + 30, h * 0.08, 0.95, -1),
-        Cursor(PALETTE[3], w * 0.4, h + 30, 1.05, 1),
-        Cursor(PALETTE[2], w + 30, h * 0.6, 0.98, -1)
+        first || Cursor(PALETTE[0], -30, h * 0.14, 1.0, 1),
+        mk(1, PALETTE[1], w + 30, h * 0.08, 0.95, -1),
+        mk(2, PALETTE[3], w * 0.4, h + 30, 1.05, 1),
+        mk(3, PALETTE[2], w + 30, h * 0.6, 0.98, -1)
       ];
     }
+    progress(2, 'Header');
 
     crew = cs;
     function after(ms, fn) { return function () { return wait(ms).then(fn); }; }
@@ -1631,6 +2042,7 @@
     scripts.forEach(function (script, i) {
       var c = cs[i];
       c.lane = script().then(function () {
+        progress(4 + 26 * (scripts.length - left + 1) / scripts.length, left > 1 ? 'Header & projects' : 'The watch');
         if (--left === 0) settle();
         else return c.idleUntil(allDone);
       });
@@ -1653,37 +2065,59 @@
      spins into the gold dot. */
   var under = null;
   var letGoStrap = null;
+  /* the hands' layer, moved in just under the face so they can go in
+     behind it */
+  function tuckUnder(list) {
+    var center_ = bootFace && bootFace.closest('[data-intro]');
+    if (!center_ || !center_.parentNode) return;
+    if (!under) {
+      under = make('div', 'bi-under');
+      var z = parseInt(getComputedStyle(center_).zIndex, 10);
+      under.style.zIndex = String((isNaN(z) ? 10 : z) - 1);
+      var sr = rect(center_.parentNode);
+      under.style.left = (-sr.left) + 'px';
+      under.style.top = (-sr.top) + 'px';
+      center_.parentNode.insertBefore(under, center_);
+    }
+    list.forEach(function (c) { under.appendChild(c.el); });
+  }
+
+  /* The end. Back at the top: the bar says Complete and a hand clicks it
+     and closes it, while the image hand draws the intro face's circle and
+     the rest gather round. Then the photo is picked up out of the header —
+     and the moment it is, every other hand heads in to the middle, slipping
+     behind the face as the photo lands in it. */
   function reveal(cs) {
     frames.forEach(function (b) { b.remove(); });
     canvas.classList.remove('on');
     var img = cs[IMG % cs.length];
+    var others = cs.filter(function (c) { return c !== img; });
+    var closer = others[1] || others[0];
     var target = bootFace && shown(bootFace) ? center(rect(bootFace)) : { x: W() / 2, y: H() / 2 };
     var R = bootFace ? rect(bootFace).width / 2 : 80;
-    var jobs = cs.map(function (c, i) {
-      if (c === img) return task(c, function () { return jobFace(c); });
-      /* round the circle, each from its own side */
+    var gather = cs.map(function (c, i) {
+      if (c === img) return task(c, function () { return jobFaceCircle(c); });
+      if (c === closer) return task(c, function () { return dismissBar(c); });
       var a = (i / cs.length) * Math.PI * 2 + rnd(-0.3, 0.3);
       return task(c, function () {
         return c.move(target.x + Math.cos(a) * (R + rnd(40, 80)), target.y + Math.sin(a) * (R + rnd(30, 60)));
       });
     });
-    return Promise.all(jobs).then(function () {
-      /* under the face: the hands' layer goes in just beneath it */
-      var center_ = bootFace && bootFace.closest('[data-intro]');
-      if (center_ && center_.parentNode) {
-        under = make('div', 'bi-under');
-        var z = parseInt(getComputedStyle(center_).zIndex, 10);
-        under.style.zIndex = String((isNaN(z) ? 10 : z) - 1);
-        var sr = rect(center_.parentNode);
-        under.style.left = (-sr.left) + 'px';
-        under.style.top = (-sr.top) + 'px';
-        center_.parentNode.insertBefore(under, center_);
-        cs.forEach(function (c) { under.appendChild(c.el); });
-      }
-      cs.forEach(function (c) { c.halt = true; });
-      return Promise.all(cs.map(function (c) {
-        return c.move(target.x + rnd(-6, 6), target.y + rnd(-6, 6), { dur: rnd(1100, 1400), overshoot: false, exit: true, bend: rnd(-0.25, 0.25) });
-      }));
+    return Promise.all(gather).then(function () {
+      return task(img, function () {
+        return jobFacePhoto(img, function () {
+          tuckUnder(others);
+          others.forEach(function (c) {
+            c.halt = true;
+            c.move(target.x + rnd(-6, 6), target.y + rnd(-6, 6),
+              { dur: rnd(1000, 1300), overshoot: false, exit: true, bend: rnd(-0.25, 0.25) }).catch(function () {});
+          });
+        });
+      });
+    }).then(function () {
+      tuckUnder([img]);
+      img.halt = true;
+      return img.move(target.x, target.y, { dur: 520, overshoot: false, exit: true });
     }).then(function () {
       return wait(120);
     }).then(function () { finish(false); });
@@ -1700,6 +2134,7 @@
     if (finished) return;
     finished = true;
     dead = true;
+    hush(instant);
 
     tweens.splice(0).forEach(function (t) { t.rej(ABORT); });
     followers.length = 0;
@@ -1757,11 +2192,13 @@
 
   /* ------------------------------------------------------------ go */
 
-  /* No loading screen: the canvas is there straight away and the hands
-     arrive on it. The page loads under them as they build (warm, above). */
+  /* No loading screen: a white page with the chat on it. The page loads
+     under it (warm, above) while the visitor reads and clicks. */
   arm();
-  canvas.classList.add('on');
-  wait(120).then(run).catch(fail);
+  buildChat();
+  warm();
+  var opener = Cursor(PALETTE[0], W() + 30, H() * 0.82, 1.0, 1);
+  act1(opener).then(function (spots) { return run(opener, spots); }).catch(fail);
 })();
 
 /* Replay, wired whether or not the intro played this time. */
