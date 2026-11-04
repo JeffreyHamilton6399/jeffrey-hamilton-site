@@ -2545,9 +2545,7 @@
     asked.p = new Promise(function (r) { asked.r = r; });
     /* the image hand is booked now, so the tour does not take it first */
     var swapped = task(img, function () { return asked.p.then(function () { return swapFace(img); }); });
-    var mine = Cursor('#FFFFFF', W() + 30, H() * 0.72, 0.95, 1);
-    mine.el.classList.add('bi-cur-me', 'pop');
-    make('span', 'bi-cur-tag', mine.el).textContent = 'Jeffrey';
+    var mine = opener;                  /* my cursor, back from the side */
     var ask = panel.querySelector('.bi-pn-ask');
     var cam = null;
     return real(250).then(function () {
@@ -2834,7 +2832,7 @@
         startMusic();
         var sp = make('span', 'bi-spawn', t);
         sp.innerHTML = 'Spawning agents<span class="bi-dots">' +
-          PALETTE.slice(1).map(function (col) { return '<b style="--c:' + col + '"></b>'; }).join('') + '</span>';
+          AGENTS().map(function (col) { return '<b style="--c:' + col + '"></b>'; }).join('') + '</span>';
         return at(0.45);
       });
     }).then(function () {
@@ -2857,12 +2855,13 @@
     makePanel();
     var pageX = wideScreen() ? PANEL_X + PANEL_W + 14 : 0;
     var pageW = W() - pageX;
-    var spots = [[0.56, 0.16], [0.34, 0.74], [0.84, 0.56], [0.8, 0.22]];
+    var spots = wideScreen() ? [[0.3, 0.3], [0.56, 0.16], [0.34, 0.74], [0.84, 0.56], [0.8, 0.22]]
+      : [[0.3, 0.3], [0.56, 0.16], [0.34, 0.74], [0.8, 0.56]];
     var landed = dots.map(function (d, i) {
       var r = rect(d), cc = center(r);
       var to = { x: pageX + pageW * spots[i % spots.length][0], y: H() * spots[i % spots.length][1] };
       var fly = make('span', 'bi-fly', layer);
-      fly.style.setProperty('--c', PALETTE[i + 1]);
+      fly.style.setProperty('--c', AGENTS()[i]);
       fly.style.transform = 'translate(' + cc.x + 'px,' + cc.y + 'px)';
       d.style.visibility = 'hidden';
       requestAnimationFrame(function () {
@@ -3078,13 +3077,15 @@
 
   var IMG = 1;
   var PALETTE = ['#5B3CE8', '#0B93D6', '#0E9F6E', '#E08A00', '#E23D8A'];
+  /* the agents the reply spawns, in order (mine is the white one, apart) */
+  function AGENTS() { return wideScreen() ? PALETTE.slice() : [PALETTE[0], PALETTE[1], PALETTE[3], PALETTE[2]]; }
 
   function run(first, spots) {
     pace('start');
     var wide = W() > 680;
     var w = W(), h = H();
     var cs;
-    var sp = function (i, fx, fy) { var p = spots && spots[i - 1]; return p ? [p.x, p.y] : [fx, fy]; };
+    var sp = function (i, fx, fy) { var p = spots && spots[i]; return p ? [p.x, p.y] : [fx, fy]; };
     var mk = function (i, col, fx, fy, speed, hand) {
       var q = sp(i, fx, fy);
       var c = Cursor(col, q[0], q[1], speed, hand);
@@ -3093,7 +3094,7 @@
     };
     if (wide) {
       cs = [
-        first || Cursor(PALETTE[0], -30, h * 0.18, 1.0, 1),
+        mk(0, PALETTE[0], -30, h * 0.18, 1.0, 1),
         mk(1, PALETTE[1], w * 0.62, -30, 0.92, -1),
         mk(2, PALETTE[2], w * 0.32, h + 30, 1.06, 1),
         mk(3, PALETTE[3], w + 30, h * 0.55, 0.96, -1),
@@ -3101,7 +3102,7 @@
       ];
     } else {
       cs = [
-        first || Cursor(PALETTE[0], -30, h * 0.14, 1.0, 1),
+        mk(0, PALETTE[0], -30, h * 0.14, 1.0, 1),
         mk(1, PALETTE[1], w + 30, h * 0.08, 0.95, -1),
         mk(2, PALETTE[3], w * 0.4, h + 30, 1.05, 1),
         mk(3, PALETTE[2], w + 30, h * 0.6, 0.98, -1)
@@ -3183,6 +3184,7 @@
     canvas.classList.remove('on');
     var hands = endHands(cs), img = hands[0], closer = hands[1];
     cs.forEach(function (c) { if (hands.indexOf(c) < 0) leave(c); });   /* if any are still here */
+    if (!opener.gone) leave(opener);
     railMode(false);
     return real(700).then(function () {
       return task(closer, function () { return closePanel(closer); });
@@ -3227,7 +3229,7 @@
   function endScene(img) {
     return real(300).then(function () {
       return task(img, function () {
-        return jobFaceCircle(img).then(function () { return jobFacePhoto(img, null, 1700); });
+        return jobFaceCircle(img).then(function () { return jobFacePhoto(img, null, 800); });
       });
     }).then(function () {
       return real(200);
@@ -3314,8 +3316,16 @@
   buildChat();
   buildDesk();
   warm();
-  var opener = Cursor(PALETTE[0], W() + 30, H() * 0.82, 1.0, 1);
-  act1(opener).then(function (spots) { return run(opener, spots); }).catch(fail);
+  /* my own cursor, white with my name: it opens the camera and asks; the
+     agents it spawns do the building, and it comes back halfway */
+  var opener = Cursor('#FFFFFF', W() + 30, H() * 0.82, 1.0, 1);
+  opener.el.classList.add('bi-cur-me');
+  make('span', 'bi-cur-tag', opener.el).textContent = 'Jeffrey';
+  act1(opener).then(function (spots) {
+    /* handed over: mine steps aside to watch */
+    opener.move(W() - 46, H() * 0.6, { overshoot: false }).catch(function () {});
+    return run(null, spots);
+  }).catch(fail);
 })();
 
 /* Replay, wired whether or not the intro played this time. */
