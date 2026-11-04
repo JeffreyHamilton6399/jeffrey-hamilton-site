@@ -2791,15 +2791,6 @@ html.bi-handoff.booting .site-head { transition: opacity .45s var(--ease-out); }
   100% { opacity: 0; margin-top: -4px; }
 }
 
-/* the hands' layer at the very end, moved in just under the face so they
-   can go in behind it */
-.bi-under {
-  position: absolute;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-}
-
 /* what an image looks like while it is being dragged: a small copy under
    the hand, dropped onto the real element */
 .bi-ghost {
