@@ -2846,7 +2846,8 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
   transition: opacity 1.1s var(--ease-out), transform 1.3s var(--ease-out);
 }
 .bi-chat.on { opacity: 1; transform: translate(-50%, -50%); }
-.bi-chat.folding .bi-thread { opacity: 0; transform: translateY(-24px); transition: opacity .45s var(--ease-out), transform .6s var(--ease-out); }
+/* the box empties out of the way as the conversation goes to the panel */
+.bi-chat.folding .bi-composer { opacity: 0; transform: translateY(18px) scale(.96); transition: opacity .4s var(--ease-out), transform .6s var(--ease-out); }
 
 .bi-thread { display: grid; gap: .625rem; }
 .bi-msg {
@@ -2980,55 +2981,185 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
 .bi-cur.pop svg { animation: biPop .35s var(--ease-out); }
 @keyframes biPop { from { transform: scale(.2); } 70% { transform: scale(1.15); } to { transform: none; } }
 
-/* ---- the progress bar ---------------------------------------------------- */
-.bi-progress {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(.875rem, 2.5vw, 1.5rem);
-  width: min(26rem, calc(100vw - 2rem));
-  transform: translateX(-50%);
-  display: grid;
-  gap: .4375rem;
-  padding: .625rem .875rem .6875rem;
-  border: 1px solid var(--frame);
-  border-radius: .875rem;
-  background: color-mix(in srgb, var(--card) 92%, transparent);
-  -webkit-backdrop-filter: blur(8px);
-          backdrop-filter: blur(8px);
-  box-shadow: 0 10px 30px color-mix(in srgb, var(--void) 14%, transparent);
-  opacity: 0;
-  transition: opacity .4s var(--ease-out), transform .5s var(--ease-out), box-shadow .3s var(--ease), border-color .3s var(--ease);
+/* ---- the editor panel ---------------------------------------------------
+   Where the chat goes once it has asked: docked on the right like an AI
+   coding tool — the conversation, the files being written, the song, and
+   the progress bar. While it is open the page is a preview beside it
+   (html.bi-shrunk); for the walk down the page it slims to a rail. */
+html.bi-live body {
+  transform-origin: 0 0;
+  transition: transform .8s cubic-bezier(.6, 0, .2, 1), border-radius .8s, box-shadow .8s;
 }
-.bi-progress.on { opacity: 1; }
-.bi-pg-row { display: flex; align-items: baseline; gap: .5rem; font-family: var(--mono); font-size: .625rem; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
-.bi-pg-label { color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
-.bi-pg-stage { color: var(--ink-faint); }
-.bi-pg-pct { margin-left: auto; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-.bi-pg-track { position: relative; height: 3px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+html.bi-shrunk { background: #E4E0D7; }
+html.bi-shrunk body {
+  border-radius: 16px;
+  overflow: clip;
+  box-shadow: 0 0 0 1px rgba(20, 18, 28, .08), 0 24px 70px rgba(20, 18, 28, .22);
+}
+
+.bi-panel {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  bottom: 14px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: #1A1724;
+  color: var(--on-dark);
+  box-shadow: 0 24px 70px rgba(20, 18, 28, .35), inset 0 0 0 1px rgba(244, 241, 234, .06);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity .6s var(--ease-out), transform .8s cubic-bezier(.6, 0, .2, 1), width .8s cubic-bezier(.6, 0, .2, 1), box-shadow .3s;
+}
+.bi-panel.on { opacity: 1; transform: none; }
+.bi-panel.gone { opacity: 0; transform: translateX(110%); }
+.bi-panel.picked { box-shadow: 0 0 0 2px #5B3CE8, 0 24px 70px rgba(20, 18, 28, .35); }
+
+.bi-pn-head {
+  display: flex; align-items: center; gap: .625rem;
+  padding: .75rem .875rem;
+  border-bottom: 1px solid rgba(244, 241, 234, .07);
+  font-family: var(--mono); font-size: .625rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--on-dark-soft);
+  white-space: nowrap;
+}
+.bi-pn-dots { display: inline-flex; gap: 5px; }
+.bi-pn-dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(244, 241, 234, .16); }
+.bi-pn-dots i:first-child { background: #E2584E; }
+.bi-pn-dots i:nth-child(2) { background: #E0A43A; }
+.bi-pn-dots i:nth-child(3) { background: #4FB062; }
+.bi-pn-title { overflow: hidden; text-overflow: ellipsis; }
+.bi-pn-x {
+  margin-left: auto; display: grid; place-items: center;
+  width: 1.375rem; height: 1.375rem; border-radius: 6px;
+  font-size: .9375rem; color: var(--on-dark-soft);
+  transition: background-color .2s, color .2s;
+}
+.bi-panel.picked .bi-pn-x { background: rgba(244, 241, 234, .1); color: var(--on-dark); }
+
+/* the conversation, small */
+.bi-pn-chat { padding: .75rem .75rem .5rem; }
+.bi-pn-chat .bi-thread { gap: .4rem; }
+.bi-pn-chat .bi-text { font-size: .75rem; padding: .45rem .65rem; border-radius: .8rem; max-width: 88%; }
+.bi-pn-chat .bi-me .bi-text { background: #2C2838; }
+.bi-pn-chat .bi-ai .bi-text { background: rgba(244, 241, 234, .06); color: var(--on-dark); }
+.bi-pn-chat .bi-av { width: 1.25rem; height: 1.25rem; }
+.bi-pn-chat .bi-spawn { color: var(--on-dark-faint); font-size: .5625rem; }
+
+.bi-pn-sec {
+  padding: .5rem .875rem .25rem;
+  font-family: var(--mono); font-size: .5625rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--on-dark-faint);
+}
+.bi-pn-files { list-style: none; margin: 0; padding: 0 .5rem .5rem; flex: 1; overflow: hidden; }
+.bi-f {
+  --c: #5B3CE8;
+  position: relative;
+  display: flex; align-items: center; gap: .5rem;
+  padding: .3rem .5rem .3rem calc(.5rem + var(--d) * .875rem);
+  border-radius: 6px;
+  font-family: var(--mono); font-size: .6875rem;
+  color: var(--on-dark-soft);
+  white-space: nowrap;
+  transition: background-color .35s, color .35s;
+}
+.bi-f-ic { width: 7px; height: 7px; border-radius: 2px; background: rgba(244, 241, 234, .18); flex: none; transition: background-color .35s, box-shadow .35s; }
+.bi-f.dir .bi-f-ic { border-radius: 1px 3px 3px 3px; background: rgba(244, 241, 234, .3); }
+.bi-f-n { overflow: hidden; text-overflow: ellipsis; }
+.bi-f-c { margin-left: auto; font-size: .5625rem; color: #4FB062; opacity: 0; transition: opacity .3s; }
+.bi-f.touched .bi-f-c { opacity: 1; }
+.bi-f.touched .bi-f-ic { background: var(--c); }
+.bi-f.busy { background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--on-dark); }
+.bi-f.busy .bi-f-ic { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 30%, transparent); }
+.bi-f.done .bi-f-c::after { content: "  ✓"; color: #4FB062; }
+
+/* the song */
+.bi-music {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr auto;
+  grid-template-rows: auto auto;
+  gap: .375rem .625rem;
+  align-items: center;
+  margin: 0 .625rem .5rem;
+  padding: .625rem;
+  border-radius: 12px;
+  background: rgba(244, 241, 234, .05);
+}
+.bi-art {
+  grid-row: 1 / 3;
+  width: 2.5rem; height: 2.5rem; border-radius: 8px;
+  background: radial-gradient(circle at 30% 30%, #F2B45A, #C2533A 45%, #3A1F4D 85%);
+  display: grid; place-items: center;
+}
+.bi-art i { width: .5rem; height: .5rem; border-radius: 50%; background: #1A1724; box-shadow: 0 0 0 .55rem rgba(26, 23, 36, .35); }
+.bi-mu-t { display: grid; line-height: 1.2; min-width: 0; }
+.bi-mu-t b { font-family: var(--sans); font-weight: 600; font-size: .8125rem; color: var(--on-dark); }
+.bi-mu-t em { font-style: normal; font-size: .6875rem; color: var(--on-dark-soft); }
+.bi-eq { display: flex; align-items: flex-end; gap: 2px; height: 1.25rem; }
+.bi-eq i { width: 3px; height: 100%; border-radius: 1px; background: #E9B33F; transform-origin: 50% 100%; transform: scaleY(.15); }
+.bi-mu-line { grid-column: 2 / 4; display: flex; align-items: center; gap: .5rem; font-family: var(--mono); font-size: .5625rem; color: var(--on-dark-faint); font-variant-numeric: tabular-nums; }
+.bi-mu-bar { flex: 1; height: 3px; border-radius: 3px; background: rgba(244, 241, 234, .12); overflow: hidden; }
+.bi-mu-bar i { display: block; height: 100%; background: var(--on-dark-soft); transform-origin: 0 50%; transform: scaleX(0); }
+
+/* the progress bar, at the foot of the panel */
+.bi-progress {
+  display: grid; gap: .4375rem;
+  margin: 0 .625rem .625rem;
+  padding: .625rem .75rem .6875rem;
+  border-radius: 12px;
+  background: rgba(244, 241, 234, .05);
+  transition: box-shadow .3s;
+}
+.bi-pg-row { display: flex; align-items: baseline; gap: .5rem; font-family: var(--mono); font-size: .5625rem; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+.bi-pg-label { color: var(--on-dark); }
+.bi-pg-stage { color: var(--on-dark-faint); overflow: hidden; text-overflow: ellipsis; }
+.bi-pg-pct { margin-left: auto; color: var(--on-dark-soft); font-variant-numeric: tabular-nums; }
+.bi-pg-track { position: relative; height: 3px; border-radius: 3px; background: rgba(244, 241, 234, .12); overflow: hidden; }
 .bi-pg-fill {
   position: absolute; inset: 0;
   transform-origin: left center; transform: scaleX(0);
   background: linear-gradient(90deg, #5B3CE8, #0B93D6, #0E9F6E, #E08A00, #E23D8A);
   transition: transform .7s var(--ease-out);
 }
-.bi-progress.done .bi-pg-pct { color: #0E9F6E; }
-.bi-progress.picked { border-color: color-mix(in srgb, var(--iris) 55%, var(--frame)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--iris) 14%, transparent), 0 10px 30px color-mix(in srgb, var(--void) 14%, transparent); }
-.bi-pg-x {
-  position: absolute;
-  right: -.5rem; top: -.5rem;
-  display: grid; place-items: center;
-  width: 1.25rem; height: 1.25rem;
-  border-radius: 50%;
-  background: var(--void); color: var(--on-dark);
-  font-size: .8125rem; line-height: 1;
-  opacity: 0; transform: scale(.6);
-  transition: opacity .25s var(--ease-out), transform .25s var(--ease-out);
-}
-.bi-progress.picked .bi-pg-x { opacity: 1; transform: none; }
-.bi-progress.gone { opacity: 0; transform: translate(-50%, 24px); }
-/* the dark sections: the bar keeps its own light ground, so it reads on both */
+.bi-progress.done .bi-pg-pct { color: #4FB062; }
+.bi-panel.picked .bi-progress { box-shadow: 0 0 0 1.5px #5B3CE8; }
+
+/* the rail: the panel slimmed to its files and the song, for the walk */
+.bi-panel.rail { width: 58px; }
+.bi-panel.rail :is(.bi-pn-chat, .bi-pn-sec, .bi-pn-title, .bi-pn-x, .bi-f-n, .bi-f-c, .bi-mu-t, .bi-mu-line, .bi-art, .bi-pg-row) { display: none; }
+.bi-panel.rail .bi-pn-head { justify-content: center; padding: .75rem 0; }
+.bi-panel.rail .bi-pn-dots { flex-direction: column; }
+.bi-panel.rail .bi-pn-files { padding: .5rem .375rem; }
+.bi-panel.rail .bi-f { justify-content: center; padding: .45rem 0; }
+.bi-panel.rail .bi-f-ic { width: 9px; height: 9px; }
+.bi-panel.rail .bi-music { grid-template-columns: 1fr; margin: 0 .375rem .5rem; padding: .5rem .25rem; justify-items: center; }
+.bi-panel.rail .bi-eq { gap: 1px; }
+.bi-panel.rail .bi-eq i { width: 2px; }
+.bi-panel.rail .bi-eq i:nth-child(n+8) { display: none; }
+.bi-panel.rail .bi-progress { margin: 0 .375rem .5rem; padding: .5rem .375rem; }
+.bi-panel.rail .bi-pg-track { height: 4px; }
+
+/* phones: no room to shrink the page — a small sheet at the foot, with the
+   song and the bar */
 @media (max-width: 680px) {
-  .bi-progress { bottom: 4.25rem; }
+  .bi-panel { top: auto; left: .75rem; right: .75rem; width: auto; bottom: .75rem; }
+  .bi-panel.rail { width: auto; }
+  .bi-panel :is(.bi-pn-chat, .bi-pn-sec, .bi-pn-files) { display: none; }
+  .bi-panel .bi-pn-head { padding: .5rem .75rem; }
+  .bi-panel.rail :is(.bi-pn-title, .bi-pn-x, .bi-mu-t, .bi-mu-line, .bi-art, .bi-pg-row) { display: revert; }
+  .bi-panel.rail .bi-music { grid-template-columns: 2.5rem 1fr auto; margin: 0 .625rem .5rem; padding: .625rem; justify-items: stretch; }
+  .bi-panel.rail .bi-eq i:nth-child(n+8) { display: block; }
+  /* the sheet takes the foot of the screen, so skip goes to the top */
+  html .bi-skip { bottom: auto; top: .75rem; }
+  html .bi-panel .bi-skip {
+    position: static; margin-left: auto; padding: .375rem .625rem; animation: none;
+    background: transparent; color: var(--on-dark-soft); border-color: rgba(244, 241, 234, .16);
+    -webkit-backdrop-filter: none; backdrop-filter: none; font-size: .5625rem;
+  }
+  html .bi-panel .bi-pn-x { margin-left: .375rem; }
 }
 
 /* skip: always there while the intro is */
