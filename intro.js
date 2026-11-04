@@ -2038,7 +2038,8 @@
       opened = real(500).then(function () { return launch(c, 'camera'); });
     } else {
       var item = deskUi.bar.querySelector('[data-m="Window"]');
-      var menu = make('div', 'bi-menu', root);
+      var menu = make('div', 'bi-menu');
+      root.insertBefore(menu, layer);       /* under the hands */
       menu.innerHTML = ['Camera', 'Assistant', 'Canvas', '', 'Minimize', 'Zoom'].map(function (n) {
         return n ? '<span class="bi-menu-i' + (n === 'Camera' ? ' first' : '') + '">' + n + (n === 'Camera' ? '<em>\u23181</em>' : '') + '</span>' : '<i></i>';
       }).join('');
@@ -2177,20 +2178,18 @@
     if (hole.from) {
       var f = hole.from;
       makeHole(f);
-      return goFull({ x: f.left, y: f.top, w: f.width, h: f.height }, 0);
+      goFull({ x: f.left, y: f.top, w: f.width, h: f.height }, 0).catch(function () {});
+      return Promise.resolve();
     }
     var fb = center(rect(hole.frame.querySelector('.bi-full')));
-    return c.move(fb.x, fb.y).then(c.click).then(function () { return goFull(hole.to, 34); });
+    /* done at the click: the window grows while the hand goes for my head */
+    return c.move(fb.x, fb.y).then(c.click).then(function () { goFull(hole.to, 34).catch(function () {}); });
   }
   /* full screen: the window takes the screen, the bar and dock go, the
      chat turns into the panel — and the desktop is done with */
   function goFull(from, b0) {
-    makePanel();
     deskUi.bar.classList.add('gone');
     deskUi.dock.classList.add('gone');
-    if (deskUi.ai) deskUi.ai.classList.add('away');
-    morphPanel();
-    chat.classList.add('folding');
     canvas.classList.add('on');
     return tween(900, function (e) {
       setHole(from.x * (1 - e), from.y * (1 - e), from.w + (W() - from.w) * e, from.h + (H() - from.h) * e, 12 * (1 - e), b0 * (1 - e));
@@ -2198,10 +2197,20 @@
       closeDesk();
     });
   }
-  /* the camera stays for the head to be taken from it, unless it is all
-     going (a skip, or the end) */
+  /* once my head is in the header: the chat turns into the panel */
+  function chatToPanel() {
+    makePanel();
+    var ai = deskUi.ai;
+    if (ai) { ai.classList.add('away'); setTimeout(function () { ai.remove(); }, 700); deskUi.ai = null; }
+    morphPanel();
+    chat.classList.add('folding');
+  }
+
+  /* the camera and the chat's window stay for the head to be taken and the
+     chat to become the panel, unless it is all going (a skip, or the end) */
   function closeDesk(all) {
     if (all) {
+      if (deskUi.ai) { deskUi.ai.remove(); deskUi.ai = null; }
       var k3 = followers.indexOf(meTick);
       if (k3 >= 0) followers.splice(k3, 1);
       if (stu.cam) { stu.cam.remove(); stu.cam = null; }
@@ -2211,7 +2220,7 @@
     if (k >= 0) followers.splice(k, 1);
     clearInterval(deskUi.clock);
     if (deskUi.stopVideo) deskUi.stopVideo();
-    [desk, deskUi.bar, deskUi.dock, deskUi.ai, hole && hole.frame].forEach(function (el) { if (el) el.remove(); });
+    [desk, deskUi.bar, deskUi.dock, hole && hole.frame].forEach(function (el) { if (el) el.remove(); });
     desk = null;
     doc.classList.remove('bi-desk-on');
   }
@@ -2275,7 +2284,7 @@
     var cam = stu.cam = make('div', 'bi-win bi-win-cam');
     root.insertBefore(cam, deskUi.bar);
     cam.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i></i></span><span class="bi-win-title">Camera</span></div>' +
-      '<div class="bi-cam-view"><span class="bi-rec"><i></i>REC <b>00:00:00</b></span></div>';
+      '<div class="bi-cam-view"><span class="bi-shutter" aria-hidden="true"><i></i></span></div>';
     /* a window on the desk, not the desk: the chat opens over part of it */
     var cw = phone ? W() - 40 : Math.round(Math.min(W() * 0.24, 360));
     var ch = phone ? Math.round(H() * 0.4) : Math.round(Math.min((H() - 160) * 0.8, cw * 1.3));
@@ -2286,11 +2295,6 @@
     var view = cam.querySelector('.bi-cam-view');
     me.el = make('img', 'bi-figure', view);
     me.el.alt = '';
-    var rec = cam.querySelector('.bi-rec b'), t0 = Date.now();
-    stu.recTimer = setInterval(function () {
-      var t = Math.floor((Date.now() - t0) / 1000);
-      rec.textContent = '00:' + ('0' + Math.floor(t / 60)).slice(-2) + ':' + ('0' + t % 60).slice(-2);
-    }, 1000);
     /* "Press to start" is my line: a speech bubble from me */
     ui.press.classList.add('bi-bubble');
     if (window.fetch) {
@@ -2402,12 +2406,12 @@
   var spinEl = null;
   function pickUp(c) {
     if (hasPose('surprised')) { playSeq([['surprised', 99999, true]], 'hold'); me.mode = 'hold'; }
-    return real(200).then(function () {
+    return Promise.resolve().then(function () {
       var h = headAt(hasPose('surprised') ? 'surprised' : me.pose);
       if (!h || !face) return null;
       return c.move(h.x, h.y).then(c.press).then(function () { return h; });
     }).then(function (h) {
-      if (!h) { show(face); startSpin(); emit('markPhoto'); return; }
+      if (!h) { show(face); startSpin(); emit('markPhoto'); chatToPanel(); return; }
       /* the head, lifted off: a circle of the frame that is showing */
       var g = make('div', 'bi-headgrab', layer);
       var er = rect(me.el), size = h.r * 2;
@@ -2422,7 +2426,7 @@
       var mask = 'radial-gradient(circle at ' + hx + 'px ' + hy + 'px, transparent ' + (h.r * 1.02) + 'px, #000 ' + (h.r * 1.08) + 'px)';
       me.el.style.webkitMaskImage = me.el.style.maskImage = mask;
       if (hasPose('shrug')) setTimeout(function () { if (!dead) { setPose('shrug'); } }, 260);
-      setTimeout(function () { if (!dead && stu.cam) stu.cam.classList.add('poof'); }, 650);
+
       var fr = rect(face), fc = center(fr), s1 = fr.width / size;
       var x0 = h.x, y0 = h.y;
       return c.move(fc.x, fc.y, {
@@ -2435,13 +2439,15 @@
         g.remove();
         show(face);
         startSpin();
+        chatToPanel();
         tween(260, function (e) { setS(face, 'scale', (0.6 + 0.4 * e).toFixed(3)); }, ease.back).catch(function () {});
         emit('markPhoto');
+        /* and the camera, done with, pops */
+        if (stu.cam) stu.cam.classList.add('poof');
         return c.release();
       });
     }).then(function () {
       setTimeout(function () {
-        clearInterval(stu.recTimer);
         var k = followers.indexOf(meTick);
         if (k >= 0) followers.splice(k, 1);
         if (stu.cam) { stu.cam.remove(); stu.cam = null; }
@@ -3208,7 +3214,6 @@
     removeEventListener('pointerdown', onPointer);
 
     closeDesk(true);
-    clearInterval(stu.recTimer);
     stopSpin();
     var hadFocus = document.activeElement === skip;
     skip.remove();

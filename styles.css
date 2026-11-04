@@ -3419,6 +3419,24 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   transition: transform .24s steps(3, end), opacity .15s steps(2, end);
 }
 .bi-win-cam.open { opacity: 1; transform: none; }
+/* its viewfinder marks stay inside it, under the chat's window */
+.bi-win-cam { isolation: isolate; }
+/* the record button, at the foot of the picture, never pressed */
+.bi-shutter {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 2;
+  width: 46px;
+  height: 46px;
+  margin-left: -23px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px rgba(20, 18, 30, .55), 0 4px 12px rgba(20, 18, 30, .3);
+  display: grid;
+  place-items: center;
+}
+.bi-shutter i { width: 32px; height: 32px; border-radius: 50%; background: #E2584E; }
 .bi-win-cam .bi-win-bar { border-bottom: 3px solid #14121E; }
 .bi-win-cam.poof { transform: scale(.3) rotate(-6deg); opacity: 0; }
 .bi-cam-view {
@@ -3445,21 +3463,6 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   background-repeat: no-repeat;
   opacity: .55;
 }
-.bi-rec {
-  position: absolute;
-  top: 22px;
-  left: 26px;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font: 600 11px/1 var(--mono), monospace;
-  letter-spacing: .12em;
-  color: #14121E;
-}
-.bi-rec i { width: 8px; height: 8px; border-radius: 50%; background: #E2584E; animation: biRec 1.2s steps(2, end) infinite; }
-.bi-rec b { font-weight: 500; opacity: .6; }
-@keyframes biRec { 50% { opacity: .15; } }
 .bi-figure {
   position: absolute;
   left: 50%;
