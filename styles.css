@@ -3257,7 +3257,26 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
   overflow: hidden;
   background: #0d0b16;
 }
-.bi-city { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 65%; }
+/* A slow camera drift, like a desktop wallpaper coming to life. The
+   overscan keeps every edge covered as the camera moves. */
+.bi-city {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 65%;
+  transform-origin: 50% 65%;
+  animation: bi-city-drift 36s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes bi-city-drift {
+  from { transform: scale(1.08) translate3d(-1.5%, 0.6%, 0); }
+  to   { transform: scale(1.18) translate3d(1.5%, -0.8%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bi-city { animation: none; transform: none; will-change: auto; }
+}
 .bi-vignette {
   position: absolute;
   inset: 0;
