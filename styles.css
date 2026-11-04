@@ -3510,27 +3510,37 @@ html.bi-desk-on .bi-press.bi-bubble::after {
 html.bi-desk-on .bi-press.bi-bubble.on { animation: biBob 1.4s steps(3, end) infinite; }
 @keyframes biBob { 50% { transform: translateY(-5px) rotate(-1.5deg); } }
 
-/* my head, carried up to the header */
-.bi-headgrab {
+
+/* the screenshot of my face: the flash, the shot left floating, and then
+   the profile picture until halfway */
+.bi-flash {
+  position: absolute;
+  background: #fff;
+  pointer-events: none;
+  animation: biFlash .45s ease-out forwards;
+}
+@keyframes biFlash { from { opacity: .95; } to { opacity: 0; } }
+.bi-shot {
   position: absolute;
   left: 0; top: 0;
-  border-radius: 50%;
-  background-repeat: no-repeat;
-  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #14121E, 0 12px 24px rgba(20, 18, 30, .25);
+  border: 4px solid #fff;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
   transform-origin: 50% 50%;
+  object-fit: cover;
+  opacity: 0;
   pointer-events: none;
+  transition: opacity .15s ease;
 }
-
-/* the profile picture, spinning in my chair until halfway */
-.mark-face:has(.bi-spin) { position: relative; }
-.bi-spin {
+.bi-shot.on { opacity: 1; }
+.bi-shot.held { border-radius: 50%; transition: opacity .15s ease, border-radius .3s ease; }
+.mark-face:has(.bi-faceshot) { position: relative; }
+.bi-faceshot {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 12%;
-  background: #FBFAF6;
 }
 
 /* halfway: my own cursor, and the face-cam beside the panel */

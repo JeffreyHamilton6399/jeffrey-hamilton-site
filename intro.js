@@ -2233,9 +2233,9 @@
      the way a comic does rather than gliding. The press pulls me in: I am
      at the keyboard, typing at the chat that opens on the right; I talk
      into my earbuds while my voice plays, and listen while the AI answers.
-     When the song comes in, a cursor picks my head up and drops it into the
-     header's profile picture (where I spin in a chair until halfway), the
-     rest of me pops, and the chat becomes the panel. */
+     When the song comes in, a cursor screenshots my face out of the
+     camera, closes it, and drags the shot into the header's profile
+     picture (it stays until halfway), and the chat becomes the panel. */
 
   var ME = 'assets/me/';
   var me = { meta: null, el: null, imgs: {}, mode: 'aim', pose: '', seq: null, next: 0, extra: 0 };
@@ -2400,85 +2400,125 @@
 
   }
 
-  /* Full screen, and the camera still up: a hand takes my head out of it
-     and drops it into the header's profile picture, and the rest of me and
-     the camera pop. */
-  var spinEl = null;
+  /* Full screen, and the camera still up: a hand screenshots my face out of
+     it (the box dragged round my head, a flash, the shot left floating
+     where it was taken), closes the camera, and drags the shot up into the
+     header's profile picture. Then the chat turns into the panel. */
+  var faceShot = null;
   function pickUp(c) {
-    if (hasPose('surprised')) { playSeq([['surprised', 99999, true]], 'hold'); me.mode = 'hold'; }
-    return Promise.resolve().then(function () {
-      var h = headAt(hasPose('surprised') ? 'surprised' : me.pose);
-      if (!h || !face) return null;
-      return c.move(h.x, h.y).then(c.press).then(function () { return h; });
-    }).then(function (h) {
-      if (!h) { show(face); startSpin(); emit('markPhoto'); chatToPanel(); return; }
-      /* the head, lifted off: a circle of the frame that is showing */
-      var g = make('div', 'bi-headgrab', layer);
-      var er = rect(me.el), size = h.r * 2;
-      g.style.width = g.style.height = size + 'px';
-      g.style.backgroundImage = 'url("' + me.el.src + '")';
-      g.style.backgroundSize = er.width + 'px ' + er.height + 'px';
-      g.style.backgroundPosition = (er.left - h.x + h.r) + 'px ' + (er.top - h.y + h.r) + 'px';
-      var put = function (x, y, s) { g.style.transform = 'translate(' + (x - size / 2) + 'px,' + (y - size / 2) + 'px) scale(' + s.toFixed(3) + ')'; };
-      put(h.x, h.y, 1);
-      /* the body left behind, headless, then gone */
-      var hx = h.x - er.left, hy = h.y - er.top;
-      var mask = 'radial-gradient(circle at ' + hx + 'px ' + hy + 'px, transparent ' + (h.r * 1.02) + 'px, #000 ' + (h.r * 1.08) + 'px)';
-      me.el.style.webkitMaskImage = me.el.style.maskImage = mask;
-      if (hasPose('shrug')) setTimeout(function () { if (!dead) { setPose('shrug'); } }, 260);
-
-      var fr = rect(face), fc = center(fr), s1 = fr.width / size;
-      var x0 = h.x, y0 = h.y;
-      return c.move(fc.x, fc.y, {
-        dur: 1000 / TIME, ease: ease.inOut, overshoot: false, bend: 0.12,
+    if (hasPose('smile')) { playSeq([['smile', 99999, true]], 'hold'); me.mode = 'hold'; }
+    var h = stu.cam && headAt();
+    if (!h || !face) {
+      if (stu.cam) { stu.cam.remove(); stu.cam = null; }
+      show(face); emit('markPhoto'); chatToPanel();
+      return Promise.resolve();
+    }
+    /* the box round my head, kept inside the picture */
+    var vr = rect(stu.cam.querySelector('.bi-cam-view'));
+    var side = Math.round(Math.min(h.r * 2.6, vr.width - 16, vr.height - 16));
+    var box = {
+      x: clamp(h.x - side / 2, vr.left + 8, vr.right - side - 8),
+      y: clamp(h.y - side * 0.52, vr.top + 8, vr.bottom - side - 8),
+      w: side, h: side
+    };
+    var shot = snapFace(box);
+    var sel = Box(c.color);
+    var thumb = null;
+    return c.move(box.x, box.y).then(function () {
+      c.chip('\u21e7\u23184');           /* the screenshot keys */
+      return real(180);
+    }).then(c.press).then(function () {
+      sel.set(box.x, box.y, 1, 1);
+      sel.on();
+      return c.move(box.x + box.w, box.y + box.h, {
+        overshoot: false, bend: 0.02, dur: 560,
         onMove: function (x, y) {
-          var k = clamp(Math.hypot(x - x0, y - y0) / Math.max(1, Math.hypot(fc.x - x0, fc.y - y0)), 0, 1);
-          put(x, y, 1 + (s1 - 1) * k);
+          sel.set(box.x, box.y, Math.max(1, x - box.x), Math.max(1, y - box.y));
+          sel.badge(Math.round(x - box.x) + ' \u00d7 ' + Math.round(y - box.y));
         }
-      }).then(function () {
-        g.remove();
-        show(face);
-        startSpin();
-        chatToPanel();
-        tween(260, function (e) { setS(face, 'scale', (0.6 + 0.4 * e).toFixed(3)); }, ease.back).catch(function () {});
-        emit('markPhoto');
-        /* and the camera, done with, pops */
-        if (stu.cam) stu.cam.classList.add('poof');
-        return c.release();
       });
     }).then(function () {
-      setTimeout(function () {
+      return c.release();
+    }).then(function () {
+      sel.remove();
+      /* the flash, and the shot, left where it was taken */
+      var fl = make('span', 'bi-flash', layer);
+      fl.style.left = box.x + 'px'; fl.style.top = box.y + 'px';
+      fl.style.width = box.w + 'px'; fl.style.height = box.h + 'px';
+      setTimeout(function () { fl.remove(); }, 500);
+      thumb = make('img', 'bi-shot', layer);
+      thumb.alt = '';
+      thumb.src = shot;
+      thumb.style.width = thumb.style.height = box.w + 'px';
+      thumb.style.transform = 'translate(' + box.x + 'px,' + box.y + 'px)';
+      requestAnimationFrame(function () { thumb.classList.add('on'); });
+      return real(500);
+    }).then(function () {
+      /* the camera, closed from its own red button */
+      var dot = stu.cam.querySelector('.bi-win-bar .bi-pn-dots i');
+      var dr = center(rect(dot));
+      return c.move(dr.x, dr.y).then(c.click).then(function () {
+        stu.cam.classList.add('poof');
+        var cam = stu.cam;
+        setTimeout(function () { cam.remove(); }, 400);
+        stu.cam = null;
         var k = followers.indexOf(meTick);
         if (k >= 0) followers.splice(k, 1);
-        if (stu.cam) { stu.cam.remove(); stu.cam = null; }
-      }, 500);
+        return real(420);
+      });
+    }).then(function () {
+      /* and the shot of my face, up into the header */
+      var tc = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
+      var fr = rect(face), fc = center(fr), s1 = fr.width / box.w;
+      var put = function (x, y, s) {
+        thumb.style.transform = 'translate(' + (x - box.w / 2) + 'px,' + (y - box.h / 2) + 'px) scale(' + s.toFixed(3) + ')';
+      };
+      return c.move(tc.x, tc.y).then(c.press).then(function () {
+        thumb.classList.add('held');
+        return c.move(fc.x, fc.y, {
+          dur: 900 / TIME, ease: ease.inOut, overshoot: false, bend: 0.1,
+          onMove: function (x, y) {
+            var k = clamp(Math.hypot(x - tc.x, y - tc.y) / Math.max(1, Math.hypot(fc.x - tc.x, fc.y - tc.y)), 0, 1);
+            put(x, y, 1 + (s1 - 1) * k);
+          }
+        });
+      }).then(function () {
+        thumb.remove();
+        show(face);
+        setFaceShot(shot);
+        tween(260, function (e) { setS(face, 'scale', (0.6 + 0.4 * e).toFixed(3)); }, ease.back).catch(function () {});
+        emit('markPhoto');
+        chatToPanel();
+        return c.release();
+      });
     });
   }
 
-  /* me spinning in my chair: the profile picture until halfway */
-  function startSpin() {
-    var spins = posesLike('spin_');
-    if (!face || !spins.length) return;
-    spinEl = make('img', 'bi-spin', face);
-    spinEl.alt = '';
-    var k = 0, last = 0;
-    spinEl.src = poseUrl(spins[0]);
-    var f = function () {
-      var now = performance.now();
-      if (!spinEl || now - last < 140) return;
-      last = now;
-      k = (k + 1) % spins.length;
-      spinEl.src = poseUrl(spins[k]);
-    };
-    spinEl._f = f;
-    followers.push(f);
+  /* the screenshot itself: that square of the camera's picture */
+  function snapFace(box) {
+    try {
+      var er = rect(me.el), k = (me.el.naturalWidth || er.width) / er.width;
+      var cv = document.createElement('canvas');
+      cv.width = cv.height = 240;
+      var cx = cv.getContext('2d');
+      cx.fillStyle = '#F2EFE8';
+      cx.fillRect(0, 0, 240, 240);
+      cx.drawImage(me.el, (box.x - er.left) * k, (box.y - er.top) * k, box.w * k, box.h * k, 0, 0, 240, 240);
+      return cv.toDataURL('image/png');
+    } catch (e) {
+      return me.el.src;
+    }
   }
-  function stopSpin() {
-    if (!spinEl) return;
-    var k = followers.indexOf(spinEl._f);
-    if (k >= 0) followers.splice(k, 1);
-    spinEl.remove();
-    spinEl = null;
+
+  /* the screenshot as the profile picture, until halfway */
+  function setFaceShot(src) {
+    clearFaceShot();
+    faceShot = make('img', 'bi-faceshot', face);
+    faceShot.alt = '';
+    faceShot.src = src;
+  }
+  function clearFaceShot() {
+    if (faceShot) { faceShot.remove(); faceShot = null; }
   }
 
   /* ---- halfway: my own cursor asks for a better picture -------------------
@@ -2487,7 +2527,7 @@
      it) comes in, clicks the panel's mic, and I ask, into my earbuds, in a
      small face-cam beside the panel. The AI says it will, and the hand that
      does the images takes my real portrait out of the files and drops it
-     over the one of me spinning. */
+     over the screenshot. */
   var HALF_TEXT = 'Hey, can you swap my profile pic for a good one?';
   var HALF_REPLY = 'Sure. Swapping it now.';
   function halfway(cs) {
@@ -2590,12 +2630,12 @@
     };
   }
 
-  /* the real portrait, out of the panel's files and onto the spinning one */
+  /* the real portrait, out of the panel's files and onto the screenshot */
   function swapFace(c) {
     var row = panel && panel.querySelector('.bi-f[data-f="portrait.jpg"]');
     var fr = rect(face), fc = center(fr);
     var from = row ? center(rect(row)) : { x: 6, y: fc.y + 140 };
-    var src = face.querySelector('img:not(.bi-spin)');
+    var src = face.querySelector('img:not(.bi-faceshot)');
     src = src ? (src.currentSrc || src.src) : '';
     return c.move(from.x - 30, from.y).then(c.press).then(function () {
       if (row) row.classList.add('busy');
@@ -2604,7 +2644,7 @@
       return c.move(fc.x, fc.y, { onMove: function (x, y) { g.at(x, y); } })
         .then(function () { g.remove(); return c.release(); });
     }).then(function () {
-      stopSpin();
+      clearFaceShot();
       touch('portrait.jpg', c.color, 1);
       if (row) row.classList.remove('busy');
       tween(280, function (e) { setS(face, 'scale', (0.7 + 0.3 * e).toFixed(3)); }, ease.back).catch(function () {});
@@ -3214,7 +3254,7 @@
     removeEventListener('pointerdown', onPointer);
 
     closeDesk(true);
-    stopSpin();
+    clearFaceShot();
     var hadFocus = document.activeElement === skip;
     skip.remove();
     doc.classList.remove('bi-on', 'bi-live');

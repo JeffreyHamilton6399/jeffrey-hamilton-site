@@ -37,7 +37,6 @@ POSES = (
     ['talk_closed', 'talk_open', 'talk_wide', 'talk_round', 'talk_teeth'] +   # into the earbuds
     ['listen', 'nod_0', 'nod_1', 'nod_2', 'smile'] +               # while the AI answers
     ['surprised', 'shrug'] +                                       # the head is picked up
-    ['spin_%d' % i for i in range(8)] +                            # the chair spin (profile picture)
     ['half_point', 'half_roll']                                    # the halfway line
 )
 HEIGHT = 640          # frame height written, in pixels
@@ -140,7 +139,7 @@ def build(picks_path):
 
 def placeholder():
     """Every pose from the one portrait, nudged so the stand-in still shows
-    which pose is up: a lean toward where it points, a squeeze for the spin."""
+    which pose is up: a lean toward where it points."""
     src = cutout(ImageOps.contain(Image.open(os.path.join(ROOT, 'assets', 'portrait.jpg')), (900, 900)))
     W, H = src.size
     pad = 120
@@ -155,17 +154,6 @@ def placeholder():
             im = base.rotate(ang, resample=Image.BICUBIC, center=(base.width / 2, base.height))
             if r != 1:
                 im = im.transform(im.size, Image.AFFINE, (1, 0, 0, 0, 1, (r - 1) * 10), resample=Image.BICUBIC)
-        elif name.startswith('spin_'):
-            k = int(name[-1])
-            sx = abs(math.cos(k * math.pi / 4)) * 0.85 + 0.15
-            sq = base.resize((max(1, int(base.width * sx)), base.height), Image.LANCZOS)
-            if 2 < k < 6:
-                sq = Image.eval(sq, lambda v: v)  # the back: same picture, darker below
-                dark = Image.new('RGBA', sq.size, (20, 18, 30, 150))
-                dark.putalpha(sq.getchannel('A').point(lambda v: v * 0.55))
-                sq = Image.alpha_composite(sq, dark)
-            im = Image.new('RGBA', base.size, (0, 0, 0, 0))
-            im.paste(sq, ((base.width - sq.width) // 2, 0), sq)
         elif name in ('startle_0', 'startle_1', 'surprised', 'whoa'):
             im = base.transform(base.size, Image.AFFINE, (1, 0, 0, 0, 1, 14), resample=Image.BICUBIC)
         elif name.startswith(('type_', 'lean_')):
