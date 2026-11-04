@@ -1599,8 +1599,10 @@
 
   var MUSIC = 'assets/audio/loser-intro.mp3';
   var VOICE = 'assets/audio/voice-play-loser.mp3';
-  var DROP = 12.0;             /* the band comes in here, in the clip      */
-  var VOICE_AT = 4.25;         /* my voice starts                          */
+  /* The clip opens on the beat the band comes in; the agents spawn on the
+     next downbeat but one. (Measured off the song: it is 83 bpm, and the
+     band arrives at 0:55.46.) */
+  var SPAWN = 1.17;
   var VOICE_LEN = 3.0;
   var SPOKEN = ['and', 'play', 'Loser', 'by', 'Tame', 'Impala'];
 
@@ -1644,7 +1646,12 @@
       }
     } catch (e) {}
   }
+  var decoded = null;
   function decodeAudio() {
+    if (decoded) return decoded;
+    return (decoded = decodeOnce());
+  }
+  function decodeOnce() {
     if (!snd.ctx || !snd.bufs) return Promise.resolve(false);
     var ctx = snd.ctx;
     var timeout = new Promise(function (r) { setTimeout(function () { r(null); }, 4000); });
@@ -1661,7 +1668,7 @@
     var ctx = snd.ctx;
     snd.gain = ctx.createGain();
     snd.gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    snd.gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1.4);
+    snd.gain.gain.linearRampToValueAtTime(0.78, ctx.currentTime + 0.04);
     snd.gain.connect(ctx.destination);
     var src = ctx.createBufferSource();
     src.buffer = snd.music;
@@ -1670,14 +1677,7 @@
     src.start(snd.t0);
     snd.src.push(src);
   }
-  /* the music to a level, over a time, starting at a point on its clock */
-  function level(v, from, over) {
-    if (!snd.gain) return;
-    var g = snd.gain.gain, t = snd.t0 + from;
-    g.setValueAtTime(g.value, Math.max(snd.ctx.currentTime, t));
-    g.linearRampToValueAtTime(v, Math.max(snd.ctx.currentTime, t) + over);
-  }
-  function playVoice(when) {
+  function playVoice() {
     if (!snd.ctx || !snd.voice) return;
     var ctx = snd.ctx;
     var src = ctx.createBufferSource();
@@ -1689,10 +1689,20 @@
     src.connect(snd.an);
     snd.an.connect(vg);
     vg.connect(ctx.destination);
-    src.start(snd.t0 + when);
+    src.start(snd.ctx.currentTime + 0.03);
     snd.src.push(src);
   }
+  /* the answer, out loud; resolves when it has been said */
   function say(text) {
+    return new Promise(function (done) {
+      var finished_ = false;
+      function end() { if (!finished_) { finished_ = true; done(); } }
+      setTimeout(end, 4200);                       /* never wait on it for long */
+      if (!window.speechSynthesis) { setTimeout(end, 1600); return; }
+      speak(text, end);
+    });
+  }
+  function speak(text, end) {
     try {
       if (!window.speechSynthesis) return;
       var u = new SpeechSynthesisUtterance(text);
@@ -1705,8 +1715,10 @@
       });
       if (pick_ || en[0]) u.voice = pick_ || en[0];
       u.rate = 1.03;
+      u.onend = function () { setTimeout(end, 120); };
+      u.onerror = function () { end(); };
       speechSynthesis.speak(u);
-    } catch (e) {}
+    } catch (e) { setTimeout(end, 1600); }
   }
   function hush(fast) {
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
@@ -1742,8 +1754,11 @@
         '<span class="bi-wave">' + bars + '</span>' +
         '<span class="bi-btn bi-mic">' + MIC + '</span>' +
         '<span class="bi-btn bi-send">' + SEND + '</span>' +
-      '</div>' +
-      '<button type="button" class="bi-start"><span class="bi-start-dot"></span>Watch it build<em>sound on</em></button>';
+      '</div>';
+    ui.press = make('button', 'bi-press');
+    ui.press.type = 'button';
+    ui.press.textContent = 'Press to start';
+    root.insertBefore(ui.press, layer);
     ui.thread = chat.querySelector('.bi-thread');
     ui.composer = chat.querySelector('.bi-composer');
     ui.input = chat.querySelector('.bi-input');
@@ -1752,7 +1767,7 @@
     ui.bars = [].slice.call(ui.wave.children);
     ui.mic = chat.querySelector('.bi-mic');
     ui.send = chat.querySelector('.bi-send');
-    ui.start = chat.querySelector('.bi-start');
+
   }
 
   function typeInto(el, text, base) {
@@ -1820,48 +1835,56 @@
 
   function act1(cs0) {
     var c = cs0;
+    /* A white screen and two words. Anywhere will do — the screen is the
+       button — and Enter or Space works too. Nothing plays yet. */
     var started = new Promise(function (res) {
-      ui.start.addEventListener('click', function () { wakeAudio(); res(); }, { once: true });
+      var go = function (e) {
+        if (e && e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+        if (e && e.type === 'keydown') e.preventDefault();
+        root.removeEventListener('click', go);
+        document.removeEventListener('keydown', go);
+        wakeAudio();
+        res();
+      };
+      root.addEventListener('click', go);
+      document.addEventListener('keydown', go);
     });
-    requestAnimationFrame(function () { chat.classList.add('on'); });
-    setTimeout(function () { try { ui.start.focus({ preventScroll: true }); } catch (e) {} }, 900);
+    requestAnimationFrame(function () { ui.press.classList.add('on'); });
 
     return started.then(function () {
-      ui.start.classList.add('gone');
-      return decodeAudio();
+      T0 = performance.now();
+      ui.press.classList.add('gone');
+      chat.classList.add('on');
+      decodeAudio();                      /* ready by the time it is wanted */
+      return real(700);
     }).then(function () {
-      startMusic();
       /* the cursor comes in and clicks into the box */
       var ir = rect(ui.input);
       return c.move(ir.left + 18, ir.top + ir.height / 2);
     }).then(c.click).then(function () {
       chat.classList.add('is-focused');
-      return at(1.15);
+      return real(220);
     }).then(function () {
-      return c.move(c.x + 30, c.y + 26, { overshoot: false });
-    }).then(function () {
+      c.move(c.x + 30, c.y + 26, { overshoot: false }).catch(function () {});
       return typeInto(ui.typed, "Create Jeffrey's portfolio", 78);
     }).then(function () {
       var mr = center(rect(ui.mic));
-      return at(3.55).then(function () { return c.move(mr.x, mr.y); });
-    }).then(function () {
-      return at(VOICE_AT - 0.12);
+      return real(260).then(function () { return c.move(mr.x, mr.y); });
     }).then(c.click).then(function () {
-      /* my voice, with the music ducked under it */
-      playVoice(VOICE_AT);
-      level(0.16, VOICE_AT - 0.1, 0.25);
-      waveOn();
-      SPOKEN.forEach(function (w_, k) {
-        at(VOICE_AT + 0.2 + k * (VOICE_LEN - 0.6) / SPOKEN.length).then(function () {
-          ui.typed.textContent += ' ' + w_;
-        }, function () {});
+      /* my voice, and the words as they are said */
+      return decodeAudio().then(function () {
+        playVoice();
+        waveOn();
+        var step = (VOICE_LEN - 0.6) / SPOKEN.length;
+        SPOKEN.forEach(function (w_, k) {
+          real((0.2 + k * step) * 1000).then(function () { ui.typed.textContent += ' ' + w_; }, function () {});
+        });
+        return real(VOICE_LEN * 1000 + 100);
       });
-      return at(VOICE_AT + VOICE_LEN + 0.1);
     }).then(function () {
       return c.click();
     }).then(function () {
       waveOff();
-      level(0.45, VOICE_AT + VOICE_LEN + 0.2, 0.4);
       var sr = center(rect(ui.send));
       return c.move(sr.x, sr.y);
     }).then(c.click).then(function () {
@@ -1874,22 +1897,22 @@
       return real(260);
     }).then(function () {
       var t = bubble('ai', '<span class="bi-thinking">Thinking</span>');
-      return at(Math.max(clk() + 0.9, 9.2)).then(function () { return t; });
+      return real(950).then(function () { return t; });
     }).then(function (t) {
-      /* the answer, written and spoken */
-      level(0.18, clk(), 0.2);
-      say('Okay. Playing Loser, by Tame Impala.');
+      /* the answer, written and said — and when it has been said, the song
+         cuts in, on the beat the band arrives */
       t.textContent = '';
-      return streamInto(t, 'On it. Creating Jeffrey’s portfolio, and playing Loser by Tame Impala.').then(function () {
-        return at(10.9);
+      var spoken = say('Okay. Playing Loser, by Tame Impala.');
+      return streamInto(t, 'Okay. Playing Loser by Tame Impala, and creating Jeffrey’s portfolio.').then(function () {
+        return spoken;
       }).then(function () {
+        startMusic();
         var sp = make('span', 'bi-spawn', t);
         sp.innerHTML = 'Spawning agents<span class="bi-dots">' +
           PALETTE.slice(1).map(function (col) { return '<b style="--c:' + col + '"></b>'; }).join('') + '</span>';
-        return at(DROP - 0.6);
+        return at(0.45);
       });
     }).then(function () {
-      level(0.75, DROP - 0.05, 0.12);
       return spawn();
     });
   }
@@ -1927,7 +1950,7 @@
       ui.composer.style.opacity = '0';
     });
     canvas.classList.add('on');
-    return at(DROP).then(function () {
+    return at(SPAWN).then(function () {
       bar.el.classList.add('on');
       setTimeout(function () { if (chat) chat.remove(); chat = null; }, 700);
       landed.forEach(function (l) { setTimeout(function () { l.el.remove(); }, 200); });

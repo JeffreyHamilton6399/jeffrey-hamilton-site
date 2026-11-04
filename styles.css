@@ -2847,7 +2847,6 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
 }
 .bi-chat.on { opacity: 1; transform: translate(-50%, -50%); }
 .bi-chat.folding .bi-thread { opacity: 0; transform: translateY(-24px); transition: opacity .45s var(--ease-out), transform .6s var(--ease-out); }
-.bi-chat.folding .bi-start { display: none; }
 
 .bi-thread { display: grid; gap: .625rem; }
 .bi-msg {
@@ -2941,31 +2940,31 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
 .bi-composer.is-recording .bi-wave { display: flex; }
 .bi-wave i { flex: 1; max-width: 4px; height: 100%; border-radius: 2px; background: var(--ink); transform: scaleY(.12); transition: transform .06s linear; }
 
-.bi-start {
-  justify-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: .625rem;
-  padding: .75rem 1.25rem;
+/* the first screen: white, and two words in the middle of it. The whole
+   screen is the button (intro.js); this is only what it says. */
+.bi-press {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1rem 1.5rem;
   border: 0;
-  border-radius: 999px;
-  background: var(--void);
-  color: var(--on-dark);
+  background: none;
+  color: var(--ink);
   font-family: var(--mono);
-  font-size: .6875rem;
+  font-size: .75rem;
   font-weight: 500;
-  letter-spacing: .14em;
+  letter-spacing: .32em;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 12px 32px color-mix(in srgb, var(--void) 25%, transparent);
-  transition: opacity .4s var(--ease-out), transform .4s var(--ease-out);
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-out);
 }
-.bi-start em { font-style: normal; color: var(--on-dark-faint); }
-.bi-start:hover { transform: translateY(-1px); }
-.bi-start:focus-visible { outline: 2px solid var(--iris); outline-offset: 3px; }
-.bi-start.gone { opacity: 0; transform: translateY(6px); pointer-events: none; }
-.bi-start-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--ember); box-shadow: 0 0 0 0 color-mix(in srgb, var(--ember) 60%, transparent); animation: biRec 1.4s ease-out infinite; }
-@keyframes biRec { to { box-shadow: 0 0 0 .6rem transparent; } }
+.bi-press.on { opacity: 1; animation: biBreathe 2.6s ease-in-out 1.2s infinite; }
+.bi-press.gone { opacity: 0; animation: none; transition: opacity .35s var(--ease-out); pointer-events: none; }
+.bi-press:focus-visible { outline: 1px solid var(--iris); outline-offset: 6px; }
+@keyframes biBreathe { 50% { opacity: .45; } }
+.bi:has(.bi-press:not(.gone)) { cursor: pointer; }
 
 /* the dots on their way out to become cursors */
 .bi-fly {
