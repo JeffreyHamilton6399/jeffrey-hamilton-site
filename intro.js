@@ -1912,9 +1912,15 @@
     return started.then(function () {
       T0 = performance.now();
       ui.press.classList.add('gone');
-      chat.classList.add('on');
       decodeAudio().then(startBgm);       /* Aria Math, faded in */
-      return real(700);
+      /* a moment of just the music, then the box opens from its middle */
+      return real(1800);
+    }).then(function () {
+      chat.classList.add('on', 'grow');
+      return real(2900);
+    }).then(function () {
+      chat.classList.add('grown');
+      return real(900);
     }).then(function () {
       /* the cursor comes in and clicks into the box */
       var ir = rect(ui.input);
