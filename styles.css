@@ -2845,6 +2845,8 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
   transition: opacity 1.1s var(--ease-out), transform 1.3s var(--ease-out);
 }
 .bi-chat.on { opacity: 1; transform: translate(-50%, -50%); }
+.bi-chat.in-win { transform: translate(-50%, -100%); }
+.bi-chat.in-win.on { transform: translate(-50%, -100%); }
 /* After the press: the music first, then the box opens slowly from its
    middle out to both ends, and only then do its insides fade up. */
 .bi-chat .bi-composer {
@@ -3258,31 +3260,14 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: #0d0b16;
+  /* a plain white desk: the wallpaper is me, in the camera */
+  background:
+    radial-gradient(circle at 1px 1px, rgba(20, 18, 30, .07) 1px, transparent 1.6px) 0 0 / 18px 18px,
+    #FBFAF6;
 }
-/* Real city footage fills the desktop; the still image is always beneath. */
-.bi-city {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 65%;
-}
-.bi-city-video { object-position: center; opacity: 0; transition: opacity .6s ease; }
-.bi-city-video.playing { opacity: 1; }
-@media (prefers-reduced-motion: reduce) {
-  .bi-city-video { display: none; transition: none; }
-}
-.bi-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 90% 80% at 50% 45%, transparent 55%, rgba(5, 4, 12, .55));
-  pointer-events: none;
-}
+
 /* the scrollbar's gutter too, so the desktop reaches the edge */
-html.bi-live.bi-desk-on { background: linear-gradient(#0a0a1a, #161230 45%, #261a33 72%, #0b0a14) fixed; }
-html.bi-desk-on .bi-press { color: #F4F1EA; text-shadow: 0 1px 12px rgba(0, 0, 0, .5); }
+html.bi-live.bi-desk-on { background: #FBFAF6; }
 html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out), background-color .25s var(--ease), border-color .25s var(--ease); }
 
 .bi-menubar {
@@ -3293,10 +3278,11 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   align-items: center;
   gap: 1.15rem;
   padding: 0 1rem;
-  background: rgba(18, 16, 30, .38);
+  background: rgba(255, 255, 255, .72);
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
           backdrop-filter: blur(18px) saturate(1.4);
-  color: #F2F0F7;
+  border-bottom: 1px solid rgba(20, 18, 30, .08);
+  color: #14121E;
   font: 500 13px/1 var(--sans, system-ui), system-ui, sans-serif;
   letter-spacing: 0;
   transition: transform .6s cubic-bezier(.65, 0, .25, 1), opacity .5s ease;
@@ -3311,7 +3297,7 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
 .bi-mb-m { opacity: .92; }
 .bi-mb-r { margin-left: auto; display: flex; align-items: center; gap: .9rem; }
 .bi-mb-r svg { display: block; }
-.bi-desk.is-phone ~ .bi-menubar { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; height: 40px; padding: 0 1.4rem; font-weight: 600; font-size: 15px; }
+.bi-desk.is-phone ~ .bi-menubar { background: none; border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; height: 40px; padding: 0 1.4rem; font-weight: 600; font-size: 15px; }
 
 .bi-dock {
   position: absolute;
@@ -3322,12 +3308,12 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   align-items: flex-end;
   gap: 8px;
   padding: 7px 9px 9px;
-  border: 1px solid rgba(255, 255, 255, .22);
+  border: 1px solid rgba(20, 18, 30, .12);
   border-radius: 20px;
-  background: rgba(255, 255, 255, .16);
+  background: rgba(255, 255, 255, .7);
   -webkit-backdrop-filter: blur(22px) saturate(1.5);
           backdrop-filter: blur(22px) saturate(1.5);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, .35);
+  box-shadow: 0 10px 34px rgba(20, 18, 30, .14);
   transition: transform .6s cubic-bezier(.65, 0, .25, 1), opacity .5s ease;
 }
 .bi-dock.gone { transform: translate(-50%, 130%); opacity: 0; }
@@ -3370,11 +3356,12 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   bottom: -6px;
   width: 4px; height: 4px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, .85);
+  background: rgba(20, 18, 30, .8);
   opacity: 0;
   transition: opacity .3s ease;
 }
 .bi-app.open .bi-app-dot { opacity: 1; }
+.bi-ic-camera { background: linear-gradient(180deg, #3b3846, #17151f); }
 .bi-ic-assistant { background: conic-gradient(from 210deg at 45% 55%, #5B3CE8, #0B93D6, #0E9F6E, #E08A00, #E23D8A, #5B3CE8); }
 .bi-ic-canvas { background: linear-gradient(160deg, #2a2735, #15131d); }
 .bi-ic-files { background: linear-gradient(180deg, #6CB4FF, #2F7BEA); }
@@ -3384,6 +3371,238 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
 .bi-desk.is-phone ~ .bi-dock { gap: 18px; padding: 12px 18px; border-radius: 30px; bottom: 14px; }
 .bi-desk.is-phone ~ .bi-dock .bi-app-ic { width: 56px; height: 56px; border-radius: 14px; }
 .bi-desk.is-phone ~ .bi-dock .bi-app-tip { display: none; }
+
+/* ---- me, in the Camera app (intro.js) -------------------------------------
+   Cut out comic-style (scripts/me) on the camera's white set, my name on the
+   desk beside it. The frames cut from pose to pose, so nothing here eases
+   between them. */
+.bi-win-cam {
+  background: #fff;
+  border: 3px solid #14121E;
+  border-radius: 16px;
+  box-shadow: 8px 8px 0 #14121E;
+  transition: transform .24s steps(3, end), opacity .15s steps(2, end);
+}
+.bi-win-cam .bi-win-bar { border-bottom: 3px solid #14121E; }
+.bi-win-cam.poof { transform: scale(.3) rotate(-6deg); opacity: 0; }
+.bi-cam-view {
+  position: absolute;
+  inset: 37px 0 0 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 40%, #fff, transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(20, 18, 30, .06) 1px, transparent 1.6px) 0 0 / 14px 14px,
+    #F2EFE8;
+}
+/* the viewfinder: corner marks and the red light */
+.bi-cam-view::before {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(#14121E, #14121E) 0 0 / 22px 2px, linear-gradient(#14121E, #14121E) 0 0 / 2px 22px,
+    linear-gradient(#14121E, #14121E) 100% 0 / 22px 2px, linear-gradient(#14121E, #14121E) 100% 0 / 2px 22px,
+    linear-gradient(#14121E, #14121E) 0 100% / 22px 2px, linear-gradient(#14121E, #14121E) 0 100% / 2px 22px,
+    linear-gradient(#14121E, #14121E) 100% 100% / 22px 2px, linear-gradient(#14121E, #14121E) 100% 100% / 2px 22px;
+  background-repeat: no-repeat;
+  opacity: .55;
+}
+.bi-rec {
+  position: absolute;
+  top: 22px;
+  left: 26px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 11px/1 var(--mono), monospace;
+  letter-spacing: .12em;
+  color: #14121E;
+}
+.bi-rec i { width: 8px; height: 8px; border-radius: 50%; background: #E2584E; animation: biRec 1.2s steps(2, end) infinite; }
+.bi-rec b { font-weight: 500; opacity: .6; }
+@keyframes biRec { 50% { opacity: .15; } }
+.bi-figure {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  bottom: 0;
+  height: 94%;
+  width: auto;
+  transform-origin: 50% 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(8px 10px 0 rgba(20, 18, 30, .12));
+}
+.bi-figure.cut { animation: biCut .16s steps(2, end); }
+@keyframes biCut { 0% { transform: scale(1.035) rotate(-.6deg); } 100% { transform: none; } }
+.bi-figure.poof { animation: biPoof .32s steps(4, end) forwards; }
+@keyframes biPoof { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08) rotate(2deg); opacity: .8; } 100% { transform: scale(.2); opacity: 0; } }
+
+/* the title: comic lettering, printed a little out of register */
+.bi-title {
+  position: absolute;
+  left: 50vw;
+  top: 30vh;
+  display: grid;
+  color: #14121E;
+  font-family: var(--display, var(--sans));
+  text-transform: uppercase;
+  line-height: .86;
+  pointer-events: none;
+  transition: opacity .12s steps(2, end), transform .12s steps(2, end);
+}
+.bi-title .bi-t-a, .bi-title .bi-t-b {
+  font-size: clamp(3rem, 8.6vw, 8.5rem);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  text-shadow: 4px 3px 0 rgba(0, 190, 230, .55), -3px -2px 0 rgba(240, 40, 140, .45);
+}
+.bi-title .bi-t-b { -webkit-text-stroke: 2px #14121E; color: #FBFAF6; }
+.bi-title .bi-t-c {
+  margin-top: 1.4rem;
+  font-family: var(--mono);
+  font-size: .8rem;
+  letter-spacing: .3em;
+}
+.bi-title.gone { opacity: 0; transform: translateX(30px) skewX(-8deg); }
+
+/* the five agents, waiting in the corner for something to do */
+.bi-crew { position: absolute; right: 4vw; bottom: 110px; display: flex; gap: 10px; transition: opacity .3s ease; }
+.bi-crew i {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 0 2px #FBFAF6, 0 0 0 4.5px #14121E;
+  animation: biWait 1.6s steps(3, end) infinite;
+  animation-delay: calc(var(--k) * -.32s);
+}
+@keyframes biWait { 50% { transform: translateY(-7px); } }
+.bi-crew.busy i { animation-duration: .5s; }
+
+/* "Press to start" as my speech bubble */
+html.bi-desk-on .bi-press.bi-bubble {
+  top: 30vh;
+  left: 34vw;
+  transform: none;
+  padding: .85rem 1.15rem;
+  background: #fff;
+  color: #14121E;
+  border: 3px solid #14121E;
+  border-radius: 18px;
+  box-shadow: 5px 5px 0 #14121E;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .22em;
+}
+html.bi-desk-on .bi-press.bi-bubble::after {
+  content: "";
+  position: absolute;
+  left: -16px;
+  bottom: 10px;
+  width: 18px;
+  height: 16px;
+  background: #fff;
+  border: 3px solid #14121E;
+  border-right: 0;
+  border-top: 0;
+  transform: skewY(28deg);
+}
+html.bi-desk-on .bi-press.bi-bubble.on { animation: biBob 1.4s steps(3, end) infinite; }
+@keyframes biBob { 50% { transform: translateY(-5px) rotate(-1.5deg); } }
+
+/* my head, carried up to the header */
+.bi-headgrab {
+  position: absolute;
+  left: 0; top: 0;
+  border-radius: 50%;
+  background-repeat: no-repeat;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #14121E, 0 12px 24px rgba(20, 18, 30, .25);
+  transform-origin: 50% 50%;
+  pointer-events: none;
+}
+
+/* the profile picture, spinning in my chair until halfway */
+.mark-face:has(.bi-spin) { position: relative; }
+.bi-spin {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 12%;
+  background: #FBFAF6;
+}
+
+/* halfway: my own cursor, and the face-cam beside the panel */
+.bi-cur-me svg path { stroke: #14121E; }
+.bi-cur-tag {
+  position: absolute;
+  left: 18px;
+  top: 22px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #14121E;
+  color: #fff;
+  font: 600 10px/1.2 var(--mono), monospace;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+.bi-cam {
+  position: absolute;
+  left: calc(14px + 300px + 14px);
+  top: 96px;
+  height: 230px;
+  width: auto;
+  transform-origin: 0 100%;
+  transform: scale(.2) rotate(-6deg);
+  opacity: 0;
+  filter: drop-shadow(5px 6px 0 rgba(20, 18, 30, .18));
+  transition: transform .22s steps(3, end), opacity .15s steps(2, end);
+}
+.bi-cam.on { transform: none; opacity: 1; }
+.bi-cam.poof { transform: scale(.2) rotate(8deg); opacity: 0; }
+@media (max-width: 680px) {
+  .bi-title { left: 6vw !important; top: auto; bottom: 150px; }
+  .bi-title .bi-t-a, .bi-title .bi-t-b { font-size: 15vw; }
+  html.bi-desk-on .bi-press.bi-bubble { font-size: .7rem; }
+  .bi-crew { right: 6vw; bottom: 104px; }
+  .bi-cam { left: auto; right: 10px; top: auto; bottom: 46vh; height: 170px; }
+}
+
+/* the panel's own mic, for asking for a change */
+.bi-pn-ask {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 14px 10px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid rgba(244, 241, 234, .14);
+  border-radius: 999px;
+  color: rgba(244, 241, 234, .45);
+  font-size: 12px;
+}
+.bi-pn-ph { flex: 1; }
+.bi-pn-mic {
+  display: grid;
+  place-items: center;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  color: rgba(244, 241, 234, .8);
+  background: rgba(244, 241, 234, .08);
+}
+.bi-pn-mic svg { width: 15px; height: 15px; }
+.bi-pn-wave { display: none; gap: 3px; align-items: center; height: 14px; }
+.bi-pn-wave i { width: 3px; height: 100%; border-radius: 2px; background: #E2584E; animation: biWave .5s steps(3, end) infinite alternate; }
+.bi-pn-wave i:nth-child(2n) { animation-delay: -.2s; }
+.bi-pn-wave i:nth-child(3n) { animation-delay: -.35s; }
+@keyframes biWave { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
+.bi-pn-ask.is-recording .bi-pn-ph { display: none; }
+.bi-pn-ask.is-recording .bi-pn-wave { display: flex; flex: 1; }
+.bi-pn-ask.is-recording .bi-pn-mic { color: #E2584E; background: rgba(226, 88, 78, .16); }
+.bi-panel.rail .bi-pn-ask { display: none; }
 
 /* the windows */
 .bi-win {
@@ -3405,20 +3624,17 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
 .bi-win-bar .bi-pn-dots { position: absolute; left: 14px; }
 .bi-win-title { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 64px; }
 .bi-win-ai {
-  background: color-mix(in srgb, var(--paper) 94%, transparent);
-  -webkit-backdrop-filter: blur(20px);
-          backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, .5);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, .45), 0 0 0 .5px rgba(0, 0, 0, .2);
+  background: #fff;
+  border: 3px solid #14121E;
+  border-radius: 16px;
+  box-shadow: 8px 8px 0 #14121E;
   opacity: 0;
-  transition: transform .55s cubic-bezier(.2, .8, .2, 1), opacity .3s ease;
+  transform: scale(.6) rotate(2deg);
+  transform-origin: 30% 60%;
+  transition: transform .24s steps(3, end), opacity .12s steps(2, end);
 }
-.bi-win-ai.open { opacity: 1; }
+.bi-win-ai.open { opacity: 1; transform: none; }
 .bi-win-ai .bi-win-bar { border-bottom: 1px solid var(--frame); }
 .bi-win-ai.away { opacity: 0; transform: scale(.97); transition: opacity .45s ease, transform .6s var(--ease-out); }
-.bi-win-canvas {
-  box-shadow: 0 30px 90px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .14);
-}
-.bi-win-canvas .bi-win-bar { background: #ECE9E2; border-bottom: 1px solid rgba(0, 0, 0, .08); }
 .bi-win-bar .bi-pn-dots { gap: 8px; }
 .bi-win-bar .bi-pn-dots i { width: 12px; height: 12px; }

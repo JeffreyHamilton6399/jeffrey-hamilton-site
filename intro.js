@@ -1424,7 +1424,7 @@
   /* The rest of the page: it rises in under the hero, the view walks down
      through the watch and the story to the contact panel, builds that, and
      comes back up to the top for the opening. */
-  function tour(cs) {
+  function tour(cs, half) {
     var path = below[0];
     below.forEach(function (el) { if (el !== path) show(el); });
     cs.forEach(function (c) {
@@ -1437,7 +1437,8 @@
     if (live && JH.watch.byHand) { JH.watch.byHand(true); JH.watch.paint(0); }
     progress(32, 'The watch');
     if (JH.leather) { JH.leather.byHand(true); JH.leather.open(0); }
-    railMode(true);
+    /* the panel stays open until the halfway exchange is over */
+    (half || Promise.resolve()).then(function () { if (!dead) railMode(true); }, function () {});
     /* The dark section is drawn in as a panel across the foot of the
        screen, the strap's tab is made on the white above it, and a hand
        takes the tab and pulls: the page comes up with it, the black panel
@@ -1606,12 +1607,16 @@
     document.addEventListener('keydown', onKey, true);
     addEventListener('resize', onResize);
     addEventListener('pointermove', onPointer, { passive: true });
+    addEventListener('pointerdown', onPointer, { passive: true });
     raf = requestAnimationFrame(loop);
   }
 
   /* where the visitor's own pointer is, so the hands can go home to it */
   var you = null;
-  function onPointer(e) { if (e.pointerType !== 'touch') you = { x: e.clientX, y: e.clientY }; }
+  function onPointer(e) {
+    if (e.pointerType !== 'touch') you = { x: e.clientX, y: e.clientY };
+    aim = { x: e.clientX, y: e.clientY, t: performance.now() };
+  }
   function onKey(e) { if (e.key === 'Escape') finish(true); }
   var w0 = window.innerWidth;
   function onResize() { if (Math.abs(window.innerWidth - w0) > 2) finish(true); }
@@ -1631,6 +1636,9 @@
   var VOICE = 'assets/audio/voice-play-loser.mp3';
   var AI_LOSER = 'assets/audio/ai-playing-loser.mp3';
   var AI_DONE = 'assets/audio/ai-complete.mp3';
+  /* halfway: me asking for a better picture, and the answer */
+  var HALF_VOICE = 'assets/audio/voice-halfway.mp3';
+  var AI_HALF = 'assets/audio/ai-swapping.mp3';
   /* What plays from the press until the answer: Aria Math, from just before
      its climax (3:37), faded in so it never lands at full volume. */
   var BGM = 'assets/audio/aria-math-intro.mp3';
@@ -1666,7 +1674,7 @@
 
   function fetchAudio() {
     if (!window.fetch) return;
-    snd.bufs = Promise.all([MUSIC, VOICE, BGM, AI_LOSER, AI_DONE].map(function (u) {
+    snd.bufs = Promise.all([MUSIC, VOICE, BGM, AI_LOSER, AI_DONE, HALF_VOICE, AI_HALF].map(function (u) {
       return new Promise(function (resolve) {
         var timer = setTimeout(function () { resolve(null); }, 4000);
         fetch(u).then(function (r) { if (!r.ok) throw r; return r.arrayBuffer(); })
@@ -1706,7 +1714,7 @@
           try { ctx.decodeAudioData(b.slice(0), done, function () { done(null); }); }
           catch (e) { done(null); }
         });
-      })).then(function (d) { snd.music = d[0]; snd.voice = d[1]; snd.bgm = d[2]; snd.aiLoser = d[3]; snd.aiDone = d[4]; return true; }, function () { return false; });
+      })).then(function (d) { snd.music = d[0]; snd.voice = d[1]; snd.bgm = d[2]; snd.aiLoser = d[3]; snd.aiDone = d[4]; snd.half = d[5]; snd.aiHalf = d[6]; return true; }, function () { return false; });
     });
   }
   function startMusic() {
@@ -1907,24 +1915,27 @@
 
   /* ------------------------------------------------------------ the desktop
 
-     Before anything, a computer: a desktop with a real city photograph
-     behind its windows, a menu bar, a dock. The press opens the assistant
-     from the dock — it bounces, gets its dot, and its window grows out of
-     it with the chat inside. Once the song is asked for, a hand opens the
-     design app, Canvas, whose window is the page itself: the desktop is cut
-     away where the window is, so what shows through it is the real page,
-     blank, waiting. A click on its full-screen button and the window takes
-     the screen — the menu bar and dock go, the chat becomes the panel — and
-     the desktop is never seen again. Nothing on the page moves for any of
-     it: the window is a hole in the desktop, not the page made small. */
+     Before anything, a computer: a plain white desktop, a menu bar, a dock,
+     and the Camera app open on the left with me in it (the studio, below).
+     The press opens the assistant from the dock — it bounces, gets its dot,
+     and its window grows out of it on the right, the chat inside. Once the
+     song is asked for, a hand opens the design app, Canvas, whose window is
+     the page itself: the desktop is cut away where the window is, so what
+     shows through it is the real page, blank, waiting. A click on its
+     full-screen button and the window takes the screen — the menu bar and
+     dock go, the chat becomes the panel — and then a hand takes my head out
+     of the camera into the header. The desktop is never seen again. Nothing
+     on the page moves for any of it: the window is a hole in the desktop,
+     not the page made small. */
 
   var desk = null, deskUi = {};
   var DOCK = [
-    ['assistant', 'Assistant'], ['canvas', 'Canvas'], ['files', 'Files'],
+    ['camera', 'Camera'], ['assistant', 'Assistant'], ['canvas', 'Canvas'], ['files', 'Files'],
     ['music', 'Music'], ['terminal', 'Terminal'], ['settings', 'Settings']
   ];
-  var DOCK_PHONE = ['assistant', 'canvas', 'music', 'files'];
+  var DOCK_PHONE = ['camera', 'assistant', 'canvas', 'music'];
   var ICONS = {
+    camera: '<svg viewBox="0 0 24 24" width="26" height="26"><rect x="3" y="7" width="13" height="10" rx="2.4" fill="#fff"/><path d="m16 11 5-3v8l-5-3Z" fill="#fff"/><circle cx="7" cy="10.2" r="1.2" fill="#E2584E"/></svg>',
     assistant: '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3.5c.6 4.2 2.3 5.9 6.5 6.5-4.2.6-5.9 2.3-6.5 6.5-.6-4.2-2.3-5.9-6.5-6.5 4.2-.6 5.9-2.3 6.5-6.5Z" fill="#fff"/><circle cx="18" cy="17.5" r="1.6" fill="#fff" opacity=".85"/></svg>',
     canvas: '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="8.5" cy="8.5" r="4" fill="#E08A00"/><rect x="12.5" y="4.5" width="7" height="7" rx="1.6" fill="#0B93D6"/><path d="M8.5 13.5 13 20.5H4Z" fill="#E23D8A"/><rect x="13.2" y="13.8" width="6.3" height="6.3" rx="3.15" fill="#0E9F6E"/></svg>',
     files: '<svg viewBox="0 0 24 24" width="26" height="26"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.4l1.8 1.8h8.8A1.5 1.5 0 0 1 21 9.3v8.2a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5Z" fill="#fff" opacity=".95"/><path d="M3 10h18" stroke="#3B8BEA" stroke-width="1.2"/></svg>',
@@ -1947,47 +1958,6 @@
     desk = make('div', 'bi-desk' + (phone ? ' is-phone' : ''));
     root.insertBefore(desk, root.firstChild);
     doc.classList.add('bi-desk-on');
-    deskUi.city = make('img', 'bi-city', desk);
-    deskUi.city.alt = '';
-    deskUi.city.src = 'assets/backgrounds/city-night.jpg';
-    deskUi.city.fetchPriority = 'high';
-    /* Real traffic, quiet behind the desktop. The photograph stays beneath
-       it if playback is blocked, or the visitor asks for less motion. */
-    var motion = matchMedia('(prefers-reduced-motion: reduce)');
-    var video = make('video', 'bi-city bi-city-video', desk);
-    deskUi.video = video;
-    video.muted = true;
-    video.defaultMuted = true;
-    video.loop = true;
-    video.playsInline = true;
-    video.setAttribute('playsinline', '');
-    video.setAttribute('aria-hidden', 'true');
-    video.preload = 'none';
-    video.addEventListener('playing', function () {
-      if (!motion.matches) video.classList.add('playing');
-    });
-    video.addEventListener('error', function () { video.classList.remove('playing'); });
-    function wallpaper() {
-      if (motion.matches || document.hidden) {
-        video.pause();
-        if (motion.matches) video.classList.remove('playing');
-        return;
-      }
-      if (!video.getAttribute('src')) video.src = 'assets/backgrounds/city-night.mp4';
-      var playing = video.play();
-      if (playing && playing.catch) playing.catch(function () { video.classList.remove('playing'); });
-    }
-    motion.addListener(wallpaper);
-    document.addEventListener('visibilitychange', wallpaper);
-    deskUi.stopVideo = function () {
-      motion.removeListener(wallpaper);
-      document.removeEventListener('visibilitychange', wallpaper);
-      video.pause();
-      video.removeAttribute('src');
-      video.load();
-    };
-    wallpaper();
-    make('div', 'bi-vignette', desk);
     var bar = make('div', 'bi-menubar');
     root.insertBefore(bar, desk.nextSibling);
     if (phone) {
@@ -2017,7 +1987,9 @@
         '<span class="bi-app-tip">' + d[1] + '</span><i class="bi-app-dot"></i>';
       deskUi.icons[d[0]] = it;
     });
+    deskUi.icons.camera.classList.add('open');
     deskUi.icons.assistant.classList.add('hint');
+    buildCamera();
   }
 
   /* The cursor's way into an app: onto its icon (the name comes up), a
@@ -2043,13 +2015,19 @@
     var win = make('div', 'bi-win bi-win-ai');
     root.insertBefore(win, chat);
     win.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i></i></span><span class="bi-win-title">Assistant</span></div>';
+    /* centred, over part of the camera */
+    var cr = stu.cam ? rect(stu.cam) : { right: W() * 0.45, bottom: H() * 0.5 };
     var ww = phone ? W() - 16 : Math.min(720, W() - 64);
-    var wh = phone ? H() - 140 : Math.min(470, H() - 190);
-    var wx = (W() - ww) / 2, wy = phone ? 44 : Math.max(44, (H() - 96 - wh) / 2 + 14);
+    var wh = phone ? Math.max(220, H() - cr.bottom - 120) : Math.min(470, H() - 190);
+    var wx = phone ? 8 : (W() - ww) / 2;
+    var wy = phone ? cr.bottom + 10 : Math.max(44, (H() - 96 - wh) / 2 + 14);
     win.style.left = wx + 'px'; win.style.top = wy + 'px';
     win.style.width = ww + 'px'; win.style.height = wh + 'px';
-    /* the chat in the middle of the window, under its title bar */
-    chat.style.top = (wy + 34 + (wh - 34) / 2) + 'px';
+    /* sat on the window's floor, so the conversation grows up from it */
+    chat.style.left = (wx + ww / 2) + 'px';
+    chat.style.top = (wy + wh - 22) + 'px';
+    chat.style.width = (ww - 40) + 'px';
+    chat.classList.add('in-win');
     var fc = center(from);
     win.style.transformOrigin = '0 0';
     win.style.transform = 'translate(' + (fc.x - wx - ww * 0.04) + 'px,' + (fc.y - wy - wh * 0.04) + 'px) scale(.08)';
@@ -2102,7 +2080,7 @@
   function makeHole(from) {
     hole = hole || {};
     hole.frame = make('div', 'bi-win bi-win-canvas');
-    root.insertBefore(hole.frame, deskUi.ai || chat);
+    root.insertBefore(hole.frame, stu.cam || deskUi.ai || chat);   /* under the camera: I stay in view */
     hole.frame.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i class="bi-full"></i></span><span class="bi-win-title">Canvas \u2014 jeffreyhamilton.com</span></div>';
     hole.bar = hole.frame.firstChild;
     setHole(from.left, from.top, from.width, from.height, 12, 0);
@@ -2135,15 +2113,424 @@
       closeDesk();
     });
   }
-  function closeDesk() {
+  /* the camera stays for the head to be taken from it, unless it is all
+     going (a skip, or the end) */
+  function closeDesk(all) {
+    if (all) {
+      var k3 = followers.indexOf(meTick);
+      if (k3 >= 0) followers.splice(k3, 1);
+      if (stu.cam) { stu.cam.remove(); stu.cam = null; }
+    }
     if (!desk) return;
     var k = followers.indexOf(deskUi.draw);
     if (k >= 0) followers.splice(k, 1);
     clearInterval(deskUi.clock);
-    if (deskUi.stopVideo) deskUi.stopVideo();
     [desk, deskUi.bar, deskUi.dock, deskUi.ai, hole && hole.frame].forEach(function (el) { if (el) el.remove(); });
     desk = null;
     doc.classList.remove('bi-desk-on');
+  }
+
+  /* ------------------------------------------------------------ the studio
+
+     Before anything, me: a cut-out of me on the left of a white page, cut
+     comic-style (scripts/me builds the frames), and my name on the right.
+     I point at wherever the visitor's pointer is, cutting from pose to pose
+     the way a comic does rather than gliding. The press pulls me in: I am
+     at the keyboard, typing at the chat that opens on the right; I talk
+     into my earbuds while my voice plays, and listen while the AI answers.
+     When the song comes in, a cursor picks my head up and drops it into the
+     header's profile picture (where I spin in a chair until halfway), the
+     rest of me pops, and the chat becomes the panel. */
+
+  var ME = 'assets/me/';
+  var me = { meta: null, el: null, imgs: {}, mode: 'aim', pose: '', seq: null, next: 0, extra: 0 };
+  var stu = {};
+  var aim = null;                       /* where the visitor last pointed or tapped */
+
+  function poseUrl(n) { return ME + n + '.webp'; }
+  function hasPose(n) { return !!(me.meta && me.meta.poses[n]); }
+  function preload(names) {
+    names.forEach(function (n) {
+      if (!hasPose(n) || me.imgs[n]) return;
+      var i = new Image();
+      i.decoding = 'async';
+      i.src = poseUrl(n);
+      me.imgs[n] = i;
+    });
+  }
+  function posesLike(prefix) {
+    return me.meta ? Object.keys(me.meta.poses).filter(function (k) { return k.indexOf(prefix) === 0; }) : [];
+  }
+  function setPose(n, el) {
+    el = el || me.el;
+    if (!el || !hasPose(n)) return;
+    if (el === me.el) { if (me.pose === n) return; me.pose = n; }
+    el.src = poseUrl(n);
+  }
+  /* a smash cut: the figure jumps a touch as the pose changes */
+  function cut() {
+    if (!me.el) return;
+    me.el.classList.remove('cut');
+    void me.el.offsetWidth;
+    me.el.classList.add('cut');
+  }
+  /* where the head is on screen, for a pose (default: the one showing) */
+  function headAt(n, el) {
+    el = el || me.el;
+    var p = me.meta && me.meta.poses[n || me.pose];
+    if (!el || !p) return null;
+    var r = rect(el);
+    return { x: r.left + p.head[0] * r.width, y: r.top + p.head[1] * r.height, r: p.head[2] * r.width };
+  }
+
+  /* the Camera app, open on the left of the desktop from the start: me */
+  function buildCamera() {
+    var phone = !wideScreen();
+    var cam = stu.cam = make('div', 'bi-win bi-win-cam open');
+    root.insertBefore(cam, deskUi.bar);
+    cam.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i></i></span><span class="bi-win-title">Camera</span></div>' +
+      '<div class="bi-cam-view"><span class="bi-rec"><i></i>REC <b>00:00:00</b></span></div>';
+    /* a window on the desk, not the desk: the chat opens over part of it */
+    var cw = phone ? W() - 16 : Math.round(Math.min(W() * 0.3, 440));
+    var ch = phone ? Math.round(H() * 0.44) : Math.round(Math.min((H() - 160) * 0.86, cw * 1.3));
+    cam.style.left = (phone ? 8 : Math.round(W() * 0.045)) + 'px';
+    cam.style.top = (phone ? 46 : Math.round(Math.max(48, (H() - 96 - ch) / 2 + 10))) + 'px';
+    cam.style.width = cw + 'px';
+    cam.style.height = ch + 'px';
+    var view = cam.querySelector('.bi-cam-view');
+    me.el = make('img', 'bi-figure', view);
+    me.el.alt = '';
+    var rec = cam.querySelector('.bi-rec b'), t0 = Date.now();
+    stu.recTimer = setInterval(function () {
+      var t = Math.floor((Date.now() - t0) / 1000);
+      rec.textContent = '00:' + ('0' + Math.floor(t / 60)).slice(-2) + ':' + ('0' + t % 60).slice(-2);
+    }, 1000);
+    stu.title = make('div', 'bi-title', desk);
+    stu.title.innerHTML = '<span class="bi-t-a">Jeffrey</span><span class="bi-t-b">Hamilton</span>' +
+      '<span class="bi-t-c">makes things you can use</span>';
+    stu.title.style.left = (rect(cam).right + Math.max(40, W() * 0.06)) + 'px';
+    stu.crew = make('div', 'bi-crew', desk);
+    stu.crew.innerHTML = PALETTE.slice(1).map(function (col, i) {
+      return '<i style="--c:' + col + ';--k:' + i + '"></i>';
+    }).join('');
+    /* "Press to start" is my line: a speech bubble from me */
+    ui.press.classList.add('bi-bubble');
+    if (window.fetch) {
+      fetch(ME + 'me.json').then(function (r) { if (!r.ok) throw r; return r.json(); }).then(function (m) {
+        if (dead) return;
+        me.meta = m;
+        preload(posesLike('point_').concat(posesLike('look_'), ['whoa', 'thumbs', 'wave']));
+        setPose(hasPose('look_1_2') ? 'look_1_2' : Object.keys(m.poses)[0]);
+        me.el.addEventListener('load', placeBubble, { once: true });
+        /* the rest, while the visitor reads */
+        setTimeout(function () { if (!dead) preload(Object.keys(m.poses)); }, 600);
+      }).catch(function () { cam.classList.add('no-me'); });
+    }
+    followers.push(meTick);
+  }
+
+  /* the speech bubble beside my head */
+  function placeBubble() {
+    var h = headAt();
+    if (!h || !ui.press) return;
+    var phone = !wideScreen();
+    ui.press.style.left = Math.round(phone ? h.x + h.r * 0.6 : h.x + h.r * 1.15) + 'px';
+    ui.press.style.top = Math.round(phone ? h.y - h.r * 1.6 : h.y - h.r * 1.5) + 'px';
+    ui.press.classList.add('placed');
+  }
+
+  /* Every frame: which pose is up. Poses change at most every so often, so
+     it reads as cuts, a comic's twelve to the second, not a glide. */
+  function meTick() {
+    if (!me.meta || !me.el) return;
+    var now = performance.now();
+    if (now < me.next) return;
+    me.next = now + 125;
+    if (me.seq) {
+      var step = me.seq.list[me.seq.i];
+      if (!step) { var after = me.seq.then; me.seq = null; me.mode = after || me.mode; return; }
+      if (!me.seq.t) { me.seq.t = now; setPose(step[0]); if (step[2]) cut(); }
+      if (now - me.seq.t >= step[1]) { me.seq.i++; me.seq.t = 0; }
+      return;
+    }
+    if (me.mode === 'aim') return aimPose(now);
+    if (me.mode === 'type') {
+      if (Math.random() < 0.05) { playSeq([['glance', 420]], 'type'); return; }
+      var ty = posesLike('type_');
+      setPose(ty[Math.floor(Math.random() * ty.length)]);
+      me.next = now + rnd(110, 190);
+      return;
+    }
+    if (me.mode === 'talk') return talkPose(me.el, function (n) { setPose(n); });
+  }
+  function playSeq(list, then) { me.seq = { list: list, i: 0, t: 0, then: then }; me.next = 0; }
+
+  /* pointing: the cell of a 5 x 3 grid of the screen the pointer is in */
+  function aimPose(now) {
+    var a = aim, recent = a && now - a.t < 1600;
+    if (!a) {
+      /* nobody pointing yet: look about now and then */
+      if (now > me.extra) {
+        me.extra = now + rnd(1800, 3200);
+        aim = null;
+        me.wander = { x: rnd(0.35, 1) * W(), y: rnd(0.15, 0.85) * H() };
+      }
+      a = me.wander || { x: W() * 0.7, y: H() * 0.4 };
+    } else if (!recent && now > me.extra) {
+      /* left alone a while: a wave, a thumbs up, a whoa */
+      me.extra = now + rnd(5200, 8000);
+      var bits = ['wave', 'thumbs', 'whoa'].filter(hasPose);
+      if (bits.length) { playSeq([[bits[Math.floor(Math.random() * bits.length)], 900, true]], 'aim'); return; }
+    }
+    var h = headAt('look_1_2') || { x: W() * 0.2, y: H() * 0.3, r: 60 };
+    var kind = recent ? 'point_' : 'look_';
+    var name;
+    if (Math.hypot(a.x - h.x, a.y - h.y) < h.r * 1.6) name = kind + 'center';
+    else {
+      var col = clamp(Math.floor(a.x / W() * 5), 0, 4), row = clamp(Math.floor(a.y / H() * 3), 0, 2);
+      name = kind + row + '_' + col;
+    }
+    if (!hasPose(name)) name = name.replace(kind, kind === 'point_' ? 'look_' : 'point_');
+    if (name !== me.pose) setPose(name);
+  }
+
+  /* talking: the mouth shape from how loud the voice is right now */
+  var talkBuf = null;
+  function talkPose(el, set) {
+    var lvl = 0.2 + 0.25 * Math.random();
+    var an = el === me.el ? snd.an : (snd.han || snd.an);
+    if (an) {
+      if (!talkBuf || talkBuf.length !== an.fftSize) talkBuf = new Uint8Array(an.fftSize);
+      an.getByteTimeDomainData(talkBuf);
+      var sum = 0;
+      for (var i = 0; i < talkBuf.length; i++) { var v = (talkBuf[i] - 128) / 128; sum += v * v; }
+      lvl = Math.sqrt(sum / talkBuf.length) * 4;
+    }
+    var name = lvl < 0.08 ? 'talk_closed' : lvl > 0.5 ? 'talk_wide' : ['talk_open', 'talk_round', 'talk_teeth', 'talk_open'][Math.floor(Math.random() * 4)];
+    set(hasPose(name) ? name : 'talk_open');
+  }
+
+  /* the press: a jump, the lean in, and at the keys; the title cuts away
+     and the chat opens on the right, where I am looking */
+  function pulledIn() {
+    var list = [['startle_0', 130, true], ['startle_1', 160], ['lean_0', 150, true], ['lean_1', 200]]
+      .filter(function (s) { return hasPose(s[0]); });
+    playSeq(list, 'type');
+    if (stu.title) stu.title.classList.add('gone');
+    if (stu.crew) stu.crew.classList.add('busy');
+  }
+
+  /* Full screen, and the camera still up: a hand takes my head out of it
+     and drops it into the header's profile picture, and the rest of me and
+     the camera pop. */
+  var spinEl = null;
+  function pickUp(c) {
+    if (hasPose('surprised')) { playSeq([['surprised', 99999, true]], 'hold'); me.mode = 'hold'; }
+    return real(200).then(function () {
+      var h = headAt(hasPose('surprised') ? 'surprised' : me.pose);
+      if (!h || !face) return null;
+      return c.move(h.x, h.y).then(c.press).then(function () { return h; });
+    }).then(function (h) {
+      if (!h) { show(face); startSpin(); emit('markPhoto'); return; }
+      /* the head, lifted off: a circle of the frame that is showing */
+      var g = make('div', 'bi-headgrab', layer);
+      var er = rect(me.el), size = h.r * 2;
+      g.style.width = g.style.height = size + 'px';
+      g.style.backgroundImage = 'url("' + me.el.src + '")';
+      g.style.backgroundSize = er.width + 'px ' + er.height + 'px';
+      g.style.backgroundPosition = (er.left - h.x + h.r) + 'px ' + (er.top - h.y + h.r) + 'px';
+      var put = function (x, y, s) { g.style.transform = 'translate(' + (x - size / 2) + 'px,' + (y - size / 2) + 'px) scale(' + s.toFixed(3) + ')'; };
+      put(h.x, h.y, 1);
+      /* the body left behind, headless, then gone */
+      var hx = h.x - er.left, hy = h.y - er.top;
+      var mask = 'radial-gradient(circle at ' + hx + 'px ' + hy + 'px, transparent ' + (h.r * 1.02) + 'px, #000 ' + (h.r * 1.08) + 'px)';
+      me.el.style.webkitMaskImage = me.el.style.maskImage = mask;
+      if (hasPose('shrug')) setTimeout(function () { if (!dead) { setPose('shrug'); } }, 260);
+      setTimeout(function () { if (!dead && stu.cam) stu.cam.classList.add('poof'); }, 650);
+      var fr = rect(face), fc = center(fr), s1 = fr.width / size;
+      var x0 = h.x, y0 = h.y;
+      return c.move(fc.x, fc.y, {
+        dur: 1000 / TIME, ease: ease.inOut, overshoot: false, bend: 0.12,
+        onMove: function (x, y) {
+          var k = clamp(Math.hypot(x - x0, y - y0) / Math.max(1, Math.hypot(fc.x - x0, fc.y - y0)), 0, 1);
+          put(x, y, 1 + (s1 - 1) * k);
+        }
+      }).then(function () {
+        g.remove();
+        show(face);
+        startSpin();
+        tween(260, function (e) { setS(face, 'scale', (0.6 + 0.4 * e).toFixed(3)); }, ease.back).catch(function () {});
+        emit('markPhoto');
+        return c.release();
+      });
+    }).then(function () {
+      setTimeout(function () {
+        clearInterval(stu.recTimer);
+        var k = followers.indexOf(meTick);
+        if (k >= 0) followers.splice(k, 1);
+        if (stu.cam) { stu.cam.remove(); stu.cam = null; }
+      }, 500);
+    });
+  }
+
+  /* me spinning in my chair: the profile picture until halfway */
+  function startSpin() {
+    var spins = posesLike('spin_');
+    if (!face || !spins.length) return;
+    spinEl = make('img', 'bi-spin', face);
+    spinEl.alt = '';
+    var k = 0, last = 0;
+    spinEl.src = poseUrl(spins[0]);
+    var f = function () {
+      var now = performance.now();
+      if (!spinEl || now - last < 140) return;
+      last = now;
+      k = (k + 1) % spins.length;
+      spinEl.src = poseUrl(spins[k]);
+    };
+    spinEl._f = f;
+    followers.push(f);
+  }
+  function stopSpin() {
+    if (!spinEl) return;
+    var k = followers.indexOf(spinEl._f);
+    if (k >= 0) followers.splice(k, 1);
+    spinEl.remove();
+    spinEl = null;
+  }
+
+  /* ---- halfway: my own cursor asks for a better picture -------------------
+
+     When the top of the page is made, my cursor (white, with my name on
+     it) comes in, clicks the panel's mic, and I ask, into my earbuds, in a
+     small face-cam beside the panel. The AI says it will, and the hand that
+     does the images takes my real portrait out of the files and drops it
+     over the one of me spinning. */
+  var HALF_TEXT = 'Hey, can you swap my profile pic for a good one?';
+  var HALF_REPLY = 'Sure. Swapping it now.';
+  function halfway(cs) {
+    if (!panel || !face) return Promise.resolve();
+    var img = cs[IMG % cs.length];
+    var asked = {};
+    asked.p = new Promise(function (r) { asked.r = r; });
+    /* the image hand is booked now, so the tour does not take it first */
+    var swapped = task(img, function () { return asked.p.then(function () { return swapFace(img); }); });
+    var mine = Cursor('#FFFFFF', W() + 30, H() * 0.72, 0.95, 1);
+    mine.el.classList.add('bi-cur-me', 'pop');
+    make('span', 'bi-cur-tag', mine.el).textContent = 'Jeffrey';
+    var ask = panel.querySelector('.bi-pn-ask');
+    var cam = null;
+    return real(250).then(function () {
+      var mr = center(rect(ask.querySelector('.bi-pn-mic')));
+      return mine.move(mr.x, mr.y);
+    }).then(mine.click).then(function () {
+      ask.classList.add('is-recording');
+      cam = faceCam();
+      duck(0.16, 0.35);
+      return decodeAudio().then(function () {
+        var len = playHalf();
+        return real(len * 1000 + 150);
+      });
+    }).then(function () {
+      ask.classList.remove('is-recording');
+      if (cam) cam.listen();
+      var said = bubble('me');
+      said.textContent = HALF_TEXT;
+      mine.move(W() + 40, mine.y + rnd(-40, 40), { exit: true }).catch(function () {});
+      leave(mine);
+      return real(500);
+    }).then(function () {
+      var t = bubble('ai', '<span class="bi-thinking">Thinking</span>');
+      return real(650).then(function () { return t; });
+    }).then(function (t) {
+      t.textContent = '';
+      var spoken = playLine(snd.aiHalf).then(function (ok) { if (!ok && !dead) return sayFallback(HALF_REPLY); });
+      asked.r();
+      return Promise.all([streamInto(t, HALF_REPLY), spoken]);
+    }).then(function () {
+      duck(0.78, 0.9);
+      if (cam) cam.gone();
+      return swapped;
+    });
+  }
+
+  /* my voice, the halfway line (a missing file plays silence for as long) */
+  function playHalf() {
+    if (!snd.ctx || !snd.half) { snd.han = null; return 2.6; }
+    var ctx = snd.ctx;
+    var src = ctx.createBufferSource();
+    src.buffer = snd.half;
+    snd.han = ctx.createAnalyser();
+    snd.han.fftSize = 256;
+    src.connect(snd.han);
+    snd.han.connect(ctx.destination);
+    src.start(ctx.currentTime + 0.03);
+    snd.src.push(src);
+    return snd.half.duration;
+  }
+
+  /* the face-cam: a small me beside the panel, talking, then listening */
+  function faceCam() {
+    if (!me.meta) return null;
+    var el = make('img', 'bi-cam', root);
+    el.alt = '';
+    var mode = 'talk';
+    var start = hasPose('half_point') ? 'half_point' : 'talk_open';
+    el.src = poseUrl(start);
+    var last = 0, began = performance.now();
+    var f = function () {
+      var now = performance.now();
+      if (now - last < 110) return;
+      last = now;
+      if (mode === 'talk') {
+        if (now - began < 260) return;
+        if (!snd.han && hasPose('half_roll') && Math.random() < 0.06) { el.src = poseUrl('half_roll'); return; }
+        talkPose(el, function (n) { el.src = poseUrl(n); });
+      }
+    };
+    followers.push(f);
+    requestAnimationFrame(function () { el.classList.add('on'); });
+    function off() { var k = followers.indexOf(f); if (k >= 0) followers.splice(k, 1); }
+    return {
+      listen: function () {
+        mode = 'listen';
+        var nods = ['nod_0', 'nod_1', 'nod_2', 'listen'].filter(hasPose), i = 0;
+        var step = function () { if (i < nods.length && !dead) { el.src = poseUrl(nods[i++]); setTimeout(step, 180); } };
+        step();
+      },
+      gone: function () {
+        off();
+        if (hasPose('smile')) el.src = poseUrl('smile');
+        setTimeout(function () { el.classList.remove('on'); el.classList.add('poof'); }, 350);
+        setTimeout(function () { el.remove(); }, 900);
+      },
+      el: el
+    };
+  }
+
+  /* the real portrait, out of the panel's files and onto the spinning one */
+  function swapFace(c) {
+    var row = panel && panel.querySelector('.bi-f[data-f="portrait.jpg"]');
+    var fr = rect(face), fc = center(fr);
+    var from = row ? center(rect(row)) : { x: 6, y: fc.y + 140 };
+    var src = face.querySelector('img:not(.bi-spin)');
+    src = src ? (src.currentSrc || src.src) : '';
+    return c.move(from.x - 30, from.y).then(c.press).then(function () {
+      if (row) row.classList.add('busy');
+      var g = Ghost(src, c.color);
+      g.at(c.x, c.y);
+      return c.move(fc.x, fc.y, { onMove: function (x, y) { g.at(x, y); } })
+        .then(function () { g.remove(); return c.release(); });
+    }).then(function () {
+      stopSpin();
+      touch('portrait.jpg', c.color, 1);
+      if (row) row.classList.remove('busy');
+      tween(280, function (e) { setS(face, 'scale', (0.7 + 0.3 * e).toFixed(3)); }, ease.back).catch(function () {});
+      var sel = Box(c.color).handles(true);
+      sel.track(function () { return rect(face); }, 2);
+      sel.on();
+      return wait(260).then(function () { sel.remove(); });
+    });
   }
 
   function typeInto(el, text, base) {
@@ -2232,19 +2619,19 @@
       T0 = performance.now();
       ui.press.classList.add('gone');
       decodeAudio().then(startBgm);       /* Aria Math, faded in */
-      /* a moment of just the music, then the assistant is opened from the
-         dock, and its box opens from the middle */
-      return real(1100);
+      /* pulled in: at the keys, and the assistant opened from the dock */
+      pulledIn();
+      return real(600);
     }).then(function () {
       return launch(c, 'assistant');
     }).then(openAssistant).then(function () {
-      return real(300);
+      return real(250);
     }).then(function () {
       chat.classList.add('on', 'grow');
-      return real(2700);
+      return real(1900);
     }).then(function () {
       chat.classList.add('grown');
-      return real(900);
+      return real(500);
     }).then(function () {
       /* the cursor comes in and clicks into the box */
       var ir = rect(ui.input);
@@ -2264,6 +2651,7 @@
         bgTo(BGM_UNDER, 0.35);
         playVoice();
         waveOn();
+        me.seq = null; me.mode = 'talk';
         var step = (VOICE_LEN - 0.6) / SPOKEN.length;
         SPOKEN.forEach(function (w_, k) {
           real((0.2 + k * step) * 1000).then(function () { ui.typed.textContent += ' ' + w_; }, function () {});
@@ -2274,6 +2662,7 @@
       return c.click();
     }).then(function () {
       waveOff();
+      me.mode = 'type';
       bgTo(BGM_VOL * 0.8, 0.8);
       var sr = center(rect(ui.send));
       return c.move(sr.x, sr.y);
@@ -2287,6 +2676,10 @@
       canvasOpen = real(350).then(function () { return openCanvas(c); });
       canvasOpen.catch(function () {});
       chat.classList.add('has-thread');
+      /* and I listen for the answer */
+      playSeq([['listen', 500, true], ['nod_0', 160], ['nod_1', 160], ['nod_2', 160], ['listen', 900], ['smile', 600]]
+        .filter(function (q) { return hasPose(q[0]); }), 'hold');
+      me.mode = 'hold';
       return real(260);
     }).then(function () {
       var t = bubble('ai', '<span class="bi-thinking">Thinking</span>');
@@ -2309,6 +2702,8 @@
       });
     }).then(function () {
       return canvasOpen.then(function () { return fullCanvas(c); });
+    }).then(function () {
+      return pickUp(c);
     }).then(function () {
       return spawn();
     });
@@ -2439,6 +2834,8 @@
       '<div class="bi-pn-head"><span class="bi-pn-dots"><i></i><i></i><i></i></span>' +
         '<span class="bi-pn-title">jeffreyhamilton.com</span><span class="bi-pn-x">×</span></div>' +
       '<div class="bi-pn-chat"></div>' +
+      '<div class="bi-pn-ask"><span class="bi-pn-ph">Ask for a change…</span><span class="bi-pn-wave"><i></i><i></i><i></i><i></i><i></i></span>' +
+        '<span class="bi-pn-mic">' + MIC + '</span></div>' +
       '<div class="bi-pn-sec">Files</div>' +
       '<ul class="bi-pn-files">' + FILES.map(function (f) {
         return '<li class="bi-f' + (f[2] ? ' dir' : '') + '" style="--d:' + f[1] + '" data-f="' + f[0] + '">' +
@@ -2591,11 +2988,11 @@
       after(0, seq(function () { return jobFrame(cs[0]); }, function () { return jobMarkText(cs[0]); })),
       after(560, function () { return jobWord(cs[1]); }),
       after(1500, seq(function () { return jobSwitch(cs[2]); }, function () { return jobSocial(cs[2]); })),
-      after(240, seq(function () { return jobCards(img); }, function () { return jobMarkPhoto(img); })),
+      after(240, function () { return jobCards(img); }),
       after(1000, function () { return cs[4].move(w * 0.5 + rnd(-40, 40), 90).then(function () { return jobNav(cs[4]); }); })
     ] : [
       after(0, seq(function () { return jobFrame(cs[0]); }, function () { return jobMarkText(cs[0]); }, function () { return jobNav(cs[0]); })),
-      after(240, seq(function () { return jobCards(img); }, function () { return jobMarkPhoto(img); })),
+      after(240, function () { return jobCards(img); }),
       after(620, function () { return jobWord(cs[2]); }),
       after(1100, function () { return jobSwitch(cs[3]); })
     ];
@@ -2614,7 +3011,12 @@
       c.lane.catch(fail);
     });
     warm();
-    return allDone.then(function () { return tour(cs); }).then(function () { return reveal(cs); });
+    return allDone.then(function () {
+      /* halfway: my cursor asks for a better picture while the walk begins */
+      var half = halfway(cs);
+      half.catch(function () {});
+      return tour(cs, half);
+    }).then(function () { return reveal(cs); });
   }
 
   function fail(e) {
@@ -2726,8 +3128,11 @@
     document.removeEventListener('keydown', onKey, true);
     removeEventListener('resize', onResize);
     removeEventListener('pointermove', onPointer);
+    removeEventListener('pointerdown', onPointer);
 
-    closeDesk();
+    closeDesk(true);
+    clearInterval(stu.recTimer);
+    stopSpin();
     var hadFocus = document.activeElement === skip;
     skip.remove();
     doc.classList.remove('bi-on', 'bi-live');
