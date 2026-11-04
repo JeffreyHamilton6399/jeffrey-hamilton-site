@@ -1431,7 +1431,7 @@
        screen, the strap's tab is made on the white above it, and a hand
        takes the tab and pulls: the page comes up with it, the black panel
        riding up over the hero. */
-    var handover = real(820);    /* the page back to full size first */
+    var handover = real(500);    /* the panel slimmed out of the way first */
     var pr = path ? rect(path) : null;
     if (path && pr.top < H() - 2) {
       var painter = cs[0];
@@ -1523,8 +1523,7 @@
   function arm() {
     doc.classList.add('bi-live');
     fetchAudio();
-    /* on <html>, beside <body>: the page is shrunk into a preview while the
-       panel is open, and the cursors must not shrink with it */
+    /* on <html>, beside <body>, above everything the page has */
     doc.appendChild(root);
     doc.insertBefore(skip, document.body);
     hero.insertBefore(canvas, hero.firstChild);
@@ -1609,8 +1608,9 @@
   var VOICE = 'assets/audio/voice-play-loser.mp3';
   /* The clip opens on the beat the band comes in; the agents spawn on the
      next downbeat but one. (Measured off the song: it is 83 bpm, and the
-     band arrives at 0:55.46.) */
-  var SPAWN = 1.17;
+     band arrives at 0:10.69; the clip starts at 0:10.63.) */
+  var CLIP_AT = 10.63, SONG_LEN = 223.1;
+  var SPAWN = 1.18;
   var VOICE_LEN = 3.0;
   var SPOKEN = ['and', 'play', 'Loser', 'by', 'Tame', 'Impala'];
 
@@ -1935,10 +1935,11 @@
   }
 
   /* The handover. The dots fly out of the reply to where each agent
-     starts; the conversation glides over to the right and becomes the
-     editor panel — chat, files, the song, the progress bar — and the page
-     shrinks beside it into a preview, which is where it is built. Resolves
-     on the beat with where the dots landed. */
+     starts, and the text box turns into the editor panel: it slides over to
+     the right edge, then stretches up and down from the middle to the full
+     height of the screen, and fills in — the conversation, the files, the
+     song, the progress bar. It lies over the page being built: one screen,
+     not a second one. Resolves on the beat with where the dots landed. */
   function spawn() {
     var dots = [].slice.call(chat.querySelectorAll('.bi-dots b'));
     makePanel();
@@ -1960,20 +1961,8 @@
       return { el: fly, x: to.x, y: to.y };
     });
 
-    /* the conversation itself moves into the panel (measured before and
-       after, and eased from one to the other) */
-    var thread = ui.thread, r0 = rect(thread);
-    panel.querySelector('.bi-pn-chat').appendChild(thread);
-    var r1 = rect(thread);
-    var k = r0.width / Math.max(1, r1.width);
-    thread.style.transformOrigin = '0 0';
-    thread.style.transform = 'translate(' + (r0.left - r1.left) + 'px,' + (r0.top - r1.top) + 'px) scale(' + k + ')';
-    thread.getBoundingClientRect();
-    thread.style.transition = 'transform .8s cubic-bezier(.6,0,.2,1)';
-    requestAnimationFrame(function () { thread.style.transform = ''; });
+    morphPanel();
     chat.classList.add('folding');
-    panel.classList.add('on');
-    shrinkPage(true);
     canvas.classList.add('on');
     return at(SPAWN).then(function () {
       setTimeout(function () { if (chat) chat.remove(); chat = null; }, 700);
@@ -1987,6 +1976,58 @@
   var PANEL_W = 300;
   var panel = null, bar = null, files = {};
   function wideScreen() { return W() > 680; }
+
+  /* the text box becomes the panel: across to the right edge at its own
+     height, then open from the middle to the top and bottom of the screen;
+     only then does its content come in, the conversation gliding into it */
+  function morphPanel() {
+    var thread = ui.thread;
+    if (!wideScreen()) {
+      panel.querySelector('.bi-pn-chat').appendChild(thread);
+      panel.classList.add('on');
+      return;
+    }
+    var cr = rect(ui.composer), r0 = rect(thread);
+    var ps = panel.style;
+    ps.transition = 'none';
+    ps.left = cr.left + 'px'; ps.top = cr.top + 'px';
+    ps.width = cr.width + 'px'; ps.height = cr.height + 'px';
+    ps.right = 'auto'; ps.bottom = 'auto';
+    ps.borderRadius = (cr.height / 2) + 'px';
+    panel.classList.add('on', 'morph');
+    ui.composer.style.visibility = 'hidden';
+    panel.getBoundingClientRect();
+    var ease_ = 'cubic-bezier(.65,0,.25,1)';
+    ps.transition = 'left .5s ' + ease_ + ', width .5s ' + ease_ + ', top .55s ' + ease_ + ', height .55s ' + ease_ + ', border-radius .5s ' + ease_;
+    ps.left = (W() - 14 - PANEL_W) + 'px';
+    ps.width = PANEL_W + 'px';
+    ps.borderRadius = '18px';
+    setTimeout(function () {
+      if (dead) return;
+      ps.top = '14px';
+      ps.height = (H() - 28) + 'px';
+    }, 480);
+    setTimeout(function () {
+      if (dead) return;
+      /* handed over to the stylesheet's own placing, which is where it is */
+      ps.transition = 'none';
+      ps.left = ps.top = ps.width = ps.height = ps.right = ps.bottom = ps.borderRadius = '';
+      panel.getBoundingClientRect();
+      ps.transition = '';
+      panel.classList.remove('morph');
+      /* the conversation, carried from the middle of the screen into it */
+      var chatBox = panel.querySelector('.bi-pn-chat');
+      chatBox.appendChild(thread);
+      var r1 = rect(thread);
+      var k = r0.width / Math.max(1, r1.width);
+      thread.style.transformOrigin = '0 0';
+      thread.style.transition = 'none';
+      thread.style.transform = 'translate(' + (r0.left - r1.left) + 'px,' + (r0.top - r1.top) + 'px) scale(' + k + ')';
+      thread.getBoundingClientRect();
+      thread.style.transition = 'transform .7s cubic-bezier(.6,0,.2,1)';
+      thread.style.transform = '';
+    }, 1080);
+  }
   var FILES = [
     ['jeffreyhamilton.com', 0, 1], ['index.html', 1], ['styles.css', 1], ['app.js', 1], ['intro.js', 1],
     ['field.js', 1], ['fun.js', 1], ['assets', 1, 1], ['portrait.jpg', 2], ['shots', 2, 1], ['audio', 2, 1]
@@ -2010,7 +2051,7 @@
       }).join('') + '</ul>' +
       '<div class="bi-music"><span class="bi-art"><i></i></span>' +
         '<span class="bi-mu-t"><b>Loser</b><em>Tame Impala</em></span><span class="bi-eq">' + eq + '</span>' +
-        '<span class="bi-mu-line"><span class="bi-mu-now">0:55</span><span class="bi-mu-bar"><i></i></span><span class="bi-mu-end">4:27</span></span></div>' +
+        '<span class="bi-mu-line"><span class="bi-mu-now">0:10</span><span class="bi-mu-bar"><i></i></span><span class="bi-mu-end">3:43</span></span></div>' +
       '<div class="bi-progress"><span class="bi-pg-row"><span class="bi-pg-label">Building</span>' +
         '<span class="bi-pg-stage"></span><span class="bi-pg-pct">0%</span></span>' +
         '<span class="bi-pg-track"><span class="bi-pg-fill"></span></span></div>';
@@ -2035,9 +2076,9 @@
         var v = data ? (data[1 + n] || 0) / 255 : 0.3 + 0.3 * Math.sin(performance.now() / 180 + n);
         b.style.transform = 'scaleY(' + Math.max(0.12, Math.min(1, v * 1.15)).toFixed(3) + ')';
       });
-      var at_ = 55.4 + Math.max(0, clk());
+      var at_ = CLIP_AT + Math.max(0, clk());
       now.textContent = Math.floor(at_ / 60) + ':' + ('0' + Math.floor(at_ % 60)).slice(-2);
-      line.style.transform = 'scaleX(' + Math.min(1, at_ / 267.6).toFixed(4) + ')';
+      line.style.transform = 'scaleX(' + Math.min(1, at_ / SONG_LEN).toFixed(4) + ')';
     });
     return panel;
   }
@@ -2063,19 +2104,11 @@
     return 'index.html';
   }
 
-  /* the page as a preview beside the panel, or the full screen */
-  function shrinkPage(on) {
-    if (!wideScreen()) return;
-    var s_ = (W() - PANEL_W - 28) / W();
-    doc.classList.toggle('bi-shrunk', on);
-    document.body.style.transform = on ? 'translate(14px, 14px) scale(' + s_.toFixed(4) + ')' : '';
-  }
-  /* the walk scrolls a pinned watch, which no preview can hold: the page
-     goes back to full width and the panel slims to a rail */
+  /* for the walk down the page the panel slims to a rail, out of the way of
+     the panels coming in on the right of the watch */
   function railMode(on) {
     if (!panel || !wideScreen()) return;     /* a phone keeps its sheet */
     panel.classList.toggle('rail', on);
-    shrinkPage(!on);
   }
 
   function progress(p, stage) {
@@ -2108,8 +2141,7 @@
       return c.move(xr.x, xr.y);
     }).then(c.click).then(function () {
       panel.classList.add('gone');
-      shrinkPage(false);
-      return real(850);
+      return real(700);
     });
   }
 
@@ -2231,7 +2263,7 @@
     var others = cs.filter(function (c) { return c !== img; });
     var closer = others[1] || others[0];
     railMode(false);
-    return real(900).then(function () {
+    return real(700).then(function () {
       return task(closer, function () { return closePanel(closer); });
     }).then(function () { return endScene(cs, img, others); });
   }
@@ -2277,8 +2309,6 @@
     finished = true;
     dead = true;
     hush(instant);
-    document.body.style.transform = '';
-    doc.classList.remove('bi-shrunk');
 
     tweens.splice(0).forEach(function (t) { t.rej(ABORT); });
     followers.length = 0;
