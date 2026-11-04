@@ -3262,28 +3262,45 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
   overflow: hidden;
   background: #0d0b16;
 }
-/* Real city footage fills the desktop; the still image is always beneath. */
-.bi-city {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 65%;
-}
-.bi-city-video { object-position: center; opacity: 0; transition: opacity .6s ease; }
-.bi-city-video.playing { opacity: 1; }
-@media (prefers-reduced-motion: reduce) {
-  .bi-city-video { display: none; transition: none; }
-}
-.bi-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 90% 80% at 50% 45%, transparent 55%, rgba(5, 4, 12, .55));
-  pointer-events: none;
-}
 /* the scrollbar's gutter too, so the desktop reaches the edge */
-html.bi-live.bi-desk-on { background: linear-gradient(#0a0a1a, #161230 45%, #261a33 72%, #0b0a14) fixed; }
+html.bi-live.bi-desk-on { background: #0B0918; }
+/* the wallpaper: the cursors' colours as slow light (intro.js draws it tiny;
+   the stretch is the blur), with a fine grain of stars over it */
+.bi-aura { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bi-desk::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, .07) 1px, transparent 1.4px) 0 0 / 22px 22px,
+    radial-gradient(ellipse 90% 80% at 50% 45%, transparent 55%, rgba(5, 4, 12, .55));
+}
+
+/* the Window menu, dropped from the menu bar */
+.bi-mb-m.on { background: rgba(255, 255, 255, .22); border-radius: 5px; margin: 0 -7px; padding: 3px 7px; }
+.bi-menu {
+  position: absolute;
+  z-index: 3;
+  min-width: 190px;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 10px;
+  background: rgba(30, 27, 42, .82);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+          backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .45);
+  color: #F2F0F7;
+  font: 500 13px/1 system-ui, sans-serif;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity .12s ease, transform .12s ease;
+}
+.bi-menu.on { opacity: 1; transform: none; }
+.bi-menu-i { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 6px; }
+.bi-menu-i em { font-style: normal; opacity: .55; }
+.bi-menu-i.hover { background: #5B3CE8; }
+.bi-menu i { display: block; height: 1px; margin: 4px 8px; background: rgba(255, 255, 255, .14); }
 html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out), background-color .25s var(--ease), border-color .25s var(--ease); }
 
 .bi-menubar {
@@ -3395,9 +3412,13 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   background: #fff;
   border: 3px solid #14121E;
   border-radius: 16px;
-  box-shadow: 8px 8px 0 #14121E;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, .55);
+  opacity: 0;
+  transform: scale(.55) rotate(-3deg);
+  transform-origin: 30% 0;
   transition: transform .24s steps(3, end), opacity .15s steps(2, end);
 }
+.bi-win-cam.open { opacity: 1; transform: none; }
 .bi-win-cam .bi-win-bar { border-bottom: 3px solid #14121E; }
 .bi-win-cam.poof { transform: scale(.3) rotate(-6deg); opacity: 0; }
 .bi-cam-view {
@@ -3455,48 +3476,6 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
 @keyframes biCut { 0% { transform: scale(1.035) rotate(-.6deg); } 100% { transform: none; } }
 .bi-figure.poof { animation: biPoof .32s steps(4, end) forwards; }
 @keyframes biPoof { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08) rotate(2deg); opacity: .8; } 100% { transform: scale(.2); opacity: 0; } }
-
-/* the title: comic lettering, printed a little out of register */
-.bi-title {
-  position: absolute;
-  left: 50vw;
-  top: 30vh;
-  display: grid;
-  color: #F4F1EA;
-  font-family: var(--display, var(--sans));
-  text-transform: uppercase;
-  line-height: .86;
-  pointer-events: none;
-  transition: opacity .12s steps(2, end), transform .12s steps(2, end);
-}
-.bi-title .bi-t-a, .bi-title .bi-t-b {
-  font-size: clamp(3rem, 8.6vw, 8.5rem);
-  font-weight: 700;
-  letter-spacing: -.02em;
-  text-shadow: 4px 3px 0 rgba(0, 190, 230, .55), -3px -2px 0 rgba(240, 40, 140, .45);
-}
-.bi-title .bi-t-b { -webkit-text-stroke: 2px #F4F1EA; color: transparent; }
-.bi-title .bi-t-a, .bi-title .bi-t-c { text-shadow: 0 2px 18px rgba(0, 0, 0, .45); }
-.bi-title .bi-t-c {
-  margin-top: 1.4rem;
-  font-family: var(--mono);
-  font-size: .8rem;
-  letter-spacing: .3em;
-}
-.bi-title.gone { opacity: 0; transform: translateX(30px) skewX(-8deg); }
-
-/* the five agents, waiting in the corner for something to do */
-.bi-crew { position: absolute; right: 4vw; bottom: 110px; display: flex; gap: 10px; transition: opacity .3s ease; }
-.bi-crew i {
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: var(--c);
-  box-shadow: 0 0 0 2px #14121E, 0 0 0 4px #F4F1EA;
-  animation: biWait 1.6s steps(3, end) infinite;
-  animation-delay: calc(var(--k) * -.32s);
-}
-@keyframes biWait { 50% { transform: translateY(-7px); } }
-.bi-crew.busy i { animation-duration: .5s; }
 
 /* "Press to start" as my speech bubble */
 html.bi-desk-on .bi-press.bi-bubble {
@@ -3581,10 +3560,7 @@ html.bi-desk-on .bi-press.bi-bubble.on { animation: biBob 1.4s steps(3, end) inf
 .bi-cam.on { transform: none; opacity: 1; }
 .bi-cam.poof { transform: scale(.2) rotate(8deg); opacity: 0; }
 @media (max-width: 680px) {
-  .bi-title { left: 6vw !important; top: auto; bottom: 150px; }
-  .bi-title .bi-t-a, .bi-title .bi-t-b { font-size: 15vw; }
   html.bi-desk-on .bi-press.bi-bubble { font-size: .7rem; }
-  .bi-crew { right: 6vw; bottom: 104px; }
   .bi-cam { left: auto; right: 10px; top: auto; bottom: 46vh; height: 170px; }
 }
 

@@ -1915,9 +1915,10 @@
 
   /* ------------------------------------------------------------ the desktop
 
-     Before anything, a computer: a desktop with a real city behind its
-     windows, a menu bar, a dock, and the Camera app open on the left with me
-     in it (the studio, below).
+     Before anything, a computer: a desktop with a slow aurora in the
+     cursors' colours behind its windows, a menu bar and a dock. A cursor
+     opens the Camera app from the Window menu, and there I am (the studio,
+     below).
      The press opens the assistant from the dock — it bounces, gets its dot,
      and its window grows out of it on the right, the chat inside. Once the
      song is asked for, a hand opens the design app, Canvas, whose window is
@@ -1959,47 +1960,7 @@
     desk = make('div', 'bi-desk' + (phone ? ' is-phone' : ''));
     root.insertBefore(desk, root.firstChild);
     doc.classList.add('bi-desk-on');
-    deskUi.city = make('img', 'bi-city', desk);
-    deskUi.city.alt = '';
-    deskUi.city.src = 'assets/backgrounds/city-night.jpg';
-    deskUi.city.fetchPriority = 'high';
-    /* Real traffic, quiet behind the desktop. The photograph stays beneath
-       it if playback is blocked, or the visitor asks for less motion. */
-    var motion = matchMedia('(prefers-reduced-motion: reduce)');
-    var video = make('video', 'bi-city bi-city-video', desk);
-    deskUi.video = video;
-    video.muted = true;
-    video.defaultMuted = true;
-    video.loop = true;
-    video.playsInline = true;
-    video.setAttribute('playsinline', '');
-    video.setAttribute('aria-hidden', 'true');
-    video.preload = 'none';
-    video.addEventListener('playing', function () {
-      if (!motion.matches) video.classList.add('playing');
-    });
-    video.addEventListener('error', function () { video.classList.remove('playing'); });
-    function wallpaper() {
-      if (motion.matches || document.hidden) {
-        video.pause();
-        if (motion.matches) video.classList.remove('playing');
-        return;
-      }
-      if (!video.getAttribute('src')) video.src = 'assets/backgrounds/city-night.mp4';
-      var playing = video.play();
-      if (playing && playing.catch) playing.catch(function () { video.classList.remove('playing'); });
-    }
-    motion.addListener(wallpaper);
-    document.addEventListener('visibilitychange', wallpaper);
-    deskUi.stopVideo = function () {
-      motion.removeListener(wallpaper);
-      document.removeEventListener('visibilitychange', wallpaper);
-      video.pause();
-      video.removeAttribute('src');
-      video.load();
-    };
-    wallpaper();
-    make('div', 'bi-vignette', desk);
+    auroraOn();
     var bar = make('div', 'bi-menubar');
     root.insertBefore(bar, desk.nextSibling);
     if (phone) {
@@ -2008,7 +1969,7 @@
       bar.innerHTML =
         '<span class="bi-mb-logo"></span><b class="bi-mb-app">Desktop</b>' +
         '<span class="bi-mb-m">File</span><span class="bi-mb-m">Edit</span><span class="bi-mb-m">View</span>' +
-        '<span class="bi-mb-m">Window</span><span class="bi-mb-m">Help</span>' +
+        '<span class="bi-mb-m" data-m="Window">Window</span><span class="bi-mb-m">Help</span>' +
         '<span class="bi-mb-r">' + WIFI + BATT + '<span class="bi-mb-clock"></span></span>';
     }
     deskUi.bar = bar;
@@ -2029,9 +1990,91 @@
         '<span class="bi-app-tip">' + d[1] + '</span><i class="bi-app-dot"></i>';
       deskUi.icons[d[0]] = it;
     });
-    deskUi.icons.camera.classList.add('open');
     deskUi.icons.assistant.classList.add('hint');
     buildCamera();
+  }
+
+  /* The wallpaper: the five cursors' colours as slow light in a dark sky.
+     Drawn tiny and stretched to the screen, so the browser's own scaling
+     is the blur, and redrawn every frame for next to nothing. */
+  function auroraOn() {
+    var cv = deskUi.aura = make('canvas', 'bi-aura', desk);
+    var w = cv.width = 96, h = cv.height = Math.max(40, Math.round(96 * H() / W()));
+    var cx = cv.getContext('2d');
+    var cols = ['91,60,232', '11,147,214', '14,159,110', '224,138,0', '226,61,138', '91,60,232'];
+    var blobs = cols.map(function (col, i) {
+      return { col: col, x: rnd(0.1, 0.9), y: rnd(0.15, 0.75), r: rnd(0.35, 0.6), sx: rnd(0.05, 0.11), sy: rnd(0.04, 0.09), p: rnd(0, 6.3) + i };
+    });
+    var t0 = performance.now();
+    deskUi.draw = function () {
+      if (!desk) return;
+      var t = (performance.now() - t0) / 1000;
+      var g = cx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, '#07060F'); g.addColorStop(1, '#130E26');
+      cx.globalCompositeOperation = 'source-over';
+      cx.fillStyle = g;
+      cx.fillRect(0, 0, w, h);
+      cx.globalCompositeOperation = 'lighter';
+      blobs.forEach(function (b) {
+        var x = (b.x + Math.sin(t * b.sx + b.p) * 0.22) * w;
+        var y = (b.y + Math.cos(t * b.sy + b.p * 1.3) * 0.18) * h;
+        var r = b.r * w * (0.85 + 0.15 * Math.sin(t * 0.3 + b.p));
+        var rg = cx.createRadialGradient(x, y, 0, x, y, r);
+        rg.addColorStop(0, 'rgba(' + b.col + ',.3)');
+        rg.addColorStop(1, 'rgba(' + b.col + ',0)');
+        cx.fillStyle = rg;
+        cx.fillRect(0, 0, w, h);
+      });
+    };
+    followers.push(deskUi.draw);
+  }
+
+  /* At the very start, before the press: a hand opens the Camera from the
+     Window menu (from the dock, on a phone), and there I am. */
+  function openCamera(c) {
+    var phone = !wideScreen();
+    var opened;
+    if (phone) {
+      opened = real(500).then(function () { return launch(c, 'camera'); });
+    } else {
+      var item = deskUi.bar.querySelector('[data-m="Window"]');
+      var menu = make('div', 'bi-menu', root);
+      menu.innerHTML = ['Camera', 'Assistant', 'Canvas', '', 'Minimize', 'Zoom'].map(function (n) {
+        return n ? '<span class="bi-menu-i' + (n === 'Camera' ? ' first' : '') + '">' + n + (n === 'Camera' ? '<em>\u23181</em>' : '') + '</span>' : '<i></i>';
+      }).join('');
+      var ir = rect(item);
+      menu.style.left = (ir.left - 8) + 'px';
+      menu.style.top = (ir.bottom + 2) + 'px';
+      var cam = menu.querySelector('.first');
+      opened = real(450).then(function () {
+        return c.move(ir.left + ir.width / 2, ir.top + ir.height / 2);
+      }).then(c.click).then(function () {
+        item.classList.add('on');
+        menu.classList.add('on');
+        return real(260);
+      }).then(function () {
+        var cr = rect(cam);
+        return c.move(cr.left + 34, cr.top + cr.height / 2, { overshoot: false });
+      }).then(function () {
+        cam.classList.add('hover');
+        return real(180);
+      }).then(c.click).then(function () {
+        menu.remove();
+        item.classList.remove('on');
+        deskUi.icons.camera.classList.add('launch');
+        setTimeout(function () { deskUi.icons.camera.classList.add('open'); deskUi.icons.camera.classList.remove('launch'); }, 820);
+      });
+    }
+    return opened.then(function () {
+      if (deskUi.app) deskUi.app.textContent = 'Camera';
+      stu.cam.classList.add('open');
+      return real(420);
+    }).then(function () {
+      placeBubble();
+      ui.press.classList.add('on');
+      /* out of the way while I talk to the visitor */
+      return c.move(W() * (phone ? 0.85 : 0.78), H() * (phone ? 0.62 : 0.66));
+    });
   }
 
   /* The cursor's way into an app: onto its icon (the name comes up), a
@@ -2060,7 +2103,7 @@
     /* centred, over part of the camera */
     var cr = stu.cam ? rect(stu.cam) : { right: W() * 0.45, bottom: H() * 0.5 };
     var ww = phone ? W() - 16 : Math.min(720, W() - 64);
-    var wh = phone ? Math.max(220, H() - cr.bottom - 120) : Math.min(470, H() - 190);
+    var wh = phone ? Math.max(220, H() - cr.bottom - 170) : Math.min(470, H() - 190);
     var wx = phone ? 8 : (W() - ww) / 2;
     var wy = phone ? cr.bottom + 10 : Math.max(44, (H() - 96 - wh) / 2 + 14);
     win.style.left = wx + 'px'; win.style.top = wy + 'px';
@@ -2229,14 +2272,14 @@
   /* the Camera app, open on the left of the desktop from the start: me */
   function buildCamera() {
     var phone = !wideScreen();
-    var cam = stu.cam = make('div', 'bi-win bi-win-cam open');
+    var cam = stu.cam = make('div', 'bi-win bi-win-cam');
     root.insertBefore(cam, deskUi.bar);
     cam.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i></i></span><span class="bi-win-title">Camera</span></div>' +
       '<div class="bi-cam-view"><span class="bi-rec"><i></i>REC <b>00:00:00</b></span></div>';
     /* a window on the desk, not the desk: the chat opens over part of it */
-    var cw = phone ? W() - 16 : Math.round(Math.min(W() * 0.3, 440));
-    var ch = phone ? Math.round(H() * 0.44) : Math.round(Math.min((H() - 160) * 0.86, cw * 1.3));
-    cam.style.left = (phone ? 8 : Math.round(W() * 0.045)) + 'px';
+    var cw = phone ? W() - 40 : Math.round(Math.min(W() * 0.24, 360));
+    var ch = phone ? Math.round(H() * 0.4) : Math.round(Math.min((H() - 160) * 0.8, cw * 1.3));
+    cam.style.left = (phone ? 20 : Math.round(W() * 0.06)) + 'px';
     cam.style.top = (phone ? 46 : Math.round(Math.max(48, (H() - 96 - ch) / 2 + 10))) + 'px';
     cam.style.width = cw + 'px';
     cam.style.height = ch + 'px';
@@ -2248,14 +2291,6 @@
       var t = Math.floor((Date.now() - t0) / 1000);
       rec.textContent = '00:' + ('0' + Math.floor(t / 60)).slice(-2) + ':' + ('0' + t % 60).slice(-2);
     }, 1000);
-    stu.title = make('div', 'bi-title', desk);
-    stu.title.innerHTML = '<span class="bi-t-a">Jeffrey</span><span class="bi-t-b">Hamilton</span>' +
-      '<span class="bi-t-c">makes things you can use</span>';
-    stu.title.style.left = (rect(cam).right + Math.max(40, W() * 0.06)) + 'px';
-    stu.crew = make('div', 'bi-crew', desk);
-    stu.crew.innerHTML = PALETTE.slice(1).map(function (col, i) {
-      return '<i style="--c:' + col + ';--k:' + i + '"></i>';
-    }).join('');
     /* "Press to start" is my line: a speech bubble from me */
     ui.press.classList.add('bi-bubble');
     if (window.fetch) {
@@ -2264,7 +2299,6 @@
         me.meta = m;
         preload(posesLike('point_').concat(posesLike('look_'), ['whoa', 'thumbs', 'wave']));
         setPose(hasPose('look_1_2') ? 'look_1_2' : Object.keys(m.poses)[0]);
-        me.el.addEventListener('load', placeBubble, { once: true });
         /* the rest, while the visitor reads */
         setTimeout(function () { if (!dead) preload(Object.keys(m.poses)); }, 600);
       }).catch(function () { cam.classList.add('no-me'); });
@@ -2359,8 +2393,7 @@
     var list = [['startle_0', 130, true], ['startle_1', 160], ['lean_0', 150, true], ['lean_1', 200]]
       .filter(function (s) { return hasPose(s[0]); });
     playSeq(list, 'type');
-    if (stu.title) stu.title.classList.add('gone');
-    if (stu.crew) stu.crew.classList.add('busy');
+
   }
 
   /* Full screen, and the camera still up: a hand takes my head out of it
@@ -2656,9 +2689,10 @@
       root.addEventListener('click', go);
       document.addEventListener('keydown', go);
     });
-    requestAnimationFrame(function () { ui.press.classList.add('on'); });
+    var camOpen = openCamera(c);
+    camOpen.catch(function () {});
 
-    return started.then(function () {
+    return Promise.all([started, camOpen]).then(function () {
       T0 = performance.now();
       ui.press.classList.add('gone');
       decodeAudio().then(startBgm);       /* Aria Math, faded in */
