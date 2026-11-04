@@ -30,3 +30,5 @@ _*.png
 node_modules/
 package.json
 package-lock.json
+scripts/me/work/
+__pycache__/
