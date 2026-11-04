@@ -3281,7 +3281,6 @@ html.bi-live.bi-desk-on { background: #0B0918; }
 .bi-mb-m.on { background: rgba(255, 255, 255, .22); border-radius: 5px; margin: 0 -7px; padding: 3px 7px; }
 .bi-menu {
   position: absolute;
-  z-index: 3;
   min-width: 190px;
   padding: 5px;
   border: 1px solid rgba(255, 255, 255, .16);
