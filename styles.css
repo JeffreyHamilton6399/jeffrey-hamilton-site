@@ -3257,8 +3257,7 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
   overflow: hidden;
   background: #0d0b16;
 }
-/* A slow camera drift, like a desktop wallpaper coming to life. The
-   overscan keeps every edge covered as the camera moves. */
+/* Real city footage fills the desktop; the still image is always beneath. */
 .bi-city {
   position: absolute;
   inset: 0;
@@ -3266,16 +3265,11 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
   height: 100%;
   object-fit: cover;
   object-position: 50% 65%;
-  transform-origin: 50% 65%;
-  animation: bi-city-drift 36s ease-in-out infinite alternate;
-  will-change: transform;
 }
-@keyframes bi-city-drift {
-  from { transform: scale(1.08) translate3d(-1.5%, 0.6%, 0); }
-  to   { transform: scale(1.18) translate3d(1.5%, -0.8%, 0); }
-}
+.bi-city-video { object-position: center; opacity: 0; transition: opacity .6s ease; }
+.bi-city-video.playing { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
-  .bi-city { animation: none; transform: none; will-change: auto; }
+  .bi-city-video { display: none; transition: none; }
 }
 .bi-vignette {
   position: absolute;
