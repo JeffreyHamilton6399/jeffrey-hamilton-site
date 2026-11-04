@@ -446,6 +446,8 @@
       });
     }).then(function () {
       appear();
+      touch(fileFor(el), c.color);
+      if (Math.random() < 0.45) touch('styles.css', c.color, Math.round(rnd(1, 6)));
       b.badge(null);
       b.el.classList.remove('fill');
       return c.release();
@@ -545,6 +547,7 @@
       }, ease.out);
     }).then(function () {
       setS(el, 'translate', bx + 'px ' + by + 'px');
+      touch(fileFor(el), c.color);
       return wait(160);
     }).then(function () {
       guides.forEach(function (g) { g.remove(); });
@@ -1164,7 +1167,7 @@
       }).then(function () {
         F.reveal(1);
         return c.release();
-      }).then(function () { b.remove(); });
+      }).then(function () { touch('field.js', c.color, 24); b.remove(); });
     });
   }
 
@@ -1204,6 +1207,7 @@
         c.mid++;
         return tween(ms, function (k) {
           Wt.strap(i, k);
+          if (Math.random() < 0.06) touch('app.js', c.color, 2);
           c.x = x; c.y = Math.max(full.top + 2, rect(el).bottom - 2);
           c.place();
         }, ease.inOut);
@@ -1223,6 +1227,7 @@
         c.mid++;
         return tween(ms, function (k) {
           Wt.part(el, k);
+          if (Math.random() < 0.06) touch('app.js', c.color, 2);
           var q = at0(k);
           c.x = q.x; c.y = q.y;
           c.place();
@@ -1421,15 +1426,16 @@
     if (live && JH.watch.byHand) { JH.watch.byHand(true); JH.watch.paint(0); }
     progress(32, 'The watch');
     if (JH.leather) { JH.leather.byHand(true); JH.leather.open(0); }
+    railMode(true);
     /* The dark section is drawn in as a panel across the foot of the
        screen, the strap's tab is made on the white above it, and a hand
        takes the tab and pulls: the page comes up with it, the black panel
        riding up over the hero. */
+    var handover = real(820);    /* the page back to full size first */
     var pr = path ? rect(path) : null;
-    var handover = Promise.resolve();
     if (path && pr.top < H() - 2) {
       var painter = cs[0];
-      handover = task(painter, function () {
+      handover = handover.then(function () { return task(painter, function () {
         var top = pr.top, b = Box(painter.color, { fill: true });
         return painter.move(8, top + 2).then(painter.press).then(function () {
           b.set(8, top, 1, 1);
@@ -1442,7 +1448,7 @@
           show(path);
           return painter.release();
         }).then(function () { b.remove(); });
-      });
+      }); });
     } else if (path) show(path);
     var tabbed = strap && live && shown(strap) && rect(strap).top < H();
     var puller = cs[1 % cs.length];
@@ -1517,8 +1523,10 @@
   function arm() {
     doc.classList.add('bi-live');
     fetchAudio();
-    document.body.appendChild(root);
-    document.body.insertBefore(skip, document.body.firstChild);
+    /* on <html>, beside <body>: the page is shrunk into a preview while the
+       panel is open, and the cursors must not shrink with it */
+    doc.appendChild(root);
+    doc.insertBefore(skip, document.body);
     hero.insertBefore(canvas, hero.firstChild);
     window.scrollTo(0, 0);
 
@@ -1672,10 +1680,19 @@
     snd.gain.connect(ctx.destination);
     var src = ctx.createBufferSource();
     src.buffer = snd.music;
-    src.connect(snd.gain);
+    snd.man = ctx.createAnalyser();
+    snd.man.fftSize = 64;
+    src.connect(snd.man);
+    snd.man.connect(snd.gain);
     snd.t0 = ctx.currentTime + 0.05;
     src.start(snd.t0);
     snd.src.push(src);
+  }
+  /* the music dipped under something said, and back */
+  function duck(v, over) {
+    if (!snd.gain) return;
+    var g = snd.gain.gain, t = snd.ctx.currentTime;
+    try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(v, t + over); } catch (e) {}
   }
   function playVoice() {
     if (!snd.ctx || !snd.voice) return;
@@ -1917,15 +1934,19 @@
     });
   }
 
-  /* The handover: the dots fly out of the reply to where each agent starts,
-     the text box folds down into the progress bar, and the white page turns
-     into the canvas. Resolves on the beat with where the dots landed. */
+  /* The handover. The dots fly out of the reply to where each agent
+     starts; the conversation glides over to the right and becomes the
+     editor panel — chat, files, the song, the progress bar — and the page
+     shrinks beside it into a preview, which is where it is built. Resolves
+     on the beat with where the dots landed. */
   function spawn() {
     var dots = [].slice.call(chat.querySelectorAll('.bi-dots b'));
-    var spots = [[0.16, 0.3], [0.56, 0.16], [0.34, 0.74], [0.84, 0.56], [0.8, 0.22]].slice(1);
+    makePanel();
+    var pageW = wideScreen() ? W() - PANEL_W - 28 : W();
+    var spots = [[0.56, 0.16], [0.34, 0.74], [0.84, 0.56], [0.8, 0.22]];
     var landed = dots.map(function (d, i) {
       var r = rect(d), cc = center(r);
-      var to = { x: W() * spots[i % spots.length][0], y: H() * spots[i % spots.length][1] };
+      var to = { x: 14 + pageW * spots[i % spots.length][0], y: H() * spots[i % spots.length][1] };
       var fly = make('span', 'bi-fly', layer);
       fly.style.setProperty('--c', PALETTE[i + 1]);
       fly.style.transform = 'translate(' + cc.x + 'px,' + cc.y + 'px)';
@@ -1938,64 +1959,157 @@
       });
       return { el: fly, x: to.x, y: to.y };
     });
-    /* the box becomes the bar */
-    makeBar();
-    var from = rect(ui.composer), to = rect(bar.el);
-    ui.composer.style.transformOrigin = '0 0';
-    ui.composer.style.transition = 'transform .7s cubic-bezier(.6,0,.2,1), border-radius .7s, opacity .5s .35s';
-    var sx = to.width / from.width, sy = to.height / from.height;
+
+    /* the conversation itself moves into the panel (measured before and
+       after, and eased from one to the other) */
+    var thread = ui.thread, r0 = rect(thread);
+    panel.querySelector('.bi-pn-chat').appendChild(thread);
+    var r1 = rect(thread);
+    var k = r0.width / Math.max(1, r1.width);
+    thread.style.transformOrigin = '0 0';
+    thread.style.transform = 'translate(' + (r0.left - r1.left) + 'px,' + (r0.top - r1.top) + 'px) scale(' + k + ')';
+    thread.getBoundingClientRect();
+    thread.style.transition = 'transform .8s cubic-bezier(.6,0,.2,1)';
+    requestAnimationFrame(function () { thread.style.transform = ''; });
     chat.classList.add('folding');
-    requestAnimationFrame(function () {
-      ui.composer.style.transform = 'translate(' + (to.left - from.left) + 'px,' + (to.top - from.top) + 'px) scale(' + sx + ',' + sy + ')';
-      ui.composer.style.opacity = '0';
-    });
+    panel.classList.add('on');
+    shrinkPage(true);
     canvas.classList.add('on');
     return at(SPAWN).then(function () {
-      bar.el.classList.add('on');
       setTimeout(function () { if (chat) chat.remove(); chat = null; }, 700);
       landed.forEach(function (l) { setTimeout(function () { l.el.remove(); }, 200); });
       return landed;
     });
   }
 
-  /* ---- the progress bar ---- */
-  var bar = null;
-  function makeBar() {
-    if (bar) return bar;
-    var el = make('div', 'bi-progress');
-    root.insertBefore(el, layer);
-    el.innerHTML =
-      '<span class="bi-pg-row"><span class="bi-pg-label">Building jeffreyhamilton.com</span>' +
-      '<span class="bi-pg-stage"></span><span class="bi-pg-pct">0%</span></span>' +
-      '<span class="bi-pg-track"><span class="bi-pg-fill"></span></span>' +
-      '<span class="bi-pg-x" aria-hidden="true">×</span>';
-    bar = { el: el, p: 0, fill: el.querySelector('.bi-pg-fill'), pct: el.querySelector('.bi-pg-pct'),
-            stage: el.querySelector('.bi-pg-stage'), x: el.querySelector('.bi-pg-x') };
-    return bar;
+  /* ---- the editor panel ------------------------------------------------- */
+
+  var PANEL_W = 300;
+  var panel = null, bar = null, files = {};
+  function wideScreen() { return W() > 680; }
+  var FILES = [
+    ['jeffreyhamilton.com', 0, 1], ['index.html', 1], ['styles.css', 1], ['app.js', 1], ['intro.js', 1],
+    ['field.js', 1], ['fun.js', 1], ['assets', 1, 1], ['portrait.jpg', 2], ['shots', 2, 1], ['audio', 2, 1]
+  ];
+
+  function bar_x_placeholder(p) { return p.querySelector('.bi-pn-x'); }
+  function makePanel() {
+    if (panel) return panel;
+    panel = make('aside', 'bi-panel');
+    root.insertBefore(panel, layer);
+    var eq = '';
+    for (var i = 0; i < 12; i++) eq += '<i></i>';
+    panel.innerHTML =
+      '<div class="bi-pn-head"><span class="bi-pn-dots"><i></i><i></i><i></i></span>' +
+        '<span class="bi-pn-title">jeffreyhamilton.com</span><span class="bi-pn-x">×</span></div>' +
+      '<div class="bi-pn-chat"></div>' +
+      '<div class="bi-pn-sec">Files</div>' +
+      '<ul class="bi-pn-files">' + FILES.map(function (f) {
+        return '<li class="bi-f' + (f[2] ? ' dir' : '') + '" style="--d:' + f[1] + '" data-f="' + f[0] + '">' +
+          '<span class="bi-f-ic"></span><span class="bi-f-n">' + f[0] + (f[2] ? '/' : '') + '</span><span class="bi-f-c"></span></li>';
+      }).join('') + '</ul>' +
+      '<div class="bi-music"><span class="bi-art"><i></i></span>' +
+        '<span class="bi-mu-t"><b>Loser</b><em>Tame Impala</em></span><span class="bi-eq">' + eq + '</span>' +
+        '<span class="bi-mu-line"><span class="bi-mu-now">0:55</span><span class="bi-mu-bar"><i></i></span><span class="bi-mu-end">4:27</span></span></div>' +
+      '<div class="bi-progress"><span class="bi-pg-row"><span class="bi-pg-label">Building</span>' +
+        '<span class="bi-pg-stage"></span><span class="bi-pg-pct">0%</span></span>' +
+        '<span class="bi-pg-track"><span class="bi-pg-fill"></span></span></div>';
+    /* on a phone the sheet is at the foot and the header is being built at
+       the top: skip moves into the sheet, out of the way */
+    if (!wideScreen()) panel.querySelector('.bi-pn-head').insertBefore(skip, bar_x_placeholder(panel));
+    [].slice.call(panel.querySelectorAll('.bi-f')).forEach(function (li) {
+      files[li.getAttribute('data-f')] = { li: li, n: 0, c: li.querySelector('.bi-f-c'), t: 0 };
+    });
+    var pg = panel.querySelector('.bi-progress');
+    bar = { el: pg, p: 0, fill: pg.querySelector('.bi-pg-fill'), pct: pg.querySelector('.bi-pg-pct'),
+            stage: pg.querySelector('.bi-pg-stage'), x: panel.querySelector('.bi-pn-x') };
+
+    /* the song: its own levels on the equaliser, its place in the song */
+    var bars = [].slice.call(panel.querySelectorAll('.bi-eq i'));
+    var now = panel.querySelector('.bi-mu-now'), line = panel.querySelector('.bi-mu-bar i');
+    var data = null;
+    followers.push(function () {
+      if (snd.man && !data) data = new Uint8Array(snd.man.frequencyBinCount);
+      if (data) snd.man.getByteFrequencyData(data);
+      bars.forEach(function (b, n) {
+        var v = data ? (data[1 + n] || 0) / 255 : 0.3 + 0.3 * Math.sin(performance.now() / 180 + n);
+        b.style.transform = 'scaleY(' + Math.max(0.12, Math.min(1, v * 1.15)).toFixed(3) + ')';
+      });
+      var at_ = 55.4 + Math.max(0, clk());
+      now.textContent = Math.floor(at_ / 60) + ':' + ('0' + Math.floor(at_ % 60)).slice(-2);
+      line.style.transform = 'scaleX(' + Math.min(1, at_ / 267.6).toFixed(4) + ')';
+    });
+    return panel;
   }
+
+  /* a file being written to: lit in the colour of the hand writing it, its
+     count of new lines going up */
+  function touch(name, color, lines) {
+    var f = files[name];
+    if (!f) return;
+    f.n += lines || Math.round(rnd(3, 16));
+    f.c.textContent = '+' + f.n;
+    f.li.style.setProperty('--c', color || '#5B3CE8');
+    f.li.classList.add('busy', 'touched');
+    clearTimeout(f.t);
+    f.t = setTimeout(function () { f.li.classList.remove('busy'); }, 900);
+  }
+  function fileFor(el) {
+    if (!el || !el.closest) return 'index.html';
+    if (el.closest('.spiral-card')) return 'shots';
+    if (el.closest('.side-switch')) return 'fun.js';
+    if (el.closest('.mark-face, .boot-face')) return 'portrait.jpg';
+    if (el.closest('.path-dial, .path-year')) return 'app.js';
+    return 'index.html';
+  }
+
+  /* the page as a preview beside the panel, or the full screen */
+  function shrinkPage(on) {
+    if (!wideScreen()) return;
+    var s_ = (W() - PANEL_W - 28) / W();
+    doc.classList.toggle('bi-shrunk', on);
+    document.body.style.transform = on ? 'translate(14px, 14px) scale(' + s_.toFixed(4) + ')' : '';
+  }
+  /* the walk scrolls a pinned watch, which no preview can hold: the page
+     goes back to full width and the panel slims to a rail */
+  function railMode(on) {
+    if (!panel || !wideScreen()) return;     /* a phone keeps its sheet */
+    panel.classList.toggle('rail', on);
+    shrinkPage(!on);
+  }
+
   function progress(p, stage) {
     if (!bar) return;
     bar.p = Math.max(bar.p, Math.min(100, p));
     bar.fill.style.transform = 'scaleX(' + (bar.p / 100).toFixed(3) + ')';
+    panel.style.setProperty('--p', (bar.p / 100).toFixed(3));
     bar.pct.textContent = Math.round(bar.p) + '%';
     if (stage) bar.stage.textContent = stage;
   }
-  /* done: it says so, a hand clicks it, then its × — and it drops away */
-  function dismissBar(c) {
-    if (!bar) return Promise.resolve();
+
+  /* Done. Back at the top the panel opens out again with the page beside
+     it; the bar says Complete and the voice says so; a hand clicks the bar,
+     then the panel's ×, and the panel slides away as the page grows back. */
+  function closePanel(c) {
+    if (!panel) return Promise.resolve();
     progress(100, '');
     bar.el.classList.add('done');
     bar.pct.textContent = 'Complete ✓';
+    Object.keys(files).forEach(function (k) { files[k].li.classList.add('done'); });
+    duck(0.32, 0.3);
+    var said = say('Complete. Have a good day, Jeffrey.');
     var r = rect(bar.el);
-    return c.move(r.left + r.width * 0.42, r.top + r.height / 2).then(c.click).then(function () {
-      bar.el.classList.add('picked');
-      return real(380);
+    return c.move(r.left + r.width * 0.4, r.top + r.height / 2).then(c.click).then(function () {
+      panel.classList.add('picked');
+      return said;
     }).then(function () {
+      duck(0.6, 0.6);
       var xr = center(rect(bar.x));
       return c.move(xr.x, xr.y);
     }).then(c.click).then(function () {
-      bar.el.classList.add('gone');
-      return real(420);
+      panel.classList.add('gone');
+      shrinkPage(false);
+      return real(850);
     });
   }
 
@@ -2116,11 +2230,16 @@
     var img = cs[IMG % cs.length];
     var others = cs.filter(function (c) { return c !== img; });
     var closer = others[1] || others[0];
+    railMode(false);
+    return real(900).then(function () {
+      return task(closer, function () { return closePanel(closer); });
+    }).then(function () { return endScene(cs, img, others); });
+  }
+  function endScene(cs, img, others) {
     var target = bootFace && shown(bootFace) ? center(rect(bootFace)) : { x: W() / 2, y: H() / 2 };
     var R = bootFace ? rect(bootFace).width / 2 : 80;
     var gather = cs.map(function (c, i) {
       if (c === img) return task(c, function () { return jobFaceCircle(c); });
-      if (c === closer) return task(c, function () { return dismissBar(c); });
       var a = (i / cs.length) * Math.PI * 2 + rnd(-0.3, 0.3);
       return task(c, function () {
         return c.move(target.x + Math.cos(a) * (R + rnd(40, 80)), target.y + Math.sin(a) * (R + rnd(30, 60)));
@@ -2158,6 +2277,8 @@
     finished = true;
     dead = true;
     hush(instant);
+    document.body.style.transform = '';
+    doc.classList.remove('bi-shrunk');
 
     tweens.splice(0).forEach(function (t) { t.rej(ABORT); });
     followers.length = 0;
