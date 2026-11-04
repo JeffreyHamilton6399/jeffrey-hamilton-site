@@ -2117,28 +2117,42 @@
     hole.bar.style.height = barH + 'px';
     desk.style.clipPath = holePath(x, y + barH, w, Math.max(0, h - barH), r);
   }
+  /* Opened while the assistant is still thinking: the icon bounces and,
+     on a computer, the window grows out of it behind the chat. On a phone
+     the icon is all — its window opens straight to full screen later. */
   function openCanvas(c) {
     var phone = !wideScreen();
     return launch(c, 'canvas').then(function (from) {
       if (deskUi.app) deskUi.app.textContent = 'Canvas';
-      hole = { frame: make('div', 'bi-win bi-win-canvas') };
-      root.insertBefore(hole.frame, deskUi.ai || chat);
-      hole.frame.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i class="bi-full"></i></span><span class="bi-win-title">Canvas — jeffreyhamilton.com</span></div>';
-      hole.bar = hole.frame.firstChild;
-      var to = phone ? { x: 0, y: 0, w: W(), h: H() } :
-        { x: Math.round(W() * 0.06), y: 44, w: Math.round(W() * 0.88), h: H() - 44 - 104 };
-      var r0 = phone ? 0 : 12, b0 = phone ? 0 : 34;
-      if (phone) { deskUi.bar.classList.add('gone'); deskUi.dock.classList.add('gone'); }
+      if (phone) { hole = { from: from }; return; }
+      makeHole(from);
+      var to = { x: Math.round(W() * 0.06), y: 44, w: Math.round(W() * 0.88), h: H() - 44 - 104 };
+      hole.to = to;
       return tween(560, function (e) {
         setHole(from.left + (to.x - from.left) * e, from.top + (to.y - from.top) * e,
-          from.width + (to.w - from.width) * e, from.height + (to.h - from.height) * e, 12 + (r0 - 12) * e, b0 * e);
-      }, ease.inOut).then(function () { return to; });
-    }).then(function (to) {
-      if (phone) return goFull(to, 0);
-      var fb = center(rect(hole.frame.querySelector('.bi-full')));
-      return real(260).then(function () { return c.move(fb.x, fb.y); })
-        .then(c.click).then(function () { return goFull(to, 34); });
+          from.width + (to.w - from.width) * e, from.height + (to.h - from.height) * e, 12, 34 * e);
+      }, ease.inOut);
     });
+  }
+  function makeHole(from) {
+    hole = hole || {};
+    hole.frame = make('div', 'bi-win bi-win-canvas');
+    root.insertBefore(hole.frame, deskUi.ai || chat);
+    hole.frame.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i class="bi-full"></i></span><span class="bi-win-title">Canvas \u2014 jeffreyhamilton.com</span></div>';
+    hole.bar = hole.frame.firstChild;
+    setHole(from.left, from.top, from.width, from.height, 12, 0);
+  }
+  /* once the song is on: the full-screen button (on a phone, straight up
+     out of the icon) */
+  function fullCanvas(c) {
+    if (!hole) return Promise.resolve();
+    if (hole.from) {
+      var f = hole.from;
+      makeHole(f);
+      return goFull({ x: f.left, y: f.top, w: f.width, h: f.height }, 0);
+    }
+    var fb = center(rect(hole.frame.querySelector('.bi-full')));
+    return c.move(fb.x, fb.y).then(c.click).then(function () { return goFull(hole.to, 34); });
   }
   /* full screen: the window takes the screen, the bar and dock go, the
      chat turns into the panel — and the desktop is done with */
@@ -2231,6 +2245,7 @@
 
   function act1(cs0) {
     var c = cs0;
+    var canvasOpen = Promise.resolve();
     /* A white screen and two words. Anywhere will do — the screen is the
        button — and Enter or Space works too. Nothing plays yet. */
     var started = new Promise(function (res) {
@@ -2302,6 +2317,9 @@
       ui.typed.textContent = '';
       chat.classList.remove('has-text');
       bubble('me').textContent = said;
+      /* sent — and while it thinks, the hand opens the design app */
+      canvasOpen = real(350).then(function () { return openCanvas(c); });
+      canvasOpen.catch(function () {});
       chat.classList.add('has-thread');
       return real(260);
     }).then(function () {
@@ -2324,7 +2342,7 @@
         return at(0.45);
       });
     }).then(function () {
-      return openCanvas(c);
+      return canvasOpen.then(function () { return fullCanvas(c); });
     }).then(function () {
       return spawn();
     });
