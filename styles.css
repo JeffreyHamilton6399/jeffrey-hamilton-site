@@ -3557,23 +3557,12 @@ html.bi-desk-on .bi-press.bi-bubble.on { animation: biBob 1.4s steps(3, end) inf
   letter-spacing: .06em;
   white-space: nowrap;
 }
-.bi-cam {
-  position: absolute;
-  left: calc(14px + 300px + 14px);
-  top: 96px;
-  height: 230px;
-  width: auto;
-  transform-origin: 0 100%;
-  transform: scale(.2) rotate(-6deg);
-  opacity: 0;
-  filter: drop-shadow(5px 6px 0 rgba(20, 18, 30, .18));
-  transition: transform .22s steps(3, end), opacity .15s steps(2, end);
-}
-.bi-cam.on { transform: none; opacity: 1; }
-.bi-cam.poof { transform: scale(.2) rotate(8deg); opacity: 0; }
+.mark-face:has(.bi-facetalk) { position: relative; }
+.bi-facetalk { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* talking: the picture a touch bigger, with a ring so the eye goes to it */
+.mark-face.bi-talking { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #E2584E; transform: scale(1.18); transition: transform .2s steps(2, end); }
 @media (max-width: 680px) {
   html.bi-desk-on .bi-press.bi-bubble { font-size: .7rem; }
-  .bi-cam { left: auto; right: 10px; top: auto; bottom: 46vh; height: 170px; }
 }
 
 /* the panel's own mic, for asking for a change */

@@ -2524,8 +2524,8 @@
   /* ---- halfway: my own cursor asks for a better picture -------------------
 
      When the top of the page is made, my cursor (white, with my name on
-     it) comes in, clicks the panel's mic, and I ask, into my earbuds, in a
-     small face-cam beside the panel. The AI says it will, and the hand that
+     it) comes in, clicks the panel's mic, and I ask, into my earbuds: the
+     profile picture in the header is me talking. The AI says it will, and the hand that
      does the images takes my real portrait out of the files and drops it
      over the screenshot. */
   var HALF_TEXT = 'Hey, can you swap my profile pic for a good one?';
@@ -2591,42 +2591,48 @@
     return snd.half.duration;
   }
 
-  /* the face-cam: a small me beside the panel, talking, then listening */
+  /* The profile picture talks: while my halfway line plays, the little
+     picture in the header is me again, talking into my earbuds, cropped to
+     my face; then it nods, and goes back to the screenshot. */
   function faceCam() {
-    if (!me.meta) return null;
-    var el = make('img', 'bi-cam', root);
-    el.alt = '';
-    var mode = 'talk';
-    var start = hasPose('half_point') ? 'half_point' : 'talk_open';
-    el.src = poseUrl(start);
-    var last = 0, began = performance.now();
+    if (!me.meta || !face) return null;
+    var cv = make('canvas', 'bi-facetalk', face);
+    cv.width = cv.height = 120;
+    var cx = cv.getContext('2d');
+    function draw(n) {
+      var im = me.imgs[n], p = me.meta.poses[n];
+      if (!im || !p || !im.naturalWidth) return;
+      var w = im.naturalWidth, h = im.naturalHeight, side = p.head[2] * w * 2.6;
+      cx.fillStyle = '#F2EFE8';
+      cx.fillRect(0, 0, 120, 120);
+      cx.drawImage(im, p.head[0] * w - side / 2, p.head[1] * h - side * 0.52, side, side, 0, 0, 120, 120);
+    }
+    var mode = 'talk', last = 0, began = performance.now();
+    draw(hasPose('half_point') ? 'half_point' : 'talk_open');
     var f = function () {
       var now = performance.now();
-      if (now - last < 110) return;
+      if (mode !== 'talk' || now - last < 110) return;
       last = now;
-      if (mode === 'talk') {
-        if (now - began < 260) return;
-        if (!snd.han && hasPose('half_roll') && Math.random() < 0.06) { el.src = poseUrl('half_roll'); return; }
-        talkPose(el, function (n) { el.src = poseUrl(n); });
-      }
+      if (now - began < 260) return;
+      if (!snd.han && hasPose('half_roll') && Math.random() < 0.06) { draw('half_roll'); return; }
+      talkPose(cv, draw);
     };
     followers.push(f);
-    requestAnimationFrame(function () { el.classList.add('on'); });
+    face.classList.add('bi-talking');
     function off() { var k = followers.indexOf(f); if (k >= 0) followers.splice(k, 1); }
     return {
       listen: function () {
         mode = 'listen';
         var nods = ['nod_0', 'nod_1', 'nod_2', 'listen'].filter(hasPose), i = 0;
-        var step = function () { if (i < nods.length && !dead) { el.src = poseUrl(nods[i++]); setTimeout(step, 180); } };
+        var step = function () { if (i < nods.length && !dead) { draw(nods[i++]); setTimeout(step, 180); } };
         step();
       },
       gone: function () {
         off();
-        if (hasPose('smile')) el.src = poseUrl('smile');
-        setTimeout(function () { el.classList.remove('on'); el.classList.add('poof'); }, 350);
-        setTimeout(function () { el.remove(); }, 900);
+        if (hasPose('smile')) draw('smile');
+        setTimeout(function () { cv.remove(); face.classList.remove('bi-talking'); }, 450);
       },
-      el: el
+      el: cv
     };
   }
 
