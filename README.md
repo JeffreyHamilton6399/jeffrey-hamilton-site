@@ -46,10 +46,25 @@ measured a screen wide enough to hold it.
 
 ## The intro
 
-A first visit is built in front of you, then opens.
+A first visit starts on a computer, asks for the site, and watches it built.
 
-1. **The build** (`intro.js`). There is no loading screen: the page opens on
-   a blank canvas and a few coloured cursors build it, all at once. Nothing
+1. **The desktop** (`intro.js`). Rain running down the glass over a city at
+   night (drawn in canvas, no video), a menu bar and a dock; on a phone, a
+   home screen. *Press to start* is the one click sound needs: Aria Math
+   fades in, a cursor opens the Assistant from the dock (it bounces and gets
+   its dot) and the chat window grows out of it. The text box opens from its
+   middle; a cursor types "Create Jeffrey's portfolio", clicks the mic, and
+   my recorded voice adds "and play Loser by Tame Impala". The reply is
+   written and spoken, Aria Math fades out and Loser cuts in on the band.
+   Then a cursor opens the design app, Canvas. Its window is a hole cut in
+   the desktop, so what shows through it is the real page, blank; nothing on
+   the page is ever scaled. At its full-screen button the window takes the
+   screen, the menu bar and dock go, the chat turns into the editor panel on
+   the left (the conversation, the files being written, the song, the
+   progress bar) and the agents fly out of the reply as cursors on the beat.
+   The desktop is not seen again.
+2. **The build.** There is no loading screen: a few coloured cursors build
+   the page, starting slow and quickening toward the end. Nothing
    is typed out letter by letter and nothing appears on its own: every
    element is made by a cursor, which draws its box from corner to corner
    and lets go, and the element is there, whole. A hand that is moving is
@@ -71,16 +86,21 @@ A first visit is built in front of you, then opens.
      the dial. As each era opens two hands a side are already waiting and
      make its pieces; at Now the hand lets go of the watch and joins them,
      and each certificate on the coil is made. One hand then drags the
-     lower strap down into the contact panel, where two hands take the
-     leather's edges and pull it open like a book, and the copy is made
-     inside. On a narrower screen the watch is still and the story is in
-     the flow; the walk goes down it a screenful at a time.
-   * Last of all the image hand makes the intro face — the circle drawn with
-     the ellipse tool, the photo option-dragged down out of the header into
-     it — and every cursor goes in to the middle and slips behind it.
+     lower strap down into the contact panel; one hand draws the glyph field
+     in behind it while two take the leather's edges and pull it open like a
+     book, and the copy is made inside. On a narrower screen the watch is
+     still and the story is in the flow; the walk goes down it a screenful
+     at a time.
+   * Back at the top the panel says *Complete* and the voice says so, the
+     music well under it; a hand closes the panel. Last of all the image hand
+     makes the intro face — the circle drawn with the ellipse tool, the photo
+     dragged slowly down out of the header into it.
+   * Each hand leaves the moment its last job is done: it flies to the
+     visitor's own pointer, shrinks a touch, and is gone (off the bottom
+     left when there is no pointer).
    * The build is the loading: while it runs, the images further down the
      page are fetched a few at a time.
-2. **The opening** (`app.js`). The face the cursors made spins into a gold
+3. **The opening** (`app.js`). The face the cursors made spins into a gold
    dot, and three lines carry it to the face, the nav and the icons, which
    open as they land.
 
