@@ -1907,8 +1907,8 @@
 
   /* ------------------------------------------------------------ the desktop
 
-     Before anything, a computer: a desktop with rain running down the glass
-     over a city at night, a menu bar, a dock. The press opens the assistant
+     Before anything, a computer: a desktop with a real city photograph
+     behind its windows, a menu bar, a dock. The press opens the assistant
      from the dock — it bounces, gets its dot, and its window grows out of
      it with the chat inside. Once the song is asked for, a hand opens the
      design app, Canvas, whose window is the page itself: the desktop is cut
@@ -1947,8 +1947,10 @@
     desk = make('div', 'bi-desk' + (phone ? ' is-phone' : ''));
     root.insertBefore(desk, root.firstChild);
     doc.classList.add('bi-desk-on');
-    deskUi.city = make('canvas', 'bi-city', desk);
-    deskUi.rain = make('canvas', 'bi-rain', desk);
+    deskUi.city = make('img', 'bi-city', desk);
+    deskUi.city.alt = '';
+    deskUi.city.src = 'assets/backgrounds/city-night.jpg';
+    deskUi.city.fetchPriority = 'high';
     make('div', 'bi-vignette', desk);
     var bar = make('div', 'bi-menubar');
     root.insertBefore(bar, desk.nextSibling);
@@ -1980,140 +1982,6 @@
       deskUi.icons[d[0]] = it;
     });
     deskUi.icons.assistant.classList.add('hint');
-    rainOn();
-  }
-
-  /* The wallpaper: a city at night seen through wet glass. The city is
-     drawn once, sharp, and the stylesheet blurs it into lights; the rain is
-     drawn every frame on top, falling streaks and drops on the glass, some
-     of which give way and run. */
-  function rainOn() {
-    var w = W(), h = H();
-    var city = deskUi.city;
-    city.width = Math.round(w / 2); city.height = Math.round(h / 2);
-    /* drawn sharp off screen, then blurred once onto the wallpaper: a CSS
-       blur on it was redone every frame the rain moved over it */
-    var src = document.createElement('canvas');
-    src.width = city.width; src.height = city.height;
-    var cx = src.getContext('2d');
-    cx.scale(0.5, 0.5);
-    var sky = cx.createLinearGradient(0, 0, 0, h);
-    sky.addColorStop(0, '#0a0c1d'); sky.addColorStop(0.45, '#191433');
-    sky.addColorStop(0.72, '#3b2342'); sky.addColorStop(0.8, '#20172c'); sky.addColorStop(1, '#0d0b16');
-    cx.fillStyle = sky; cx.fillRect(0, 0, w, h);
-    var glow = cx.createRadialGradient(w * 0.55, h * 0.74, 10, w * 0.55, h * 0.74, w * 0.6);
-    glow.addColorStop(0, 'rgba(255,140,90,.28)'); glow.addColorStop(1, 'rgba(255,140,90,0)');
-    cx.fillStyle = glow; cx.fillRect(0, 0, w, h);
-    var horizon = h * 0.76;
-    [['#1c1a33', 0.18, 0.46, 0.35], ['#141226', 0.12, 0.34, 0.6], ['#0c0b17', 0.07, 0.24, 0.85]].forEach(function (L) {
-      var x = -20;
-      while (x < w + 20) {
-        var bw = w * rnd(0.035, 0.09), bh = h * rnd(L[1], L[2]);
-        cx.fillStyle = L[0];
-        cx.fillRect(x, horizon - bh, bw, bh + h);
-        for (var wy = horizon - bh + 8; wy < horizon - 4; wy += 9) {
-          for (var wx = x + 5; wx < x + bw - 5; wx += 8) {
-            if (Math.random() < L[3] * 0.32) {
-              cx.fillStyle = Math.random() < 0.8 ? 'rgba(255,205,130,' + rnd(0.35, 0.9).toFixed(2) + ')' : 'rgba(150,200,255,.7)';
-              cx.fillRect(wx, wy, 4, 5);
-            }
-          }
-        }
-        x += bw + rnd(2, 14);
-      }
-    });
-    var tints = ['255,170,90', '255,90,120', '90,200,255', '255,220,140', '170,120,255'];
-    for (var i = 0; i < 46; i++) {
-      var bx = rnd(0, w), by = rnd(h * 0.5, h * 0.98), br = rnd(6, 26);
-      cx.fillStyle = 'rgba(' + tints[i % tints.length] + ',' + rnd(0.18, 0.5).toFixed(2) + ')';
-      cx.beginPath(); cx.arc(bx, by, br, 0, Math.PI * 2); cx.fill();
-    }
-
-    var out = city.getContext('2d');
-    if ('filter' in out) {
-      out.filter = 'blur(4.5px) saturate(1.25)';
-      out.drawImage(src, 0, 0);
-    } else {
-      /* no canvas filters: soften by scaling down and back up */
-      var tiny = document.createElement('canvas');
-      tiny.width = Math.max(1, Math.round(src.width / 6)); tiny.height = Math.max(1, Math.round(src.height / 6));
-      tiny.getContext('2d').drawImage(src, 0, 0, tiny.width, tiny.height);
-      out.imageSmoothingQuality = 'high';
-      out.drawImage(tiny, 0, 0, city.width, city.height);
-    }
-
-    var rain = deskUi.rain, rx = rain.getContext('2d');
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    rain.width = Math.round(w * dpr); rain.height = Math.round(h * dpr);
-    rx.scale(dpr, dpr);
-    var n = Math.round(w * h / 7000);
-    var streaks = [];
-    for (i = 0; i < n; i++) streaks.push({ x: rnd(0, w), y: rnd(-h, h), l: rnd(10, 26), v: rnd(900, 1500), a: rnd(0.08, 0.26) });
-    var drops = [];
-    for (i = 0; i < Math.round(w * h / 9000); i++) drops.push({ x: rnd(0, w), y: rnd(0, h), r: rnd(0.8, 2.6) });
-    var runs = [];
-    function newRun() { return { x: rnd(0, w), y: rnd(-40, h * 0.6), r: rnd(2.2, 3.8), v: rnd(30, 140), wob: rnd(0, 6), trail: [] }; }
-    for (i = 0; i < 9; i++) runs.push(newRun());
-    var last = performance.now();
-    /* one drop, drawn once and stamped: a gradient per drop per frame was
-       most of the frame */
-    var sprite = document.createElement('canvas');
-    sprite.width = sprite.height = 32;
-    var sx = sprite.getContext('2d');
-    var g = sx.createRadialGradient(11, 10, 1, 16, 16, 15);
-    g.addColorStop(0, 'rgba(255,255,255,.9)');
-    g.addColorStop(0.55, 'rgba(190,200,230,.25)');
-    g.addColorStop(1, 'rgba(20,20,40,.0)');
-    sx.fillStyle = g;
-    sx.beginPath(); sx.arc(16, 16, 15, 0, Math.PI * 2); sx.fill();
-    function drop(x, y, r, a) {
-      rx.globalAlpha = a;
-      rx.drawImage(sprite, x - r, y - r, r * 2, r * 2);
-    }
-    /* the still drops on the glass, stamped once onto their own layer */
-    var glass = document.createElement('canvas');
-    glass.width = rain.width; glass.height = rain.height;
-    var gx = glass.getContext('2d');
-    gx.scale(dpr, dpr);
-    drops.forEach(function (d) { gx.globalAlpha = 0.55; gx.drawImage(sprite, d.x - d.r, d.y - d.r, d.r * 2, d.r * 2); });
-    deskUi.draw = function () {
-      if (!desk) return;
-      var now = performance.now(), dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-      rx.globalAlpha = 1;
-      rx.clearRect(0, 0, w, h);
-      rx.drawImage(glass, 0, 0, w, h);
-      rx.lineWidth = 1;
-      rx.lineCap = 'round';
-      rx.strokeStyle = 'rgb(200,210,255)';
-      /* the streaks in three weights, one path each */
-      [0.1, 0.17, 0.25].forEach(function (al, band) {
-        rx.globalAlpha = al;
-        rx.beginPath();
-        for (var k = band; k < streaks.length; k += 3) {
-          var s_ = streaks[k];
-          s_.y += s_.v * dt; s_.x -= s_.v * dt * 0.08;
-          if (s_.y > h + 30) { s_.y = rnd(-80, -10); s_.x = rnd(0, w + 60); }
-          rx.moveTo(s_.x, s_.y); rx.lineTo(s_.x + s_.l * 0.08, s_.y - s_.l);
-        }
-        rx.stroke();
-      });
-      runs.forEach(function (r, k) {
-        r.y += r.v * dt * (0.6 + 0.4 * Math.sin(now / 300 + k));
-        r.x += Math.sin(now / 400 + r.wob) * 0.15;
-        r.trail.push(r.x, r.y);
-        if (r.trail.length > 120) r.trail.splice(0, 2);
-        rx.globalAlpha = 0.1;
-        rx.strokeStyle = 'rgb(210,220,255)';
-        rx.lineWidth = r.r * 0.9;
-        rx.beginPath();
-        for (var q = 0; q < r.trail.length; q += 2) (q ? rx.lineTo : rx.moveTo).call(rx, r.trail[q], r.trail[q + 1]);
-        rx.stroke();
-        drop(r.x, r.y, r.r * 1.15, 0.85);
-        if (r.y > h + 20) runs[k] = newRun();
-      });
-    };
-    followers.push(deskUi.draw);
   }
 
   /* The cursor's way into an app: onto its icon (the name comes up), a
