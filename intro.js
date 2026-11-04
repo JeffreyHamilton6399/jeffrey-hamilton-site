@@ -1629,6 +1629,8 @@
 
   var MUSIC = 'assets/audio/loser-intro.mp3';
   var VOICE = 'assets/audio/voice-play-loser.mp3';
+  var AI_LOSER = 'assets/audio/ai-playing-loser.mp3';
+  var AI_DONE = 'assets/audio/ai-complete.mp3';
   /* What plays from the press until the answer: Aria Math, from just before
      its climax (3:37), faded in so it never lands at full volume. */
   var BGM = 'assets/audio/aria-math-intro.mp3';
@@ -1664,8 +1666,13 @@
 
   function fetchAudio() {
     if (!window.fetch) return;
-    snd.bufs = Promise.all([MUSIC, VOICE, BGM].map(function (u) {
-      return fetch(u).then(function (r) { if (!r.ok) throw r; return r.arrayBuffer(); });
+    snd.bufs = Promise.all([MUSIC, VOICE, BGM, AI_LOSER, AI_DONE].map(function (u) {
+      return new Promise(function (resolve) {
+        var timer = setTimeout(function () { resolve(null); }, 4000);
+        fetch(u).then(function (r) { if (!r.ok) throw r; return r.arrayBuffer(); })
+          .then(function (b) { clearTimeout(timer); resolve(b); },
+                function () { clearTimeout(timer); resolve(null); });
+      });
     })).catch(function () { return null; });
   }
 
@@ -1689,15 +1696,21 @@
   function decodeOnce() {
     if (!snd.ctx || !snd.bufs) return Promise.resolve(false);
     var ctx = snd.ctx;
-    var timeout = new Promise(function (r) { setTimeout(function () { r(null); }, 4000); });
-    return Promise.race([snd.bufs, timeout]).then(function (bufs) {
+    return snd.bufs.then(function (bufs) {
       if (!bufs) return false;
       return Promise.all(bufs.map(function (b) {
-        return new Promise(function (res, rej) { ctx.decodeAudioData(b.slice(0), res, rej); });
-      })).then(function (d) { snd.music = d[0]; snd.voice = d[1]; snd.bgm = d[2]; return true; }, function () { return false; });
+        return new Promise(function (res) {
+          if (!b) { res(null); return; }
+          var timer = setTimeout(function () { res(null); }, 4000);
+          function done(value) { clearTimeout(timer); res(value); }
+          try { ctx.decodeAudioData(b.slice(0), done, function () { done(null); }); }
+          catch (e) { done(null); }
+        });
+      })).then(function (d) { snd.music = d[0]; snd.voice = d[1]; snd.bgm = d[2]; snd.aiLoser = d[3]; snd.aiDone = d[4]; return true; }, function () { return false; });
     });
   }
   function startMusic() {
+    if (dead) return;
     T0 = performance.now();
     if (!snd.ctx || !snd.music) return;
     var ctx = snd.ctx;
@@ -1765,8 +1778,51 @@
     src.start(snd.ctx.currentTime + 0.03);
     snd.src.push(src);
   }
-  /* the answer, out loud; resolves when it has been said */
+  /* One recorded answer, on the same clock as the music. A stopped source
+     ends the wait too, so skipping never leaves a conversation hanging. */
+  function playLine(buffer) {
+    return new Promise(function (resolve) {
+      if (dead) { resolve(true); return; }
+      if (!snd.ctx || !buffer) { resolve(false); return; }
+      var src = null, gain = null, timer = null, ended = false;
+      function end(ok) {
+        if (ended) return;
+        ended = true;
+        clearTimeout(timer);
+        if (src) {
+          src.onended = null;
+          try { src.stop(); src.disconnect(); } catch (e) {}
+          var i = snd.src.indexOf(src);
+          if (i >= 0) snd.src.splice(i, 1);
+        }
+        if (gain) gain.disconnect();
+        resolve(ok);
+      }
+      try {
+        src = snd.ctx.createBufferSource();
+        src.buffer = buffer;
+        gain = snd.ctx.createGain();
+        gain.gain.value = 1.0;              /* matched to the recorded request */
+        src.connect(gain);
+        gain.connect(snd.ctx.destination);
+        src.onended = function () { end(true); };
+        snd.src.push(src);
+        timer = setTimeout(function () { end(true); }, buffer.duration * 1000 + 1500);
+        src.start();
+      } catch (e) { end(false); }
+    });
+  }
+  /* the answer, out loud; the browser voice only fills in a missing file */
   function say(text) {
+    if (dead) return Promise.resolve();
+    var buffer = text === 'Okay. Playing Loser, by Tame Impala.' ? snd.aiLoser
+      : text === 'Complete. Have a good day, Jeffrey.' ? snd.aiDone : null;
+    return playLine(buffer).then(function (played) {
+      if (!played && !dead) return sayFallback(text);
+    });
+  }
+  /* the answer, out loud; resolves when it has been said */
+  function sayFallback(text) {
     return new Promise(function (done) {
       var finished_ = false;
       function end() { if (!finished_) { finished_ = true; done(); } }
@@ -1797,7 +1853,12 @@
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
     if (!snd.ctx) return;
     var ctx = snd.ctx;
-    var over = fast ? 0.35 : 2.6;
+    if (fast) {
+      snd.src.slice().forEach(function (s_) { try { s_.stop(); } catch (e) {} });
+      try { ctx.close(); } catch (e) {}
+      return;
+    }
+    var over = 2.6;
     try {
       if (snd.gain) {
         snd.gain.gain.cancelScheduledValues(ctx.currentTime);
