@@ -4,3 +4,6 @@
 # Never touch binaries
 *.png binary
 *.jpg binary
+*.mp3 binary
+*.mp4 binary
+*.m4a binary
