@@ -665,7 +665,7 @@
 
   /* the photo: an option-drag of the one already in the header, down into
      the circle; onGrab runs the moment it is picked up */
-  function jobFacePhoto(c, onGrab) {
+  function jobFacePhoto(c, onGrab, slowMs) {
     if (!bootFace || !bootImg) { show(bootImg); return Promise.resolve(); }
     var r = rect(bootFace), cc = center(r);
     var src = face && shown(face) ? center(rect(face)) : { x: cc.x < W() / 2 ? 6 : W() - 6, y: cc.y };
@@ -676,6 +676,10 @@
       g.at(c.x, c.y);
       var drop = Box(c.color), over = false;
       return c.move(cc.x + rnd(-24, 24), cc.y + rnd(-24, 24), {
+        dur: slowMs ? slowMs / TIME : undefined,
+        ease: slowMs ? ease.hand : undefined,
+        overshoot: slowMs ? false : undefined,
+        bend: slowMs ? 0.06 : undefined,
         onMove: function (x, y) {
           g.at(x, y);
           var inside = Math.hypot(x - cc.x, y - cc.y) < r.width / 2;
@@ -2297,9 +2301,11 @@
 
   var letGoStrap = null;
 
-  /* The end. Back at the top: the bar says Complete and a hand clicks it
-     and closes it, while the image hand draws the intro face's circle and
-     the rest leave off the top right. */
+  /* The end. Back at the top: the bar says Complete, and while it is said
+     every hand but two heads off the bottom left, the way the panel goes.
+     One clicks the bar and closes the panel, then follows them. The image
+     hand stays: it draws the intro face's circle, drags the photo slowly
+     down out of the header into it, and leaves the same way. */
   function reveal(cs) {
     pace('end');
     frames.forEach(function (b) { b.remove(); });
@@ -2309,29 +2315,32 @@
     var closer = others[1] || others[0];
     railMode(false);
     return real(700).then(function () {
+      others.filter(function (c) { return c !== closer; }).forEach(function (c, k) {
+        offLeft(c, k).catch(function () {});
+      });
       return task(closer, function () { return closePanel(closer); });
-    }).then(function () { return endScene(cs, img, others); });
+    }).then(function () {
+      offLeft(closer, 0).catch(function () {});
+      return endScene(img);
+    });
   }
-  /* Every other hand leaves off the top right, one after another, and is
-     gone; the image hand alone draws the circle and drags the photo in,
-     then follows them out. */
-  function offRight(c, k) {
+  /* off the bottom left, after the panel, and gone */
+  function offLeft(c, k) {
     c.halt = true;
-    var x = W() + 40 + rnd(0, 60), y = -40 - rnd(0, 50);
-    return wait(k * 110).then(function () {
-      return c.move(x, y, { dur: rnd(820, 1000), overshoot: false, exit: true, bend: rnd(-0.18, 0.08) });
+    var x = -40 - rnd(0, 60), y = H() + 40 + rnd(0, 50);
+    return real(k * 160).then(function () {
+      return c.move(x, y, { dur: rnd(900, 1100) / TIME, overshoot: false, exit: true, bend: rnd(-0.12, 0.12), ease: ease.hand });
     }).then(function () { c.el.style.visibility = 'hidden'; });
   }
-  function endScene(cs, img, others) {
-    others.forEach(function (c, k) { offRight(c, k).catch(function () {}); });
-    return real(500).then(function () {
+  function endScene(img) {
+    return real(300).then(function () {
       return task(img, function () {
-        return jobFaceCircle(img).then(function () { return jobFacePhoto(img); });
+        return jobFaceCircle(img).then(function () { return jobFacePhoto(img, null, 1700); });
       });
     }).then(function () {
-      return wait(160);
+      return real(250);
     }).then(function () {
-      return offRight(img, 0);
+      return offLeft(img, 0);
     }).then(function () { finish(false); });
   }
 
