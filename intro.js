@@ -1915,8 +1915,9 @@
 
   /* ------------------------------------------------------------ the desktop
 
-     Before anything, a computer: a plain white desktop, a menu bar, a dock,
-     and the Camera app open on the left with me in it (the studio, below).
+     Before anything, a computer: a desktop with a real city behind its
+     windows, a menu bar, a dock, and the Camera app open on the left with me
+     in it (the studio, below).
      The press opens the assistant from the dock — it bounces, gets its dot,
      and its window grows out of it on the right, the chat inside. Once the
      song is asked for, a hand opens the design app, Canvas, whose window is
@@ -1958,6 +1959,47 @@
     desk = make('div', 'bi-desk' + (phone ? ' is-phone' : ''));
     root.insertBefore(desk, root.firstChild);
     doc.classList.add('bi-desk-on');
+    deskUi.city = make('img', 'bi-city', desk);
+    deskUi.city.alt = '';
+    deskUi.city.src = 'assets/backgrounds/city-night.jpg';
+    deskUi.city.fetchPriority = 'high';
+    /* Real traffic, quiet behind the desktop. The photograph stays beneath
+       it if playback is blocked, or the visitor asks for less motion. */
+    var motion = matchMedia('(prefers-reduced-motion: reduce)');
+    var video = make('video', 'bi-city bi-city-video', desk);
+    deskUi.video = video;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('aria-hidden', 'true');
+    video.preload = 'none';
+    video.addEventListener('playing', function () {
+      if (!motion.matches) video.classList.add('playing');
+    });
+    video.addEventListener('error', function () { video.classList.remove('playing'); });
+    function wallpaper() {
+      if (motion.matches || document.hidden) {
+        video.pause();
+        if (motion.matches) video.classList.remove('playing');
+        return;
+      }
+      if (!video.getAttribute('src')) video.src = 'assets/backgrounds/city-night.mp4';
+      var playing = video.play();
+      if (playing && playing.catch) playing.catch(function () { video.classList.remove('playing'); });
+    }
+    motion.addListener(wallpaper);
+    document.addEventListener('visibilitychange', wallpaper);
+    deskUi.stopVideo = function () {
+      motion.removeListener(wallpaper);
+      document.removeEventListener('visibilitychange', wallpaper);
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    };
+    wallpaper();
+    make('div', 'bi-vignette', desk);
     var bar = make('div', 'bi-menubar');
     root.insertBefore(bar, desk.nextSibling);
     if (phone) {
@@ -2125,6 +2167,7 @@
     var k = followers.indexOf(deskUi.draw);
     if (k >= 0) followers.splice(k, 1);
     clearInterval(deskUi.clock);
+    if (deskUi.stopVideo) deskUi.stopVideo();
     [desk, deskUi.bar, deskUi.dock, deskUi.ai, hole && hole.frame].forEach(function (el) { if (el) el.remove(); });
     desk = null;
     doc.classList.remove('bi-desk-on');

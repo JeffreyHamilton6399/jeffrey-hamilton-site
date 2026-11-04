@@ -3260,14 +3260,30 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  /* a plain white desk: the wallpaper is me, in the camera */
-  background:
-    radial-gradient(circle at 1px 1px, rgba(20, 18, 30, .07) 1px, transparent 1.6px) 0 0 / 18px 18px,
-    #FBFAF6;
+  background: #0d0b16;
 }
-
+/* Real city footage fills the desktop; the still image is always beneath. */
+.bi-city {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 65%;
+}
+.bi-city-video { object-position: center; opacity: 0; transition: opacity .6s ease; }
+.bi-city-video.playing { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .bi-city-video { display: none; transition: none; }
+}
+.bi-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 90% 80% at 50% 45%, transparent 55%, rgba(5, 4, 12, .55));
+  pointer-events: none;
+}
 /* the scrollbar's gutter too, so the desktop reaches the edge */
-html.bi-live.bi-desk-on { background: #FBFAF6; }
+html.bi-live.bi-desk-on { background: linear-gradient(#0a0a1a, #161230 45%, #261a33 72%, #0b0a14) fixed; }
 html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out), background-color .25s var(--ease), border-color .25s var(--ease); }
 
 .bi-menubar {
@@ -3278,11 +3294,10 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   align-items: center;
   gap: 1.15rem;
   padding: 0 1rem;
-  background: rgba(255, 255, 255, .72);
+  background: rgba(18, 16, 30, .38);
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
           backdrop-filter: blur(18px) saturate(1.4);
-  border-bottom: 1px solid rgba(20, 18, 30, .08);
-  color: #14121E;
+  color: #F2F0F7;
   font: 500 13px/1 var(--sans, system-ui), system-ui, sans-serif;
   letter-spacing: 0;
   transition: transform .6s cubic-bezier(.65, 0, .25, 1), opacity .5s ease;
@@ -3297,7 +3312,7 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
 .bi-mb-m { opacity: .92; }
 .bi-mb-r { margin-left: auto; display: flex; align-items: center; gap: .9rem; }
 .bi-mb-r svg { display: block; }
-.bi-desk.is-phone ~ .bi-menubar { background: none; border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; height: 40px; padding: 0 1.4rem; font-weight: 600; font-size: 15px; }
+.bi-desk.is-phone ~ .bi-menubar { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; height: 40px; padding: 0 1.4rem; font-weight: 600; font-size: 15px; }
 
 .bi-dock {
   position: absolute;
@@ -3308,12 +3323,12 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   align-items: flex-end;
   gap: 8px;
   padding: 7px 9px 9px;
-  border: 1px solid rgba(20, 18, 30, .12);
+  border: 1px solid rgba(255, 255, 255, .22);
   border-radius: 20px;
-  background: rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, .16);
   -webkit-backdrop-filter: blur(22px) saturate(1.5);
           backdrop-filter: blur(22px) saturate(1.5);
-  box-shadow: 0 10px 34px rgba(20, 18, 30, .14);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .35);
   transition: transform .6s cubic-bezier(.65, 0, .25, 1), opacity .5s ease;
 }
 .bi-dock.gone { transform: translate(-50%, 130%); opacity: 0; }
@@ -3356,7 +3371,7 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   bottom: -6px;
   width: 4px; height: 4px;
   border-radius: 50%;
-  background: rgba(20, 18, 30, .8);
+  background: rgba(255, 255, 255, .85);
   opacity: 0;
   transition: opacity .3s ease;
 }
@@ -3447,7 +3462,7 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   left: 50vw;
   top: 30vh;
   display: grid;
-  color: #14121E;
+  color: #F4F1EA;
   font-family: var(--display, var(--sans));
   text-transform: uppercase;
   line-height: .86;
@@ -3460,7 +3475,8 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   letter-spacing: -.02em;
   text-shadow: 4px 3px 0 rgba(0, 190, 230, .55), -3px -2px 0 rgba(240, 40, 140, .45);
 }
-.bi-title .bi-t-b { -webkit-text-stroke: 2px #14121E; color: #FBFAF6; }
+.bi-title .bi-t-b { -webkit-text-stroke: 2px #F4F1EA; color: transparent; }
+.bi-title .bi-t-a, .bi-title .bi-t-c { text-shadow: 0 2px 18px rgba(0, 0, 0, .45); }
 .bi-title .bi-t-c {
   margin-top: 1.4rem;
   font-family: var(--mono);
@@ -3475,7 +3491,7 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   width: 12px; height: 12px;
   border-radius: 50%;
   background: var(--c);
-  box-shadow: 0 0 0 2px #FBFAF6, 0 0 0 4.5px #14121E;
+  box-shadow: 0 0 0 2px #14121E, 0 0 0 4px #F4F1EA;
   animation: biWait 1.6s steps(3, end) infinite;
   animation-delay: calc(var(--k) * -.32s);
 }
