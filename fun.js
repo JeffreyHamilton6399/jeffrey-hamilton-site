@@ -54,7 +54,7 @@ const CLEAR = 48;
    word under the spiral has its own way: see app.js.) */
 const HEAD_UP_MS = 320;
 const HEAD_DOWN_MS = 900;
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documentElement.classList.contains('force-motion');
 /* between drawings that start in the same pass, so a screen of them inks
    one after another rather than all at once */
 const PEN_GAP = 90;

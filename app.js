@@ -21,7 +21,9 @@
   'use strict';
 
   var doc     = document.documentElement;
-  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* force-motion: the intro was asked for by name (?intro), so the motion
+     runs even with reduced motion on (the head script sets it) */
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches && !doc.classList.contains('force-motion');
   var hasGsap = typeof window.gsap !== 'undefined' && typeof window.ScrollTrigger !== 'undefined';
 
   if (hasGsap) gsap.registerPlugin(ScrollTrigger);

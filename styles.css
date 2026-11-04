@@ -3233,17 +3233,17 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  *, *::before, *::after {
+  html:not(.force-motion) *, html:not(.force-motion) *::before, html:not(.force-motion) *::after {
     animation-duration: .001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
   }
-  html.motion [data-reveal],
-  html.motion .line > span { opacity: 1; transform: none; }
-  html.motion [data-intro] .boot-face,
-  html.motion [data-intro] .boot-face img,
-  html.motion .hero-skills { opacity: 1 !important; transform: none !important; filter: none !important; }
-  .slab-inner { transform: none !important; opacity: 1 !important; }
+  html.motion:not(.force-motion) [data-reveal],
+  html.motion:not(.force-motion) .line > span { opacity: 1; transform: none; }
+  html.motion:not(.force-motion) [data-intro] .boot-face,
+  html.motion:not(.force-motion) [data-intro] .boot-face img,
+  html.motion:not(.force-motion) .hero-skills { opacity: 1 !important; transform: none !important; filter: none !important; }
+  html:not(.force-motion) .slab-inner { transform: none !important; opacity: 1 !important; }
 }
 
 /* ---- the desktop (intro.js) ----------------------------------------------
