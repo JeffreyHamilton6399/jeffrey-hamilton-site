@@ -1312,6 +1312,8 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   opacity: calc(var(--field-arrival, 1) * var(--field-presence, 1));
 }
 .path-field canvas { display: block; position: absolute; inset: 0; }
+/* the same field, carried on behind the contact section and its leather */
+.contact-field { opacity: 1; }
 .path-orbit-in {
   z-index: 1;
   position: absolute;
@@ -1701,7 +1703,8 @@ html[data-side="fun"] .hand-pro { opacity: 0; visibility: hidden; transition: op
   height: 100%;
   transform: translateX(-50%);
   border-radius: 0 0 clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 2rem);
-  background: color-mix(in srgb, var(--on-dark) 4%, transparent);
+  /* solid, like the strap it is: the field runs behind it, not through it */
+  background-color: color-mix(in srgb, var(--on-dark) 4%, var(--void));
   border: 3px solid var(--rule-dark);
   border-top: 0;
 }

@@ -283,6 +283,7 @@
         el.style.transform = 'translate3d(' + c.x.toFixed(1) + 'px,' + c.y.toFixed(1) + 'px,0)';
         /* the field behind the watch feels the hands go by too */
         if (JH.field) JH.field.poke(color, c.x, c.y);
+        if (JH.contactField) JH.contactField.poke(color, c.x, c.y);
       },
       /* A human reach: a slight arc, quick in the middle and slow at both
          ends, the time growing with the log of the distance (Fitts), a
@@ -1153,8 +1154,8 @@
 
   /* One hand draws the background's bounds. The real glyph field is revealed
      under the selection as it grows, then stays behind the finished watch. */
-  function makeField(c) {
-    var F = JH.field;
+  function makeField(c, F) {
+    F = F || JH.field;
     if (!F) return Promise.resolve();
     return F.ready.then(function () {
       if (dead) throw ABORT;
@@ -1493,7 +1494,11 @@
       }).then(function () {
         if (letGoStrap) { letGoStrap(); letGoStrap = null; }
         var stay = endHands(cs);
-        return openLeather(cs).then(function () {
+        /* the field behind the watch, carried on behind the leather: one
+           hand draws it in while two pull the leather open */
+        var painter = cs[2 % cs.length];
+        var ground = JH.contactField ? task(painter, function () { return makeField(painter, JH.contactField); }) : null;
+        return openLeather(cs).then(function () { return ground; }).then(function () {
           return makeAll(cs, contactPieces(), function (c) { if (stay.indexOf(c) < 0) leave(c); });
         })
           .then(function () { progress(92, 'Finishing'); pace('end'); });
