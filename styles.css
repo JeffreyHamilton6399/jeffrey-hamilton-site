@@ -2983,14 +2983,14 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
 
 /* ---- the editor panel ---------------------------------------------------
    Where the chat goes once it has asked: the text box turns into a panel
-   docked on the right, like an AI coding tool — the conversation, the files
+   docked on the left, like an AI coding tool — the conversation, the files
    being written, the song, and the progress bar. It lies over the page being
    built (glass, so the page still reads through it); for the walk down the
    page it slims to a rail. */
 .bi-panel {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 76px;              /* under the header, which is being built too */
+  left: 14px;
   bottom: 14px;
   width: 300px;
   display: flex;
@@ -3004,7 +3004,7 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
   box-shadow: 0 24px 70px rgba(20, 18, 28, .35), inset 0 0 0 1px rgba(244, 241, 234, .06);
   overflow: hidden;
   opacity: 0;
-  transform: translateX(40px);
+  transform: translateX(-40px);
   transition: opacity .6s var(--ease-out), transform .8s cubic-bezier(.6, 0, .2, 1), width .8s cubic-bezier(.6, 0, .2, 1), box-shadow .3s;
 }
 .bi-panel.on { opacity: 1; transform: none; }
@@ -3013,7 +3013,7 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
 .bi-panel.morph { box-shadow: 0 10px 40px rgba(20, 18, 28, .2); }
 .bi-panel > * { transition: opacity .45s var(--ease-out); }
 .bi-panel.morph > * { opacity: 0; transition: none; }
-.bi-panel.gone { opacity: 0; transform: translateX(110%); }
+.bi-panel.gone { opacity: 0; transform: translateX(-110%); }
 .bi-panel.picked { box-shadow: 0 0 0 2px #5B3CE8, 0 24px 70px rgba(20, 18, 28, .35); }
 
 .bi-pn-head {
@@ -3150,10 +3150,8 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
   .bi-panel.rail :is(.bi-pn-title, .bi-pn-x, .bi-mu-t, .bi-mu-line, .bi-art, .bi-pg-row) { display: revert; }
   .bi-panel.rail .bi-music { grid-template-columns: 2.5rem 1fr auto; margin: 0 .625rem .5rem; padding: .625rem; justify-items: stretch; }
   .bi-panel.rail .bi-eq i:nth-child(n+8) { display: block; }
-  /* the sheet takes the foot of the screen, so skip goes to the top */
-  html .bi-skip { bottom: auto; top: .75rem; }
   html .bi-panel .bi-skip {
-    position: static; margin-left: auto; padding: .375rem .625rem; animation: none;
+    position: static; margin: 0 0 0 auto; width: auto; padding: .375rem .625rem; animation: none;
     background: transparent; color: var(--on-dark-soft); border-color: rgba(244, 241, 234, .16);
     -webkit-backdrop-filter: none; backdrop-filter: none; font-size: .5625rem;
   }
@@ -3163,7 +3161,12 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
 /* skip: always there while the intro is */
 .bi-skip {
   position: fixed;
-  left: clamp(.875rem, 2.5vw, 1.5rem);
+  /* bottom middle, clear of the panel on the left and the switch on the
+     right */
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
   bottom: clamp(.875rem, 2.5vw, 1.5rem);
   z-index: 9001;
   display: inline-flex;
