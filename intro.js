@@ -462,7 +462,7 @@
   /* A list of things to make, shared by a crew: whoever is free takes the
      nearest one still waiting, so they are made side by side. An item can
      carry its own way of being made. */
-  function makeAll(workers, items) {
+  function makeAll(workers, items, onFree) {
     var queue = items.filter(Boolean).map(function (it) { return it.nodeType ? { el: it } : it; });
     if (!queue.length || !workers.length) {
       queue.forEach(function (it) { show(it.el); (it.also || []).forEach(show); });
@@ -470,7 +470,7 @@
     }
     return Promise.all(workers.map(function (c) {
       function next() {
-        if (!queue.length || dead) return Promise.resolve();
+        if (!queue.length || dead) { if (onFree && !dead) onFree(c); return Promise.resolve(); }
         var best = 0, bd = Infinity;
         queue.forEach(function (it, i) {
           var r = rect(it.el);
@@ -1492,7 +1492,10 @@
         if (Math.abs(r.top - want) > 30) return scrollTo(window.scrollY + (r.top - want), 450);
       }).then(function () {
         if (letGoStrap) { letGoStrap(); letGoStrap = null; }
-        return openLeather(cs).then(function () { return makeAll(cs, contactPieces()); })
+        var stay = endHands(cs);
+        return openLeather(cs).then(function () {
+          return makeAll(cs, contactPieces(), function (c) { if (stay.indexOf(c) < 0) leave(c); });
+        })
           .then(function () { progress(92, 'Finishing'); pace('end'); });
       });
     }).then(function () {
@@ -1597,9 +1600,13 @@
     skip.addEventListener('click', function () { finish(true); });
     document.addEventListener('keydown', onKey, true);
     addEventListener('resize', onResize);
+    addEventListener('pointermove', onPointer, { passive: true });
     raf = requestAnimationFrame(loop);
   }
 
+  /* where the visitor's own pointer is, so the hands can go home to it */
+  var you = null;
+  function onPointer(e) { if (e.pointerType !== 'touch') you = { x: e.clientX, y: e.clientY }; }
   function onKey(e) { if (e.key === 'Escape') finish(true); }
   var w0 = window.innerWidth;
   function onResize() { if (Math.abs(window.innerWidth - w0) > 2) finish(true); }
@@ -2200,14 +2207,14 @@
     bar.el.classList.add('done');
     bar.pct.textContent = 'Complete ✓';
     Object.keys(files).forEach(function (k) { files[k].li.classList.add('done'); });
-    duck(0.32, 0.3);
+    duck(0.1, 0.45);                      /* well under the last words */
     var said = say('Complete. Have a good day, Jeffrey.');
     var r = rect(bar.el);
     return c.move(r.left + r.width * 0.4, r.top + r.height / 2).then(c.click).then(function () {
       panel.classList.add('picked');
       return said;
     }).then(function () {
-      duck(0.6, 0.6);
+      duck(0.3, 1.4);                     /* back a little, on its way out */
       var xr = center(rect(bar.x));
       return c.move(xr.x, xr.y);
     }).then(c.click).then(function () {
@@ -2301,46 +2308,75 @@
 
   var letGoStrap = null;
 
-  /* The end. Back at the top: the bar says Complete, and while it is said
-     every hand but two heads off the bottom left, the way the panel goes.
-     One clicks the bar and closes the panel, then follows them. The image
-     hand stays: it draws the intro face's circle, drags the photo slowly
-     down out of the header into it, and leaves the same way. */
+  /* The two hands with work left at the very end: the image hand, which
+     makes the face, and the one that closes the panel. Every other hand
+     goes the moment its last piece of the contact copy is made. */
+  function endHands(cs) {
+    var img = cs[IMG % cs.length];
+    var others = cs.filter(function (c) { return c !== img; });
+    return [img, others[1] || others[0]];
+  }
+
+  /* The end. Back at the top: the bar says Complete and one hand clicks it
+     and closes the panel; the image hand draws the intro face's circle and
+     drags the photo slowly down out of the header into it. Each goes the
+     moment it is done. */
   function reveal(cs) {
     pace('end');
     frames.forEach(function (b) { b.remove(); });
     canvas.classList.remove('on');
-    var img = cs[IMG % cs.length];
-    var others = cs.filter(function (c) { return c !== img; });
-    var closer = others[1] || others[0];
+    var hands = endHands(cs), img = hands[0], closer = hands[1];
+    cs.forEach(function (c) { if (hands.indexOf(c) < 0) leave(c); });   /* if any are still here */
     railMode(false);
     return real(700).then(function () {
-      others.filter(function (c) { return c !== closer; }).forEach(function (c, k) {
-        offLeft(c, k).catch(function () {});
-      });
       return task(closer, function () { return closePanel(closer); });
     }).then(function () {
-      offLeft(closer, 0).catch(function () {});
+      leave(closer);
       return endScene(img);
     });
   }
-  /* off the bottom left, after the panel, and gone */
-  function offLeft(c, k) {
+
+  /* A hand that is done goes home: to the visitor's own pointer, where it
+     shrinks a touch and is gone in an instant — nothing is left fading
+     under the real one. With no pointer to go to (a phone, or a mouse that
+     never moved) it goes off the bottom left, after the panel. */
+  function leave(c) {
+    if (c.gone) return c.gone;
     c.halt = true;
-    var x = -40 - rnd(0, 60), y = H() + 40 + rnd(0, 50);
-    return real(k * 160).then(function () {
-      return c.move(x, y, { dur: rnd(900, 1100) / TIME, overshoot: false, exit: true, bend: rnd(-0.12, 0.12), ease: ease.hand });
-    }).then(function () { c.el.style.visibility = 'hidden'; });
+    c.mid++;
+    var x0 = c.x, y0 = c.y;
+    var off = { x: -40 - rnd(0, 60), y: H() + 40 + rnd(0, 50) };
+    var aim = function () { return you || off; };
+    var d = Math.hypot(aim().x - x0, aim().y - y0);
+    var dur = clamp(420 + d * 0.55, 520, 1100);
+    var bend = rnd(-0.12, 0.12);
+    var id = c.mid;
+    c.gone = tween(dur / TIME, function (e) {
+      if (id !== c.mid) return;
+      var t = aim();
+      var dx = t.x - x0, dy = t.y - y0, dd = Math.hypot(dx, dy) || 1;
+      var arc = Math.sin(Math.PI * e) * bend * dd;
+      c.x = x0 + dx * e - (dy / dd) * arc;
+      c.y = y0 + dy * e + (dx / dd) * arc;
+      c.place();
+    }, ease.hand).then(function () {
+      if (!you) { c.el.style.visibility = 'hidden'; return; }
+      c.el.classList.add('vanish');
+      return real(110).then(function () { c.el.style.visibility = 'hidden'; });
+    });
+    c.gone.catch(function () {});
+    return c.gone;
   }
+
   function endScene(img) {
     return real(300).then(function () {
       return task(img, function () {
         return jobFaceCircle(img).then(function () { return jobFacePhoto(img, null, 1700); });
       });
     }).then(function () {
-      return real(250);
+      return real(200);
     }).then(function () {
-      return offLeft(img, 0);
+      return leave(img);
     }).then(function () { finish(false); });
   }
 
@@ -2372,6 +2408,7 @@
 
     document.removeEventListener('keydown', onKey, true);
     removeEventListener('resize', onResize);
+    removeEventListener('pointermove', onPointer);
 
     var hadFocus = document.activeElement === skip;
     skip.remove();

@@ -2661,6 +2661,8 @@ html.bi-handoff.booting .site-head { transition: opacity .45s var(--ease-out); }
 .bi-cur svg { display: block; transform-origin: 3px 2px; transition: transform .09s ease-out; }
 .bi-cur.down svg, .bi-cur.grab svg { transform: scale(.86); }
 .bi-cur.leaving { opacity: 0; }
+/* home at the visitor's pointer: a touch smaller, then gone at once */
+.bi-cur.vanish svg { transform: scale(.72); transition: transform .1s ease-in; }
 
 .bi-ring {
   position: absolute;
