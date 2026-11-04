@@ -1637,7 +1637,7 @@
      next downbeat but one. (Measured off the song: it is 83 bpm, and the
      band arrives at 0:10.69; the clip starts at 0:10.63.) */
   var CLIP_AT = 10.63, SONG_LEN = 223.1;
-  var SPAWN = 1.18;
+  var SPAWN = 1.18, BEAT = 60 / 83;
   var VOICE_LEN = 3.0;
   var SPOKEN = ['and', 'play', 'Loser', 'by', 'Tame', 'Impala'];
 
@@ -1844,6 +1844,328 @@
 
   }
 
+  /* ------------------------------------------------------------ the desktop
+
+     Before anything, a computer: a desktop with rain running down the glass
+     over a city at night, a menu bar, a dock. The press opens the assistant
+     from the dock — it bounces, gets its dot, and its window grows out of
+     it with the chat inside. Once the song is asked for, a hand opens the
+     design app, Canvas, whose window is the page itself: the desktop is cut
+     away where the window is, so what shows through it is the real page,
+     blank, waiting. A click on its full-screen button and the window takes
+     the screen — the menu bar and dock go, the chat becomes the panel — and
+     the desktop is never seen again. Nothing on the page moves for any of
+     it: the window is a hole in the desktop, not the page made small. */
+
+  var desk = null, deskUi = {};
+  var DOCK = [
+    ['assistant', 'Assistant'], ['canvas', 'Canvas'], ['files', 'Files'],
+    ['music', 'Music'], ['terminal', 'Terminal'], ['settings', 'Settings']
+  ];
+  var DOCK_PHONE = ['assistant', 'canvas', 'music', 'files'];
+  var ICONS = {
+    assistant: '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3.5c.6 4.2 2.3 5.9 6.5 6.5-4.2.6-5.9 2.3-6.5 6.5-.6-4.2-2.3-5.9-6.5-6.5 4.2-.6 5.9-2.3 6.5-6.5Z" fill="#fff"/><circle cx="18" cy="17.5" r="1.6" fill="#fff" opacity=".85"/></svg>',
+    canvas: '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="8.5" cy="8.5" r="4" fill="#E08A00"/><rect x="12.5" y="4.5" width="7" height="7" rx="1.6" fill="#0B93D6"/><path d="M8.5 13.5 13 20.5H4Z" fill="#E23D8A"/><rect x="13.2" y="13.8" width="6.3" height="6.3" rx="3.15" fill="#0E9F6E"/></svg>',
+    files: '<svg viewBox="0 0 24 24" width="26" height="26"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.4l1.8 1.8h8.8A1.5 1.5 0 0 1 21 9.3v8.2a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5Z" fill="#fff" opacity=".95"/><path d="M3 10h18" stroke="#3B8BEA" stroke-width="1.2"/></svg>',
+    music: '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M9.5 17.2V6.8l9-2v10.4" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/><circle cx="7.4" cy="17.4" r="2.3" fill="#fff"/><circle cx="16.4" cy="15.3" r="2.3" fill="#fff"/></svg>',
+    terminal: '<svg viewBox="0 0 24 24" width="24" height="24"><path d="m6 8 4 4-4 4" fill="none" stroke="#7CF0A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 16.5h6" stroke="#E9E6F0" stroke-width="2" stroke-linecap="round"/></svg>',
+    settings: '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="6.6" fill="none" stroke="#3a3a44" stroke-width="3.2" stroke-dasharray="2.6 2.6"/><circle cx="12" cy="12" r="5" fill="none" stroke="#3a3a44" stroke-width="2"/><circle cx="12" cy="12" r="1.8" fill="#3a3a44"/></svg>'
+  };
+  var WIFI = '<svg viewBox="0 0 24 24" width="15" height="15"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.3a9.5 9.5 0 0 1 13 0M8.6 15.5a5 5 0 0 1 6.8 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="18.6" r="1.4" fill="currentColor"/></svg>';
+  var BATT = '<svg viewBox="0 0 28 14" width="24" height="12"><rect x=".75" y=".75" width="23.5" height="12.5" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".6"/><rect x="2.6" y="2.6" width="16" height="8.8" rx="1.8" fill="currentColor"/><path d="M26 5v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".6"/></svg>';
+
+  function clockText(phone) {
+    var d = new Date();
+    var t = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    if (phone) return t.replace(/\s?[AP]M$/i, '');
+    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }).replace(',', '') + ' ' + t;
+  }
+
+  function buildDesk() {
+    var phone = !wideScreen();
+    desk = make('div', 'bi-desk' + (phone ? ' is-phone' : ''));
+    root.insertBefore(desk, root.firstChild);
+    doc.classList.add('bi-desk-on');
+    deskUi.city = make('canvas', 'bi-city', desk);
+    deskUi.rain = make('canvas', 'bi-rain', desk);
+    make('div', 'bi-vignette', desk);
+    var bar = make('div', 'bi-menubar');
+    root.insertBefore(bar, desk.nextSibling);
+    if (phone) {
+      bar.innerHTML = '<span class="bi-mb-clock"></span><span class="bi-mb-r">' + WIFI + BATT + '</span>';
+    } else {
+      bar.innerHTML =
+        '<span class="bi-mb-logo"></span><b class="bi-mb-app">Desktop</b>' +
+        '<span class="bi-mb-m">File</span><span class="bi-mb-m">Edit</span><span class="bi-mb-m">View</span>' +
+        '<span class="bi-mb-m">Window</span><span class="bi-mb-m">Help</span>' +
+        '<span class="bi-mb-r">' + WIFI + BATT + '<span class="bi-mb-clock"></span></span>';
+    }
+    deskUi.bar = bar;
+    deskUi.app = bar.querySelector('.bi-mb-app');
+    var clock = bar.querySelector('.bi-mb-clock');
+    var tick = function () { clock.textContent = clockText(phone); };
+    tick();
+    deskUi.clock = setInterval(tick, 10000);
+
+    var dock = make('div', 'bi-dock');
+    root.insertBefore(dock, bar.nextSibling);
+    deskUi.dock = dock;
+    deskUi.icons = {};
+    DOCK.forEach(function (d) {
+      if (phone && DOCK_PHONE.indexOf(d[0]) < 0) return;
+      var it = make('div', 'bi-app', dock);
+      it.innerHTML = '<span class="bi-app-ic bi-ic-' + d[0] + '">' + ICONS[d[0]] + '</span>' +
+        '<span class="bi-app-tip">' + d[1] + '</span><i class="bi-app-dot"></i>';
+      deskUi.icons[d[0]] = it;
+    });
+    deskUi.icons.assistant.classList.add('hint');
+    rainOn();
+  }
+
+  /* The wallpaper: a city at night seen through wet glass. The city is
+     drawn once, sharp, and the stylesheet blurs it into lights; the rain is
+     drawn every frame on top, falling streaks and drops on the glass, some
+     of which give way and run. */
+  function rainOn() {
+    var w = W(), h = H();
+    var city = deskUi.city;
+    city.width = Math.round(w / 2); city.height = Math.round(h / 2);
+    /* drawn sharp off screen, then blurred once onto the wallpaper: a CSS
+       blur on it was redone every frame the rain moved over it */
+    var src = document.createElement('canvas');
+    src.width = city.width; src.height = city.height;
+    var cx = src.getContext('2d');
+    cx.scale(0.5, 0.5);
+    var sky = cx.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, '#0a0c1d'); sky.addColorStop(0.45, '#191433');
+    sky.addColorStop(0.72, '#3b2342'); sky.addColorStop(0.8, '#20172c'); sky.addColorStop(1, '#0d0b16');
+    cx.fillStyle = sky; cx.fillRect(0, 0, w, h);
+    var glow = cx.createRadialGradient(w * 0.55, h * 0.74, 10, w * 0.55, h * 0.74, w * 0.6);
+    glow.addColorStop(0, 'rgba(255,140,90,.28)'); glow.addColorStop(1, 'rgba(255,140,90,0)');
+    cx.fillStyle = glow; cx.fillRect(0, 0, w, h);
+    var horizon = h * 0.76;
+    [['#1c1a33', 0.18, 0.46, 0.35], ['#141226', 0.12, 0.34, 0.6], ['#0c0b17', 0.07, 0.24, 0.85]].forEach(function (L) {
+      var x = -20;
+      while (x < w + 20) {
+        var bw = w * rnd(0.035, 0.09), bh = h * rnd(L[1], L[2]);
+        cx.fillStyle = L[0];
+        cx.fillRect(x, horizon - bh, bw, bh + h);
+        for (var wy = horizon - bh + 8; wy < horizon - 4; wy += 9) {
+          for (var wx = x + 5; wx < x + bw - 5; wx += 8) {
+            if (Math.random() < L[3] * 0.32) {
+              cx.fillStyle = Math.random() < 0.8 ? 'rgba(255,205,130,' + rnd(0.35, 0.9).toFixed(2) + ')' : 'rgba(150,200,255,.7)';
+              cx.fillRect(wx, wy, 4, 5);
+            }
+          }
+        }
+        x += bw + rnd(2, 14);
+      }
+    });
+    var tints = ['255,170,90', '255,90,120', '90,200,255', '255,220,140', '170,120,255'];
+    for (var i = 0; i < 46; i++) {
+      var bx = rnd(0, w), by = rnd(h * 0.5, h * 0.98), br = rnd(6, 26);
+      cx.fillStyle = 'rgba(' + tints[i % tints.length] + ',' + rnd(0.18, 0.5).toFixed(2) + ')';
+      cx.beginPath(); cx.arc(bx, by, br, 0, Math.PI * 2); cx.fill();
+    }
+
+    var out = city.getContext('2d');
+    if ('filter' in out) {
+      out.filter = 'blur(4.5px) saturate(1.25)';
+      out.drawImage(src, 0, 0);
+    } else {
+      /* no canvas filters: soften by scaling down and back up */
+      var tiny = document.createElement('canvas');
+      tiny.width = Math.max(1, Math.round(src.width / 6)); tiny.height = Math.max(1, Math.round(src.height / 6));
+      tiny.getContext('2d').drawImage(src, 0, 0, tiny.width, tiny.height);
+      out.imageSmoothingQuality = 'high';
+      out.drawImage(tiny, 0, 0, city.width, city.height);
+    }
+
+    var rain = deskUi.rain, rx = rain.getContext('2d');
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    rain.width = Math.round(w * dpr); rain.height = Math.round(h * dpr);
+    rx.scale(dpr, dpr);
+    var n = Math.round(w * h / 7000);
+    var streaks = [];
+    for (i = 0; i < n; i++) streaks.push({ x: rnd(0, w), y: rnd(-h, h), l: rnd(10, 26), v: rnd(900, 1500), a: rnd(0.08, 0.26) });
+    var drops = [];
+    for (i = 0; i < Math.round(w * h / 9000); i++) drops.push({ x: rnd(0, w), y: rnd(0, h), r: rnd(0.8, 2.6) });
+    var runs = [];
+    function newRun() { return { x: rnd(0, w), y: rnd(-40, h * 0.6), r: rnd(2.2, 3.8), v: rnd(30, 140), wob: rnd(0, 6), trail: [] }; }
+    for (i = 0; i < 9; i++) runs.push(newRun());
+    var last = performance.now();
+    /* one drop, drawn once and stamped: a gradient per drop per frame was
+       most of the frame */
+    var sprite = document.createElement('canvas');
+    sprite.width = sprite.height = 32;
+    var sx = sprite.getContext('2d');
+    var g = sx.createRadialGradient(11, 10, 1, 16, 16, 15);
+    g.addColorStop(0, 'rgba(255,255,255,.9)');
+    g.addColorStop(0.55, 'rgba(190,200,230,.25)');
+    g.addColorStop(1, 'rgba(20,20,40,.0)');
+    sx.fillStyle = g;
+    sx.beginPath(); sx.arc(16, 16, 15, 0, Math.PI * 2); sx.fill();
+    function drop(x, y, r, a) {
+      rx.globalAlpha = a;
+      rx.drawImage(sprite, x - r, y - r, r * 2, r * 2);
+    }
+    /* the still drops on the glass, stamped once onto their own layer */
+    var glass = document.createElement('canvas');
+    glass.width = rain.width; glass.height = rain.height;
+    var gx = glass.getContext('2d');
+    gx.scale(dpr, dpr);
+    drops.forEach(function (d) { gx.globalAlpha = 0.55; gx.drawImage(sprite, d.x - d.r, d.y - d.r, d.r * 2, d.r * 2); });
+    deskUi.draw = function () {
+      if (!desk) return;
+      var now = performance.now(), dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      rx.globalAlpha = 1;
+      rx.clearRect(0, 0, w, h);
+      rx.drawImage(glass, 0, 0, w, h);
+      rx.lineWidth = 1;
+      rx.lineCap = 'round';
+      rx.strokeStyle = 'rgb(200,210,255)';
+      /* the streaks in three weights, one path each */
+      [0.1, 0.17, 0.25].forEach(function (al, band) {
+        rx.globalAlpha = al;
+        rx.beginPath();
+        for (var k = band; k < streaks.length; k += 3) {
+          var s_ = streaks[k];
+          s_.y += s_.v * dt; s_.x -= s_.v * dt * 0.08;
+          if (s_.y > h + 30) { s_.y = rnd(-80, -10); s_.x = rnd(0, w + 60); }
+          rx.moveTo(s_.x, s_.y); rx.lineTo(s_.x + s_.l * 0.08, s_.y - s_.l);
+        }
+        rx.stroke();
+      });
+      runs.forEach(function (r, k) {
+        r.y += r.v * dt * (0.6 + 0.4 * Math.sin(now / 300 + k));
+        r.x += Math.sin(now / 400 + r.wob) * 0.15;
+        r.trail.push(r.x, r.y);
+        if (r.trail.length > 120) r.trail.splice(0, 2);
+        rx.globalAlpha = 0.1;
+        rx.strokeStyle = 'rgb(210,220,255)';
+        rx.lineWidth = r.r * 0.9;
+        rx.beginPath();
+        for (var q = 0; q < r.trail.length; q += 2) (q ? rx.lineTo : rx.moveTo).call(rx, r.trail[q], r.trail[q + 1]);
+        rx.stroke();
+        drop(r.x, r.y, r.r * 1.15, 0.85);
+        if (r.y > h + 20) runs[k] = newRun();
+      });
+    };
+    followers.push(deskUi.draw);
+  }
+
+  /* The cursor's way into an app: onto its icon (the name comes up), a
+     click, two bounces, and the dot that says it is open. */
+  function launch(c, name) {
+    var it = deskUi.icons[name];
+    var r = rect(it.querySelector('.bi-app-ic')), cc = center(r);
+    return c.move(cc.x + rnd(-5, 5), cc.y + rnd(-4, 6)).then(function () {
+      it.classList.remove('hint');
+      it.classList.add('hover');
+      return real(240);
+    }).then(c.click).then(function () {
+      it.classList.remove('hover');
+      it.classList.add('launch');
+      setTimeout(function () { it.classList.add('open'); }, 260);
+      return real(820);
+    }).then(function () { it.classList.remove('launch'); return r; });
+  }
+
+  /* the assistant's window, grown out of its icon; the chat sits in it */
+  function openAssistant(from) {
+    var phone = !wideScreen();
+    var win = make('div', 'bi-win bi-win-ai');
+    root.insertBefore(win, chat);
+    win.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i></i></span><span class="bi-win-title">Assistant</span></div>';
+    var ww = phone ? W() - 16 : Math.min(720, W() - 64);
+    var wh = phone ? H() - 140 : Math.min(470, H() - 190);
+    var wx = (W() - ww) / 2, wy = phone ? 44 : Math.max(44, (H() - 96 - wh) / 2 + 14);
+    win.style.left = wx + 'px'; win.style.top = wy + 'px';
+    win.style.width = ww + 'px'; win.style.height = wh + 'px';
+    /* the chat in the middle of the window, under its title bar */
+    chat.style.top = (wy + 34 + (wh - 34) / 2) + 'px';
+    var fc = center(from);
+    win.style.transformOrigin = '0 0';
+    win.style.transform = 'translate(' + (fc.x - wx - ww * 0.04) + 'px,' + (fc.y - wy - wh * 0.04) + 'px) scale(.08)';
+    win.getBoundingClientRect();
+    win.classList.add('open');
+    win.style.transform = '';
+    if (deskUi.app) deskUi.app.textContent = 'Assistant';
+    deskUi.ai = win;
+    return real(560);
+  }
+
+  /* The design app. Its window is a hole in the desktop with a title bar
+     over it, so the page shows through: it grows out of the icon, waits for
+     its full-screen button, and then takes the whole screen. */
+  var hole = null;
+  function holePath(x, y, w, h, r) {
+    var W_ = W(), H_ = H();
+    r = Math.min(r, w / 2, h / 2);
+    return "path(evenodd, 'M0 0H" + W_ + 'V' + H_ + 'H0Z' +
+      'M' + x + ' ' + y + 'H' + (x + w) + 'V' + (y + h - r) +
+      'A' + r + ' ' + r + ' 0 0 1 ' + (x + w - r) + ' ' + (y + h) + 'H' + (x + r) +
+      'A' + r + ' ' + r + ' 0 0 1 ' + x + ' ' + (y + h - r) + "Z')";
+  }
+  function setHole(x, y, w, h, r, barH) {
+    hole.frame.style.left = x + 'px';
+    hole.frame.style.top = y + 'px';
+    hole.frame.style.width = w + 'px';
+    hole.frame.style.height = h + 'px';
+    hole.frame.style.borderRadius = Math.min(r, h / 2) + 'px';
+    hole.bar.style.height = barH + 'px';
+    desk.style.clipPath = holePath(x, y + barH, w, Math.max(0, h - barH), r);
+  }
+  function openCanvas(c) {
+    var phone = !wideScreen();
+    return launch(c, 'canvas').then(function (from) {
+      if (deskUi.app) deskUi.app.textContent = 'Canvas';
+      hole = { frame: make('div', 'bi-win bi-win-canvas') };
+      root.insertBefore(hole.frame, deskUi.ai || chat);
+      hole.frame.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i class="bi-full"></i></span><span class="bi-win-title">Canvas — jeffreyhamilton.com</span></div>';
+      hole.bar = hole.frame.firstChild;
+      var to = phone ? { x: 0, y: 0, w: W(), h: H() } :
+        { x: Math.round(W() * 0.06), y: 44, w: Math.round(W() * 0.88), h: H() - 44 - 104 };
+      var r0 = phone ? 0 : 12, b0 = phone ? 0 : 34;
+      if (phone) { deskUi.bar.classList.add('gone'); deskUi.dock.classList.add('gone'); }
+      return tween(560, function (e) {
+        setHole(from.left + (to.x - from.left) * e, from.top + (to.y - from.top) * e,
+          from.width + (to.w - from.width) * e, from.height + (to.h - from.height) * e, 12 + (r0 - 12) * e, b0 * e);
+      }, ease.inOut).then(function () { return to; });
+    }).then(function (to) {
+      if (phone) return goFull(to, 0);
+      var fb = center(rect(hole.frame.querySelector('.bi-full')));
+      return real(260).then(function () { return c.move(fb.x, fb.y); })
+        .then(c.click).then(function () { return goFull(to, 34); });
+    });
+  }
+  /* full screen: the window takes the screen, the bar and dock go, the
+     chat turns into the panel — and the desktop is done with */
+  function goFull(from, b0) {
+    makePanel();
+    deskUi.bar.classList.add('gone');
+    deskUi.dock.classList.add('gone');
+    if (deskUi.ai) deskUi.ai.classList.add('away');
+    morphPanel();
+    chat.classList.add('folding');
+    canvas.classList.add('on');
+    return tween(900, function (e) {
+      setHole(from.x * (1 - e), from.y * (1 - e), from.w + (W() - from.w) * e, from.h + (H() - from.h) * e, 12 * (1 - e), b0 * (1 - e));
+    }, ease.inOut).then(function () {
+      closeDesk();
+    });
+  }
+  function closeDesk() {
+    if (!desk) return;
+    var k = followers.indexOf(deskUi.draw);
+    if (k >= 0) followers.splice(k, 1);
+    clearInterval(deskUi.clock);
+    [desk, deskUi.bar, deskUi.dock, deskUi.ai, hole && hole.frame].forEach(function (el) { if (el) el.remove(); });
+    desk = null;
+    doc.classList.remove('bi-desk-on');
+  }
+
   function typeInto(el, text, base) {
     var i = 0;
     function next() {
@@ -1929,11 +2251,16 @@
       T0 = performance.now();
       ui.press.classList.add('gone');
       decodeAudio().then(startBgm);       /* Aria Math, faded in */
-      /* a moment of just the music, then the box opens from its middle */
-      return real(1800);
+      /* a moment of just the music, then the assistant is opened from the
+         dock, and its box opens from the middle */
+      return real(1100);
+    }).then(function () {
+      return launch(c, 'assistant');
+    }).then(openAssistant).then(function () {
+      return real(300);
     }).then(function () {
       chat.classList.add('on', 'grow');
-      return real(2900);
+      return real(2700);
     }).then(function () {
       chat.classList.add('grown');
       return real(900);
@@ -1997,6 +2324,8 @@
         return at(0.45);
       });
     }).then(function () {
+      return openCanvas(c);
+    }).then(function () {
       return spawn();
     });
   }
@@ -2029,10 +2358,9 @@
       return { el: fly, x: to.x, y: to.y };
     });
 
-    morphPanel();
-    chat.classList.add('folding');
-    canvas.classList.add('on');
-    return at(SPAWN).then(function () {
+    /* they land on a beat: the next one at least a flight away */
+    var land = SPAWN + Math.ceil(Math.max(0, clk() + 0.55 - SPAWN) / BEAT) * BEAT;
+    return at(land).then(function () {
       setTimeout(function () { if (chat) chat.remove(); chat = null; }, 700);
       landed.forEach(function (l) { setTimeout(function () { l.el.remove(); }, 200); });
       return landed;
@@ -2415,6 +2743,7 @@
     removeEventListener('resize', onResize);
     removeEventListener('pointermove', onPointer);
 
+    closeDesk();
     var hadFocus = document.activeElement === skip;
     skip.remove();
     doc.classList.remove('bi-on', 'bi-live');
@@ -2458,6 +2787,7 @@
      under it (warm, above) while the visitor reads and clicks. */
   arm();
   buildChat();
+  buildDesk();
   warm();
   var opener = Cursor(PALETTE[0], W() + 30, H() * 0.82, 1.0, 1);
   act1(opener).then(function (spots) { return run(opener, spots); }).catch(fail);
