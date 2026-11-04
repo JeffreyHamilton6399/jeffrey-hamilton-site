@@ -2295,35 +2295,11 @@
     finish(true);
   }
 
-  /* The end. Back at the top, the image hand makes the face last of all —
-     the circle drawn, the photo option-dragged down out of the header into
-     it — while the others gather round. Then every hand goes in to the
-     middle and slips behind the face, which is what the opening (app.js)
-     spins into the gold dot. */
-  var under = null;
   var letGoStrap = null;
-  /* the hands' layer, moved in just under the face so they can go in
-     behind it */
-  function tuckUnder(list) {
-    var center_ = bootFace && bootFace.closest('[data-intro]');
-    if (!center_ || !center_.parentNode) return;
-    if (!under) {
-      under = make('div', 'bi-under');
-      var z = parseInt(getComputedStyle(center_).zIndex, 10);
-      under.style.zIndex = String((isNaN(z) ? 10 : z) - 1);
-      var sr = rect(center_.parentNode);
-      under.style.left = (-sr.left) + 'px';
-      under.style.top = (-sr.top) + 'px';
-      center_.parentNode.insertBefore(under, center_);
-    }
-    list.forEach(function (c) { under.appendChild(c.el); });
-  }
 
   /* The end. Back at the top: the bar says Complete and a hand clicks it
      and closes it, while the image hand draws the intro face's circle and
-     the rest gather round. Then the photo is picked up out of the header —
-     and the moment it is, every other hand heads in to the middle, slipping
-     behind the face as the photo lands in it. */
+     the rest leave off the top right. */
   function reveal(cs) {
     pace('end');
     frames.forEach(function (b) { b.remove(); });
@@ -2336,33 +2312,26 @@
       return task(closer, function () { return closePanel(closer); });
     }).then(function () { return endScene(cs, img, others); });
   }
+  /* Every other hand leaves off the top right, one after another, and is
+     gone; the image hand alone draws the circle and drags the photo in,
+     then follows them out. */
+  function offRight(c, k) {
+    c.halt = true;
+    var x = W() + 40 + rnd(0, 60), y = -40 - rnd(0, 50);
+    return wait(k * 110).then(function () {
+      return c.move(x, y, { dur: rnd(820, 1000), overshoot: false, exit: true, bend: rnd(-0.18, 0.08) });
+    }).then(function () { c.el.style.visibility = 'hidden'; });
+  }
   function endScene(cs, img, others) {
-    var target = bootFace && shown(bootFace) ? center(rect(bootFace)) : { x: W() / 2, y: H() / 2 };
-    var R = bootFace ? rect(bootFace).width / 2 : 80;
-    var gather = cs.map(function (c, i) {
-      if (c === img) return task(c, function () { return jobFaceCircle(c); });
-      var a = (i / cs.length) * Math.PI * 2 + rnd(-0.3, 0.3);
-      return task(c, function () {
-        return c.move(target.x + Math.cos(a) * (R + rnd(40, 80)), target.y + Math.sin(a) * (R + rnd(30, 60)));
-      });
-    });
-    return Promise.all(gather).then(function () {
+    others.forEach(function (c, k) { offRight(c, k).catch(function () {}); });
+    return real(500).then(function () {
       return task(img, function () {
-        return jobFacePhoto(img, function () {
-          tuckUnder(others);
-          others.forEach(function (c) {
-            c.halt = true;
-            c.move(target.x + rnd(-6, 6), target.y + rnd(-6, 6),
-              { dur: rnd(1000, 1300), overshoot: false, exit: true, bend: rnd(-0.25, 0.25) }).catch(function () {});
-          });
-        });
+        return jobFaceCircle(img).then(function () { return jobFacePhoto(img); });
       });
     }).then(function () {
-      tuckUnder([img]);
-      img.halt = true;
-      return img.move(target.x, target.y, { dur: 520, overshoot: false, exit: true });
+      return wait(160);
     }).then(function () {
-      return wait(120);
+      return offRight(img, 0);
     }).then(function () { finish(false); });
   }
 
@@ -2406,7 +2375,6 @@
       if (first) first.focus({ preventScroll: true });
     }
 
-    if (under) { under.remove(); under = null; }
     if (JH.watch && JH.watch.byHand) JH.watch.byHand(false);
     if (JH.leather) JH.leather.byHand(false);
     if (instant) {
