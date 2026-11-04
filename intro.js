@@ -2424,7 +2424,15 @@
     var shot = snapFace(box);
     var sel = Box(c.color);
     var thumb = null;
-    return c.move(box.x, box.y).then(function () {
+    /* first the camera to the front: a click on its title bar brings it
+       up over the chat's window, as it would on any desktop */
+    var bar = rect(stu.cam.querySelector('.bi-win-bar'));
+    return c.move(bar.left + bar.width * 0.6, bar.top + bar.height / 2).then(c.click).then(function () {
+      if (stu.cam && chat) root.insertBefore(stu.cam, chat.nextSibling);
+      return real(220);
+    }).then(function () {
+      return c.move(box.x, box.y);
+    }).then(function () {
       c.chip('\u21e7\u23184');           /* the screenshot keys */
       return real(180);
     }).then(c.press).then(function () {
