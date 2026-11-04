@@ -1936,18 +1936,19 @@
 
   /* The handover. The dots fly out of the reply to where each agent
      starts, and the text box turns into the editor panel: it slides over to
-     the right edge, then stretches up and down from the middle to the full
+     the left edge, then stretches up and down from the middle to the full
      height of the screen, and fills in — the conversation, the files, the
      song, the progress bar. It lies over the page being built: one screen,
      not a second one. Resolves on the beat with where the dots landed. */
   function spawn() {
     var dots = [].slice.call(chat.querySelectorAll('.bi-dots b'));
     makePanel();
-    var pageW = wideScreen() ? W() - PANEL_W - 28 : W();
+    var pageX = wideScreen() ? PANEL_X + PANEL_W + 14 : 0;
+    var pageW = W() - pageX;
     var spots = [[0.56, 0.16], [0.34, 0.74], [0.84, 0.56], [0.8, 0.22]];
     var landed = dots.map(function (d, i) {
       var r = rect(d), cc = center(r);
-      var to = { x: 14 + pageW * spots[i % spots.length][0], y: H() * spots[i % spots.length][1] };
+      var to = { x: pageX + pageW * spots[i % spots.length][0], y: H() * spots[i % spots.length][1] };
       var fly = make('span', 'bi-fly', layer);
       fly.style.setProperty('--c', PALETTE[i + 1]);
       fly.style.transform = 'translate(' + cc.x + 'px,' + cc.y + 'px)';
@@ -1977,56 +1978,70 @@
   var panel = null, bar = null, files = {};
   function wideScreen() { return W() > 680; }
 
-  /* the text box becomes the panel: across to the right edge at its own
-     height, then open from the middle to the top and bottom of the screen;
-     only then does its content come in, the conversation gliding into it */
+  /* The chat becomes the panel, all of it. First the conversation sinks
+     down into the text box, as if the box took it in; then the box goes
+     dark, slides across to the left edge at its own height, and opens up
+     and down from the middle to the top and bottom of the panel's room;
+     then its content comes in, the conversation among it. */
+  var PANEL_X = 14, PANEL_TOP = 76;     /* under the header, so it stays seen */
   function morphPanel() {
     var thread = ui.thread;
+    var chatBox = panel.querySelector('.bi-pn-chat');
     if (!wideScreen()) {
-      panel.querySelector('.bi-pn-chat').appendChild(thread);
+      chatBox.appendChild(thread);
       panel.classList.add('on');
       return;
     }
-    var cr = rect(ui.composer), r0 = rect(thread);
+    var cr = rect(ui.composer), tr = rect(thread);
+    /* 1. the conversation, down into the box */
+    thread.style.transformOrigin = '50% 100%';
+    thread.style.transition = 'transform .38s cubic-bezier(.55,0,.75,.2), opacity .32s ease-in';
+    thread.style.transform = 'translateY(' + (cr.top + cr.height / 2 - tr.bottom) + 'px) scale(.55, .2)';
+    thread.style.opacity = '0';
     var ps = panel.style;
-    ps.transition = 'none';
-    ps.left = cr.left + 'px'; ps.top = cr.top + 'px';
-    ps.width = cr.width + 'px'; ps.height = cr.height + 'px';
-    ps.right = 'auto'; ps.bottom = 'auto';
-    ps.borderRadius = (cr.height / 2) + 'px';
-    panel.classList.add('on', 'morph');
-    ui.composer.style.visibility = 'hidden';
-    panel.getBoundingClientRect();
-    var ease_ = 'cubic-bezier(.65,0,.25,1)';
-    ps.transition = 'left .5s ' + ease_ + ', width .5s ' + ease_ + ', top .55s ' + ease_ + ', height .55s ' + ease_ + ', border-radius .5s ' + ease_;
-    ps.left = (W() - 14 - PANEL_W) + 'px';
-    ps.width = PANEL_W + 'px';
-    ps.borderRadius = '18px';
     setTimeout(function () {
       if (dead) return;
-      ps.top = '14px';
-      ps.height = (H() - 28) + 'px';
-    }, 480);
+      /* 2. the box goes dark, in place, and becomes the panel's shape */
+      ps.transition = 'none';
+      ps.left = cr.left + 'px'; ps.top = cr.top + 'px';
+      ps.width = cr.width + 'px'; ps.height = cr.height + 'px';
+      ps.right = 'auto'; ps.bottom = 'auto';
+      ps.borderRadius = (cr.height / 2) + 'px';
+      panel.classList.add('on', 'morph');
+      ui.composer.style.visibility = 'hidden';
+      panel.getBoundingClientRect();
+      var ease_ = 'cubic-bezier(.65,0,.25,1)';
+      ps.transition = 'left .5s ' + ease_ + ', width .5s ' + ease_ + ', top .55s ' + ease_ + ', height .55s ' + ease_ + ', border-radius .5s ' + ease_;
+      /* 3. across to the left edge */
+      ps.left = PANEL_X + 'px';
+      ps.width = PANEL_W + 'px';
+      ps.borderRadius = '18px';
+    }, 380);
     setTimeout(function () {
       if (dead) return;
-      /* handed over to the stylesheet's own placing, which is where it is */
+      /* 4. open up and down from where it is */
+      ps.top = PANEL_TOP + 'px';
+      ps.height = (H() - PANEL_TOP - 14) + 'px';
+    }, 860);
+    setTimeout(function () {
+      if (dead) return;
+      /* handed to the stylesheet's own placing, which is where it is now */
       ps.transition = 'none';
       ps.left = ps.top = ps.width = ps.height = ps.right = ps.bottom = ps.borderRadius = '';
       panel.getBoundingClientRect();
       ps.transition = '';
       panel.classList.remove('morph');
-      /* the conversation, carried from the middle of the screen into it */
-      var chatBox = panel.querySelector('.bi-pn-chat');
+      /* 5. the conversation, back, in its place in the panel */
       chatBox.appendChild(thread);
-      var r1 = rect(thread);
-      var k = r0.width / Math.max(1, r1.width);
-      thread.style.transformOrigin = '0 0';
       thread.style.transition = 'none';
-      thread.style.transform = 'translate(' + (r0.left - r1.left) + 'px,' + (r0.top - r1.top) + 'px) scale(' + k + ')';
+      thread.style.transformOrigin = '0 0';
+      thread.style.transform = 'translateY(10px)';
+      thread.style.opacity = '0';
       thread.getBoundingClientRect();
-      thread.style.transition = 'transform .7s cubic-bezier(.6,0,.2,1)';
+      thread.style.transition = 'transform .5s var(--ease-out), opacity .45s ease-out';
       thread.style.transform = '';
-    }, 1080);
+      thread.style.opacity = '1';
+    }, 1460);
   }
   var FILES = [
     ['jeffreyhamilton.com', 0, 1], ['index.html', 1], ['styles.css', 1], ['app.js', 1], ['intro.js', 1],
