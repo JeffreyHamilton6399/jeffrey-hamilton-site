@@ -139,6 +139,11 @@
   /* The whole session runs a little faster than life, the way a screen
      recording of one is played back. */
   var TIME = 0.5;
+  /* The pace changes as it goes: the first screen, where everything starts
+     at once, is built unhurried; the walk down the page picks up; the end
+     is quick. Every tween takes its length from TIME as it starts. */
+  var PACE = { chat: 0.5, start: 0.78, watch: 0.6, story: 0.5, end: 0.42 };
+  function pace(k) { TIME = PACE[k]; }
 
   function tween(dur, fn, e) {
     return new Promise(function (res, rej) {
@@ -169,7 +174,7 @@
 
   var skip = make('button', 'bi-skip');
   skip.type = 'button';
-  skip.innerHTML = 'Skip intro <span aria-hidden="true">&rarr;</span>';
+  skip.textContent = 'Skip intro';
 
   var canvas = make('div', 'bi-canvas');
   canvas.setAttribute('aria-hidden', 'true');
@@ -1302,6 +1307,7 @@
       ]);
     }).then(function () {
       progress(46, 'The story');
+      pace('story');
       /* the hand that put the hands on holds the long one from here */
       if (Wt.mark) followUntil(hand, function () { return center(rect(Wt.mark)); }, B.p, true);
       Wt.dial(1);
@@ -1470,6 +1476,7 @@
       });
       return until(function () { return puller.el.classList.contains('down'); });
     }).then(function () {
+      pace('watch');
       return live ? walkWatch(cs, pulling) : walkFlow(cs);
     }).then(function () {
       if (!contact) return;
@@ -1482,7 +1489,7 @@
       }).then(function () {
         if (letGoStrap) { letGoStrap(); letGoStrap = null; }
         return openLeather(cs).then(function () { return makeAll(cs, contactPieces()); })
-          .then(function () { progress(92, 'Finishing'); });
+          .then(function () { progress(92, 'Finishing'); pace('end'); });
       });
     }).then(function () {
       return wait(200);
@@ -1993,15 +2000,17 @@
       return;
     }
     var cr = rect(ui.composer), tr = rect(thread);
-    /* 1. the conversation, down into the box */
-    thread.style.transformOrigin = '50% 100%';
-    thread.style.transition = 'transform .38s cubic-bezier(.55,0,.75,.2), opacity .32s ease-in';
-    thread.style.transform = 'translateY(' + (cr.top + cr.height / 2 - tr.bottom) + 'px) scale(.55, .2)';
+    /* 1. the conversation fades down into the box */
+    thread.style.transition = 'transform .5s cubic-bezier(.5,0,.75,.3), opacity .45s ease-in';
+    thread.style.transform = 'translateY(' + Math.round((cr.top - tr.bottom) + tr.height * 0.6) + 'px)';
     thread.style.opacity = '0';
+    /* 2. the box fills with the panel's own colour, from its middle out */
+    var ink = make('span', 'bi-ink', ui.composer);
+    setTimeout(function () { if (!dead) ink.classList.add('on'); }, 300);
     var ps = panel.style;
     setTimeout(function () {
       if (dead) return;
-      /* 2. the box goes dark, in place, and becomes the panel's shape */
+      /* 3. it is the panel now, in the box's place: across to the left */
       ps.transition = 'none';
       ps.left = cr.left + 'px'; ps.top = cr.top + 'px';
       ps.width = cr.width + 'px'; ps.height = cr.height + 'px';
@@ -2011,18 +2020,17 @@
       ui.composer.style.visibility = 'hidden';
       panel.getBoundingClientRect();
       var ease_ = 'cubic-bezier(.65,0,.25,1)';
-      ps.transition = 'left .5s ' + ease_ + ', width .5s ' + ease_ + ', top .55s ' + ease_ + ', height .55s ' + ease_ + ', border-radius .5s ' + ease_;
-      /* 3. across to the left edge */
+      ps.transition = 'left .55s ' + ease_ + ', width .55s ' + ease_ + ', top .6s ' + ease_ + ', height .6s ' + ease_ + ', border-radius .55s ' + ease_;
       ps.left = PANEL_X + 'px';
       ps.width = PANEL_W + 'px';
       ps.borderRadius = '18px';
-    }, 380);
+    }, 720);
     setTimeout(function () {
       if (dead) return;
       /* 4. open up and down from where it is */
       ps.top = PANEL_TOP + 'px';
       ps.height = (H() - PANEL_TOP - 14) + 'px';
-    }, 860);
+    }, 1260);
     setTimeout(function () {
       if (dead) return;
       /* handed to the stylesheet's own placing, which is where it is now */
@@ -2041,7 +2049,7 @@
       thread.style.transition = 'transform .5s var(--ease-out), opacity .45s ease-out';
       thread.style.transform = '';
       thread.style.opacity = '1';
-    }, 1460);
+    }, 1900);
   }
   var FILES = [
     ['jeffreyhamilton.com', 0, 1], ['index.html', 1], ['styles.css', 1], ['app.js', 1], ['intro.js', 1],
@@ -2166,6 +2174,7 @@
   var PALETTE = ['#5B3CE8', '#0B93D6', '#0E9F6E', '#E08A00', '#E23D8A'];
 
   function run(first, spots) {
+    pace('start');
     var wide = W() > 680;
     var w = W(), h = H();
     var cs;
@@ -2208,15 +2217,15 @@
        first thing drawn. */
     var scripts = wide ? [
       after(0, seq(function () { return jobFrame(cs[0]); }, function () { return jobMarkText(cs[0]); })),
-      after(60, function () { return jobWord(cs[1]); }),
-      after(30, seq(function () { return jobSwitch(cs[2]); }, function () { return jobSocial(cs[2]); })),
-      after(0, seq(function () { return jobCards(img); }, function () { return jobMarkPhoto(img); })),
-      after(90, function () { return cs[4].move(w * 0.5 + rnd(-40, 40), 90).then(function () { return jobNav(cs[4]); }); })
+      after(560, function () { return jobWord(cs[1]); }),
+      after(1500, seq(function () { return jobSwitch(cs[2]); }, function () { return jobSocial(cs[2]); })),
+      after(240, seq(function () { return jobCards(img); }, function () { return jobMarkPhoto(img); })),
+      after(1000, function () { return cs[4].move(w * 0.5 + rnd(-40, 40), 90).then(function () { return jobNav(cs[4]); }); })
     ] : [
       after(0, seq(function () { return jobFrame(cs[0]); }, function () { return jobMarkText(cs[0]); }, function () { return jobNav(cs[0]); })),
-      after(0, seq(function () { return jobCards(img); }, function () { return jobMarkPhoto(img); })),
-      after(60, function () { return jobWord(cs[2]); }),
-      after(30, function () { return jobSwitch(cs[3]); })
+      after(240, seq(function () { return jobCards(img); }, function () { return jobMarkPhoto(img); })),
+      after(620, function () { return jobWord(cs[2]); }),
+      after(1100, function () { return jobSwitch(cs[3]); })
     ];
 
     /* Each collaborator works through their own list. One who finishes
@@ -2272,6 +2281,7 @@
      and the moment it is, every other hand heads in to the middle, slipping
      behind the face as the photo lands in it. */
   function reveal(cs) {
+    pace('end');
     frames.forEach(function (b) { b.remove(); });
     canvas.classList.remove('on');
     var img = cs[IMG % cs.length];
