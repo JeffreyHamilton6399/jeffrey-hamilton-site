@@ -1613,6 +1613,10 @@
 
   var MUSIC = 'assets/audio/loser-intro.mp3';
   var VOICE = 'assets/audio/voice-play-loser.mp3';
+  /* What plays from the press until the answer: Aria Math, from just before
+     its climax (3:37), faded in so it never lands at full volume. */
+  var BGM = 'assets/audio/aria-math-intro.mp3';
+  var BGM_VOL = 0.5, BGM_UNDER = 0.16;
   /* The clip opens on the beat the band comes in; the agents spawn on the
      next downbeat but one. (Measured off the song: it is 83 bpm, and the
      band arrives at 0:10.69; the clip starts at 0:10.63.) */
@@ -1644,7 +1648,7 @@
 
   function fetchAudio() {
     if (!window.fetch) return;
-    snd.bufs = Promise.all([MUSIC, VOICE].map(function (u) {
+    snd.bufs = Promise.all([MUSIC, VOICE, BGM].map(function (u) {
       return fetch(u).then(function (r) { if (!r.ok) throw r; return r.arrayBuffer(); });
     })).catch(function () { return null; });
   }
@@ -1674,7 +1678,7 @@
       if (!bufs) return false;
       return Promise.all(bufs.map(function (b) {
         return new Promise(function (res, rej) { ctx.decodeAudioData(b.slice(0), res, rej); });
-      })).then(function (d) { snd.music = d[0]; snd.voice = d[1]; return true; }, function () { return false; });
+      })).then(function (d) { snd.music = d[0]; snd.voice = d[1]; snd.bgm = d[2]; return true; }, function () { return false; });
     });
   }
   function startMusic() {
@@ -1694,6 +1698,35 @@
     snd.t0 = ctx.currentTime + 0.05;
     src.start(snd.t0);
     snd.src.push(src);
+  }
+  /* the first song: in slowly from silence, under the talking, and out
+     when the real one is asked for */
+  function startBgm() {
+    if (!snd.ctx || !snd.bgm || snd.bgSrc || snd.bgDone || dead) return;
+    var ctx = snd.ctx, t = ctx.currentTime + 0.05;
+    snd.bgGain = ctx.createGain();
+    snd.bgGain.gain.setValueAtTime(0.0001, t);
+    snd.bgGain.gain.exponentialRampToValueAtTime(0.06, t + 1.2);
+    snd.bgGain.gain.linearRampToValueAtTime(BGM_VOL, t + 3.4);
+    snd.bgGain.connect(ctx.destination);
+    var src = ctx.createBufferSource();
+    src.buffer = snd.bgm;
+    src.connect(snd.bgGain);
+    src.start(t);
+    snd.bgSrc = src;
+    snd.src.push(src);
+  }
+  function bgTo(v, over) {
+    if (!snd.bgGain) return;
+    var g = snd.bgGain.gain, t = snd.ctx.currentTime;
+    try { g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value, 0.0001), t); g.linearRampToValueAtTime(v, t + over); } catch (e) {}
+  }
+  function stopBgm(over) {
+    snd.bgDone = true;
+    if (!snd.bgSrc) return;
+    bgTo(0.0001, over);
+    var s_ = snd.bgSrc;
+    try { s_.stop(snd.ctx.currentTime + over + 0.05); } catch (e) {}
   }
   /* the music dipped under something said, and back */
   function duck(v, over) {
@@ -1755,6 +1788,7 @@
         snd.gain.gain.setValueAtTime(snd.gain.gain.value, ctx.currentTime);
         snd.gain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + over);
       }
+      if (snd.bgGain) bgTo(0.0001, over);
     } catch (e) {}
     setTimeout(function () {
       snd.src.forEach(function (s_) { try { s_.stop(); } catch (e) {} });
@@ -1879,7 +1913,7 @@
       T0 = performance.now();
       ui.press.classList.add('gone');
       chat.classList.add('on');
-      decodeAudio();                      /* ready by the time it is wanted */
+      decodeAudio().then(startBgm);       /* Aria Math, faded in */
       return real(700);
     }).then(function () {
       /* the cursor comes in and clicks into the box */
@@ -1897,6 +1931,7 @@
     }).then(c.click).then(function () {
       /* my voice, and the words as they are said */
       return decodeAudio().then(function () {
+        bgTo(BGM_UNDER, 0.35);
         playVoice();
         waveOn();
         var step = (VOICE_LEN - 0.6) / SPOKEN.length;
@@ -1909,6 +1944,7 @@
       return c.click();
     }).then(function () {
       waveOff();
+      bgTo(BGM_VOL * 0.8, 0.8);
       var sr = center(rect(ui.send));
       return c.move(sr.x, sr.y);
     }).then(c.click).then(function () {
@@ -1926,10 +1962,12 @@
       /* the answer, written and said — and when it has been said, the song
          cuts in, on the beat the band arrives */
       t.textContent = '';
+      bgTo(BGM_UNDER, 0.3);
       var spoken = say('Okay. Playing Loser, by Tame Impala.');
       return streamInto(t, 'Okay. Playing Loser by Tame Impala, and creating Jeffrey’s portfolio.').then(function () {
         return spoken;
       }).then(function () {
+        stopBgm(0.45);                     /* out, and Loser cuts in */
         startMusic();
         var sp = make('span', 'bi-spawn', t);
         sp.innerHTML = 'Spawning agents<span class="bi-dots">' +
