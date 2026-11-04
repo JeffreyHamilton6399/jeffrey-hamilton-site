@@ -88,8 +88,46 @@
   var orbit = document.querySelector('.path-orbit');
   if (orbit) fields.push(JH.field = makeField(orbit, 'path-field'));
   var contact = document.querySelector('#contact');
-  if (contact) fields.push(JH.contactField = makeField(contact, 'path-field contact-field'));
+  var cf = null;
+  if (contact) {
+    var ground = document.createElement('div');
+    ground.className = 'contact-ground';
+    ground.setAttribute('aria-hidden', 'true');
+    contact.insertBefore(ground, contact.firstChild);
+    fields.push(cf = JH.contactField = makeField(ground, 'path-field contact-field'));
+  }
   if (!fields.length) return;
+
+  /* The seam. Where the contact section rises over the watch, both fields
+     are held still on the screen, the same size in the same place, so the
+     rows and columns of one carry straight on into the other. Left to the
+     page, the watch's field (pinned) and the contact's (scrolling) slid
+     past each other, and once the pin let go the watch's moved off too.
+     The watch's is held only once its scene has scrolled above the top of
+     the screen (the contact panel covers the rest of it); the contact's is
+     cropped by the section's own box (the ground). */
+  var of = JH.field;
+  function holdFields() {
+    var vh = window.innerHeight;
+    if (of && orbit.classList.contains('is-live')) {
+      var orr = orbit.getBoundingClientRect(), ot = orr.top;
+      of.element.style.transform = ot < 0 && orr.bottom > 0 ? 'translate3d(0,' + (-ot).toFixed(1) + 'px,0)' : '';
+    }
+    if (cf) {
+      var r = contact.getBoundingClientRect();
+      if (r.top < vh && r.bottom > 0) {
+        cf.element.style.height = vh + 'px';
+        cf.element.style.transform = 'translate3d(0,' + Math.min(-r.top, r.height - vh).toFixed(1) + 'px,0)';
+      }
+    }
+  }
+  /* in step with the scroll, not a frame behind it: the smooth scroll's own
+     event where there is one, and the page's as well */
+  if (JH.lenis && JH.lenis.on) JH.lenis.on('scroll', holdFields);
+  window.addEventListener('scroll', holdFields, { passive: true });
+  window.addEventListener('resize', holdFields);
+  if (window.ScrollTrigger) ScrollTrigger.addEventListener('refresh', holdFields);
+  holdFields();
 
   window.addEventListener('pointermove', function (e) {
     if (e.pointerType !== 'mouse' || doc.classList.contains('bi-on')) return;

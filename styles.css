@@ -1312,8 +1312,11 @@ html.motion .hero-skills.is-lit { opacity: 1; transform: none; }
   opacity: calc(var(--field-arrival, 1) * var(--field-presence, 1));
 }
 .path-field canvas { display: block; position: absolute; inset: 0; }
-/* the same field, carried on behind the contact section and its leather */
-.contact-field { opacity: 1; }
+/* the same field, carried on behind the contact section and its leather:
+   the section's box crops it, and field.js holds it to the screen so its
+   grid meets the watch's pinned one exactly */
+.contact-ground { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.contact-field { opacity: 1; bottom: auto; height: 100vh; will-change: transform; }
 .path-orbit-in {
   z-index: 1;
   position: absolute;
