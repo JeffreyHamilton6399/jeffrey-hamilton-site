@@ -3247,7 +3247,7 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
 }
 
 /* ---- the desktop (intro.js) ----------------------------------------------
-   Where the intro starts: a computer. A city at night through wet glass, a
+   Where the intro starts: a computer. A real city photograph, a
    menu bar, a dock. The windows that open are the intro's own, except the
    design app's, which is a hole cut in the desktop so the real page shows
    through it — the page is never scaled. */
@@ -3257,8 +3257,7 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
   overflow: hidden;
   background: #0d0b16;
 }
-.bi-city { position: absolute; inset: 0; width: 100%; height: 100%; }
-.bi-rain { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bi-city { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 65%; }
 .bi-vignette {
   position: absolute;
   inset: 0;
