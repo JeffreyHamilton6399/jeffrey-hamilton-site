@@ -2029,7 +2029,8 @@
            frame — where the contact panel takes it up. The strap is the one
            thing that does not go, because it is what carries on. */
         var o = softRamp(raw, HOME, 1);
-        orbit.style.setProperty('--field-presence', (1 - softRamp(raw, HOME + 0.02, HOME + 0.16)).toFixed(3));
+        /* the field stays: it carries on into the contact section, where
+           the same field lies behind the leather */
         certPull = o;
         windCerts(certDrift, certLit);
 
@@ -2146,8 +2147,10 @@
            the end of the pin — so the watch was being hidden in the middle of
            coming apart. It only has to catch what the outro leaves behind. */
         start: 'top 20%',
-        onEnter: function () { clearScene(); orbit.style.visibility = 'hidden'; },
-        onLeaveBack: function () { cleared = false; orbit.style.visibility = ''; }
+        /* the drawing goes; the field behind it stays, so the ground the
+           contact section rises into is the same ground */
+        onEnter: function () { clearScene(); if (inner) inner.style.visibility = 'hidden'; },
+        onLeaveBack: function () { cleared = false; if (inner) inner.style.visibility = ''; }
       });
     }
 
