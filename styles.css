@@ -3420,26 +3420,29 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
 /* its viewfinder marks stay inside it, under the chat's window */
 .bi-win-cam { isolation: isolate; }
 /* the record button, at the foot of the picture, never pressed */
-.bi-shutter {
+.bi-cam-ctl {
   position: absolute;
-  left: 50%;
-  bottom: 16px;
-  z-index: 2;
-  width: 46px;
-  height: 46px;
-  margin-left: -23px;
+  left: 0; right: 0; bottom: 0;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-top: 3px solid #14121E;
+  background: #1E1C26;
+}
+.bi-shutter {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 3px solid #fff;
-  box-shadow: 0 0 0 2px rgba(20, 18, 30, .55), 0 4px 12px rgba(20, 18, 30, .3);
   display: grid;
   place-items: center;
 }
-.bi-shutter i { width: 32px; height: 32px; border-radius: 50%; background: #E2584E; }
+.bi-shutter i { width: 24px; height: 24px; border-radius: 50%; background: #E2584E; }
 .bi-win-cam .bi-win-bar { border-bottom: 3px solid #14121E; }
 .bi-win-cam.poof { transform: scale(.3) rotate(-6deg); opacity: 0; }
 .bi-cam-view {
   position: absolute;
-  inset: 37px 0 0 0;
+  inset: 37px 0 50px 0;
   overflow: hidden;
   background:
     radial-gradient(ellipse 70% 60% at 50% 40%, #fff, transparent 70%),
@@ -3466,7 +3469,8 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   left: 50%;
   translate: -50% 0;
   bottom: 0;
-  height: 94%;
+  /* the frames leave room over my head for a raised arm: closer than that */
+  height: 122%;
   width: auto;
   transform-origin: 50% 100%;
   user-select: none;
