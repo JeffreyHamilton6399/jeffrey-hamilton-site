@@ -12,6 +12,11 @@
         assets/me/me.json: frame size, the poses there are, and where the head
         is in each (for the cursor that picks it up).
 
+    python3 scripts/me/build.py images DIR
+        The same, from still images instead of video: DIR holds one image
+        per pose, named after it (point_0_0.png, talk_open.png ...), all
+        framed alike. look_center is the reference for size and place.
+
     python3 scripts/me/build.py placeholder
         Stand-in poses made from assets/portrait.jpg, so the intro runs before
         the real footage exists.
@@ -33,6 +38,8 @@ POSES = (
     ['look_%d_%d' % rc for rc in GRID] + ['look_center'] +        # the same, just looking
     ['whoa', 'thumbs', 'wave'] +                                   # now and then while waiting
     ['startle_0', 'startle_1', 'lean_0', 'lean_1'] +               # pulled in at the press
+    ['earbuds_0', 'earbuds_1'] +                                   # putting the earbuds in
+    ['submit'] +                                                   # clicking send
     ['type_%d' % i for i in range(6)] + ['glance'] +               # typing at the screen on the right
     ['talk_closed', 'talk_open', 'talk_wide', 'talk_round', 'talk_teeth'] +   # into the earbuds
     ['listen', 'nod_0', 'nod_1', 'nod_2', 'smile'] +               # while the AI answers
@@ -213,6 +220,31 @@ def build(picks_path, video_path=None):
     write(poses, heads)
 
 
+def images(folder):
+    """One image per pose, all framed the same (as generated). The head in
+    look_center sets the size and place for all of them."""
+    files = {os.path.splitext(f)[0]: os.path.join(folder, f) for f in os.listdir(folder)
+             if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))}
+    if 'look_center' not in files:
+        sys.exit('images: look_center is needed as the reference')
+    T = 150
+    CW, CH, HY = 9 * T, int(5.6 * T), 3 * T
+    load = lambda p: cutout(ImageOps.contain(Image.open(p), (1600, 1600)))
+    ref = load(files['look_center'])
+    hx, hy, hw = head_ref(ref.getchannel('A'))
+    k = T / hw
+    poses, heads = {}, {}
+    for name, path in sorted(files.items()):
+        cut = ref if name == 'look_center' else load(path)
+        im = cut.resize((max(1, round(cut.width * k)), max(1, round(cut.height * k))), Image.LANCZOS)
+        canvas = Image.new('RGBA', (CW, CH), (0, 0, 0, 0))
+        canvas.alpha_composite(im, (round(CW / 2 - hx * k), round(HY - hy * k)))
+        poses[name] = main_shape(canvas, (CW / 2, HY + T * 1.6))
+        heads[name] = (CW / 2, HY, T * 0.62)
+        print('cut', name)
+    write(poses, heads)
+
+
 def placeholder():
     """Every pose from the one portrait, nudged so the stand-in still shows
     which pose is up: a lean toward where it points."""
@@ -251,6 +283,8 @@ if __name__ == '__main__':
         extract(sys.argv[2:])
     elif cmd == 'build':
         build(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
+    elif cmd == 'images':
+        images(sys.argv[2])
     elif cmd == 'placeholder':
         placeholder()
     else:
