@@ -2348,6 +2348,11 @@
       if (now - me.seq.t >= step[1]) { me.seq.i++; me.seq.t = 0; }
       return;
     }
+    /* a blink now and then, so I'm never a still picture */
+    if ((me.mode === 'aim' || me.mode === 'hold') && hasPose('blink') && now > (me.blinkAt || 0)) {
+      me.blinkAt = now + rnd(2600, 5200);
+      if (me.mode === 'aim' || !me.seq) { playSeq([['blink', 140]], me.mode); return; }
+    }
     if (me.mode === 'aim') return aimPose(now);
     if (me.mode === 'type') {
       if (Math.random() < 0.05) { playSeq([['glance', 420]], 'type'); return; }
@@ -2374,7 +2379,7 @@
     } else if (!recent && now > me.extra) {
       /* left alone a while: a wave, a thumbs up, a whoa */
       me.extra = now + rnd(5200, 8000);
-      var bits = ['wave', 'thumbs', 'whoa'].filter(hasPose);
+      var bits = ['wave', 'thumbs', 'whoa', 'think', 'huh', 'laugh', 'fist', 'crossed', 'wave_small', 'nod_yes'].filter(hasPose);
       if (bits.length) { playSeq([[bits[Math.floor(Math.random() * bits.length)], 900, true]], 'aim'); return; }
     }
     var h = headAt('look_1_2') || { x: W() * 0.2, y: H() * 0.3, r: 60 };
@@ -2428,7 +2433,9 @@
      header's profile picture. Then the chat turns into the panel. */
   var faceShot = null;
   function pickUp(c) {
-    if (hasPose('smile')) { playSeq([['smile', 99999, true]], 'hold'); me.mode = 'hold'; }
+    /* eyes open for the shot: no blinking from here */
+    me.blinkAt = Infinity;
+    if (hasPose('smile')) { me.seq = null; setPose('smile'); me.mode = 'shot'; }
     var h = stu.cam && headAt();
     if (!h || !face) {
       if (stu.cam) { stu.cam.remove(); stu.cam = null; }
