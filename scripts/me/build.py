@@ -1,11 +1,11 @@
 """Frames of me for the intro's start screen.
 
     python3 scripts/me/build.py extract VIDEO [VIDEO ...]
-        Pulls frames (6 a second) into scripts/me/work/ and makes contact
+        Pulls frames (4 a second) into scripts/me/work/ and makes contact
         sheets, each frame labelled with its video and time, to choose from.
 
-    python3 scripts/me/build.py build scripts/me/picks.json
-        For every pose named in picks.json ({"pose": ["video", seconds]}),
+    python3 scripts/me/build.py build scripts/me/picks.json [VIDEO]
+        For every pose named in picks.json (a time in the video),
         takes that exact frame, removes the background (rembg, locally),
         crops every pose to the same box (the camera did not move), gives it
         the comic look (style.py) and writes assets/me/<pose>.webp, plus
@@ -53,7 +53,7 @@ def extract(videos):
         name = os.path.splitext(os.path.basename(v))[0]
         d = os.path.join(WORK, name)
         os.makedirs(d, exist_ok=True)
-        sh('ffmpeg', '-v', 'error', '-y', '-i', v, '-vf', 'fps=6,scale=-2:360', os.path.join(d, '%05d.jpg'))
+        sh('ffmpeg', '-v', 'error', '-y', '-i', v, '-vf', 'fps=4,scale=-2:360', os.path.join(d, '%05d.jpg'))
         frames = sorted(f for f in os.listdir(d) if f.endswith('.jpg'))
         per = 48
         for s in range(0, len(frames), per):
@@ -67,7 +67,7 @@ def extract(videos):
             for i, (f, im) in enumerate(zip(chunk, th)):
                 x, y = (i % cols) * tw, (i // cols) * (thh + 16)
                 sheet.paste(im.resize((tw, thh)), (x, y + 16))
-                t = (int(f[:5]) - 1) / 6
+                t = (int(f[:5]) - 1) / 4
                 dr.text((x + 3, y + 2), '%s %.2fs' % (name, t), fill='black')
             sheet.save(os.path.join(WORK, '%s_sheet_%02d.jpg' % (name, s // per)), quality=85)
         print(name, len(frames), 'frames')
@@ -96,12 +96,59 @@ def head_of(alpha):
     return [round(cx / W, 4), round(cy / H, 4), round(w * 0.55 / W, 4)]
 
 
-def write(poses):
+def head_ref(alpha):
+    """On a frontal, arms-down frame: the head is the top of the shape down
+    to the neck, where the width is least before the shoulders flare out.
+    Gives the head's centre and width, in pixels."""
+    import numpy as np
+    a = np.asarray(alpha) > 127
+    rows = np.where(a.any(axis=1))[0]
+    top, bottom = rows[0], rows[-1]
+    spans = []
+    for y in range(top, bottom + 1):
+        xs = np.where(a[y])[0]
+        spans.append((xs[0], xs[-1]) if len(xs) else (0, 0))
+    widths = [r - l for l, r in spans]
+    run = max(widths[:5]) or 1
+    end = len(widths) - 1
+    for i, w in enumerate(widths):
+        run = max(run, w) if i < len(widths) * 0.12 else run
+        if i > len(widths) * 0.08 and w > run * 1.9:
+            end = i
+            break
+    head = widths[:end]
+    neck = int(np.argmin(head[len(head) // 2:]) + len(head) // 2)
+    hw = max(head[:neck + 1])
+    i_max = int(np.argmax(head[:neck + 1]))
+    cx = (spans[i_max][0] + spans[i_max][1]) / 2
+    cy = top + neck * 0.5
+    return cx, cy, hw
+
+
+def main_shape(img, seed):
+    """Only the piece of the cut-out that is me: stray scraps dropped."""
+    from PIL import ImageDraw
+    a = img.getchannel('A').point(lambda v: 255 if v > 40 else 0)
+    x, y = int(seed[0]), int(seed[1])
+    if not (0 <= x < a.width and 0 <= y < a.height) or a.getpixel((x, y)) == 0:
+        return img
+    ImageDraw.floodfill(a, (x, y), 128)
+    keep = a.point(lambda v: 255 if v == 128 else 0)
+    out = img.copy()
+    out.putalpha(Image.composite(img.getchannel('A'), Image.new('L', img.size, 0), keep))
+    return out
+
+
+def write(poses, heads=None):
     """poses: {name: RGBA cut-out}, all the same size. Styled, cropped to one
     shared box, saved."""
     from style import stylize
     os.makedirs(OUT, exist_ok=True)
     styled = {k: stylize(v, crop=False) for k, v in poses.items()}
+    if heads:
+        k0 = next(iter(poses))
+        pad = (styled[k0].width - poses[k0].width) / 2     # stylize's margin
+        heads = {k: (h[0] + pad, h[1] + pad, h[2]) for k, h in heads.items()}
     box = None
     for im in styled.values():
         bb = im.getbbox()
@@ -114,27 +161,56 @@ def write(poses):
         im = im.resize((round(im.width * scale), HEIGHT), Image.LANCZOS)
         im.save(os.path.join(OUT, k + '.webp'), 'WEBP', quality=70, method=6)
         meta['width'] = im.width
-        meta['poses'][k] = {'head': head_of(im.getchannel('A'))}
+        if heads and k in heads:
+            hx, hy, hr = heads[k]
+            meta['poses'][k] = {'head': [round((hx - box[0]) / (box[2] - box[0]), 4),
+                                         round((hy - box[1]) / (box[3] - box[1]), 4),
+                                         round(hr / (box[2] - box[0]), 4)]}
+        else:
+            meta['poses'][k] = {'head': head_of(im.getchannel('A'))}
     with open(os.path.join(OUT, 'me.json'), 'w') as f:
         json.dump(meta, f, indent=1)
     missing = [p for p in POSES if p not in poses]
     print('wrote', len(styled), 'poses to', OUT, '| missing:', ', '.join(missing) or 'none')
 
 
-def build(picks_path):
+def build(picks_path, video_path=None):
+    """picks.json: {"video": path, "segments": [[from_s, to_s, ref_s], ...],
+    "poses": {name: seconds}}. The camera moved during filming, so each
+    segment of the video is scaled and shifted so the head in its reference
+    frame (arms down, facing the camera) lands the same size in the same
+    place; every pose in that segment gets the same move."""
     picks = json.load(open(picks_path))
     base = os.path.dirname(os.path.abspath(picks_path))
-    poses = {}
-    for name, (video, t) in picks.items():
-        v = video if os.path.isabs(video) else os.path.join(base, video)
+    video = video_path or (picks['video'] if os.path.isabs(picks['video']) else os.path.join(base, picks['video']))
+    os.makedirs(WORK, exist_ok=True)
+
+    def frame(t):
         tmp = os.path.join(WORK, '_frame.png')
-        os.makedirs(WORK, exist_ok=True)
-        sh('ffmpeg', '-v', 'error', '-y', '-ss', str(t), '-i', v, '-frames:v', '1', tmp)
-        im = Image.open(tmp)
-        im = ImageOps.contain(im, (1600, 1600))
-        poses[name] = cutout(im)
-        print('cut', name)
-    write(poses)
+        sh('ffmpeg', '-v', 'error', '-y', '-ss', str(t), '-i', video, '-frames:v', '1', tmp)
+        return cutout(ImageOps.contain(Image.open(tmp), (1600, 1600)))
+
+    T = 150                          # head width, in the shared canvas
+    CW, CH, HY = 9 * T, int(5.6 * T), 3 * T   # cut across the chest, the same for all
+    refs = {}
+    for seg in picks['segments']:
+        cut = frame(seg[2])
+        refs[tuple(seg)] = head_ref(cut.getchannel('A'))
+        print('ref', seg, [round(v) for v in refs[tuple(seg)]])
+
+    poses, heads = {}, {}
+    for name, t in picks['poses'].items():
+        seg = next(s_ for s_ in picks['segments'] if s_[0] <= t < s_[1])
+        hx, hy, hw = refs[tuple(seg)]
+        cut = frame(t)
+        k = T / hw
+        im = cut.resize((max(1, round(cut.width * k)), max(1, round(cut.height * k))), Image.LANCZOS)
+        canvas = Image.new('RGBA', (CW, CH), (0, 0, 0, 0))
+        canvas.alpha_composite(im, (round(CW / 2 - hx * k), round(HY - hy * k)))
+        poses[name] = main_shape(canvas, (CW / 2, HY + T * 1.6))
+        heads[name] = (CW / 2, HY, T * 0.62)
+        print('cut', name, t)
+    write(poses, heads)
 
 
 def placeholder():
@@ -174,7 +250,7 @@ if __name__ == '__main__':
     if cmd == 'extract':
         extract(sys.argv[2:])
     elif cmd == 'build':
-        build(sys.argv[2])
+        build(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
     elif cmd == 'placeholder':
         placeholder()
     else:

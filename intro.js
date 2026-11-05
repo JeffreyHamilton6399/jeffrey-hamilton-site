@@ -2284,10 +2284,11 @@
     var cam = stu.cam = make('div', 'bi-win bi-win-cam');
     root.insertBefore(cam, deskUi.bar);
     cam.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i></i></span><span class="bi-win-title">Camera</span></div>' +
-      '<div class="bi-cam-view"><span class="bi-shutter" aria-hidden="true"><i></i></span></div>';
+      '<div class="bi-cam-view"></div><div class="bi-cam-ctl"><span class="bi-shutter" aria-hidden="true"><i></i></span></div>';
     /* a window on the desk, not the desk: the chat opens over part of it */
-    var cw = phone ? W() - 40 : Math.round(Math.min(W() * 0.24, 360));
-    var ch = phone ? Math.round(H() * 0.4) : Math.round(Math.min((H() - 160) * 0.8, cw * 1.3));
+    /* landscape, like a webcam: the frames are me from the chest up */
+    var cw = phone ? W() - 40 : Math.round(Math.min(W() * 0.3, 440));
+    var ch = Math.round(cw / 1.24) + 37 + 50;      /* + the title bar and the controls */
     cam.style.left = (phone ? 20 : Math.round(W() * 0.06)) + 'px';
     cam.style.top = (phone ? 46 : Math.round(Math.max(48, (H() - 96 - ch) / 2 + 10))) + 'px';
     cam.style.width = cw + 'px';
