@@ -3496,8 +3496,7 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   left: 50%;
   translate: -50% 0;
   bottom: 0;
-  /* the frames leave room over my head for a raised arm: closer than that */
-  height: 122%;
+  height: 90%;
   width: auto;
   transform-origin: 50% 100%;
   user-select: none;
