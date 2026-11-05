@@ -1642,7 +1642,9 @@
   /* What plays from the press until the answer: Aria Math, from just before
      its climax (3:37), faded in so it never lands at full volume. */
   var BGM = 'assets/audio/aria-math-intro.mp3';
-  var BGM_VOL = 0.5, BGM_UNDER = 0.16;
+  var BGM_VOL = 0.28, BGM_UNDER = 0.08;
+  /* the song, under everything: a bed, not the point */
+  var MUSIC_VOL = 0.4;
   /* The clip opens on the beat the band comes in; the agents spawn on the
      next downbeat but one. (Measured off the song: it is 83 bpm, and the
      band arrives at 0:10.69; the clip starts at 0:10.63.) */
@@ -1724,7 +1726,7 @@
     var ctx = snd.ctx;
     snd.gain = ctx.createGain();
     snd.gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    snd.gain.gain.linearRampToValueAtTime(0.78, ctx.currentTime + 0.04);
+    snd.gain.gain.linearRampToValueAtTime(MUSIC_VOL, ctx.currentTime + 0.04);
     snd.gain.connect(ctx.destination);
     var src = ctx.createBufferSource();
     src.buffer = snd.music;
@@ -2367,9 +2369,16 @@
     var h = headAt('look_1_2') || { x: W() * 0.2, y: H() * 0.3, r: 60 };
     var kind = recent ? 'point_' : 'look_';
     var name;
-    if (Math.hypot(a.x - h.x, a.y - h.y) < h.r * 1.6) name = kind + 'center';
+    var dx = a.x - h.x, dy = a.y - h.y;
+    if (Math.hypot(dx, dy) < h.r * 1.6) name = kind + 'center';
     else {
-      var col = clamp(Math.floor(a.x / W() * 5), 0, 4), row = clamp(Math.floor(a.y / H() * 3), 0, 2);
+      /* Where the pointer is from me, not where it is on the screen: I sit
+         on the left, so most of the screen is to my right. Each side is
+         measured against the room on that side of me. */
+      var nx = dx / Math.max(80, dx < 0 ? h.x : W() - h.x);
+      var ny = dy / Math.max(80, dy < 0 ? h.y : H() - h.y);
+      var col = clamp(Math.round((nx + 1) * 2), 0, 4);
+      var row = ny < -0.3 ? 0 : ny > 0.3 ? 2 : 1;
       name = kind + row + '_' + col;
     }
     if (!hasPose(name)) name = name.replace(kind, kind === 'point_' ? 'look_' : 'point_');
@@ -2395,7 +2404,8 @@
   /* the press: a jump, the lean in, and at the keys; the title cuts away
      and the chat opens on the right, where I am looking */
   function pulledIn() {
-    var list = [['startle_0', 130, true], ['startle_1', 160], ['lean_0', 150, true], ['lean_1', 200]]
+    var list = [['startle_0', 130, true], ['startle_1', 160], ['lean_0', 150, true], ['lean_1', 200],
+      ['earbuds_0', 260, true], ['earbuds_1', 300]]
       .filter(function (s) { return hasPose(s[0]); });
     playSeq(list, 'type');
 
@@ -2555,7 +2565,7 @@
     }).then(mine.click).then(function () {
       ask.classList.add('is-recording');
       cam = faceCam();
-      duck(0.16, 0.35);
+      duck(MUSIC_VOL * 0.2, 0.35);
       return decodeAudio().then(function () {
         var len = playHalf();
         return real(len * 1000 + 150);
@@ -2577,7 +2587,7 @@
       asked.r();
       return Promise.all([streamInto(t, HALF_REPLY), spoken]);
     }).then(function () {
-      duck(0.78, 0.9);
+      duck(MUSIC_VOL, 0.9);
       if (cam) cam.gone();
       return swapped;
     });
@@ -2813,7 +2823,7 @@
       canvasOpen.catch(function () {});
       chat.classList.add('has-thread');
       /* and I listen for the answer */
-      playSeq([['listen', 500, true], ['nod_0', 160], ['nod_1', 160], ['nod_2', 160], ['listen', 900], ['smile', 600]]
+      playSeq([['submit', 320, true], ['listen', 500, true], ['nod_0', 160], ['nod_1', 160], ['nod_2', 160], ['listen', 900], ['smile', 600]]
         .filter(function (q) { return hasPose(q[0]); }), 'hold');
       me.mode = 'hold';
       return real(260);
@@ -3058,14 +3068,14 @@
     bar.el.classList.add('done');
     bar.pct.textContent = 'Complete ✓';
     Object.keys(files).forEach(function (k) { files[k].li.classList.add('done'); });
-    duck(0.1, 0.45);                      /* well under the last words */
+    duck(MUSIC_VOL * 0.12, 0.45);         /* well under the last words */
     var said = say('Complete. Have a good day, Jeffrey.');
     var r = rect(bar.el);
     return c.move(r.left + r.width * 0.4, r.top + r.height / 2).then(c.click).then(function () {
       panel.classList.add('picked');
       return said;
     }).then(function () {
-      duck(0.3, 1.4);                     /* back a little, on its way out */
+      duck(MUSIC_VOL * 0.4, 1.4);         /* back a little, on its way out */
       var xr = center(rect(bar.x));
       return c.move(xr.x, xr.y);
     }).then(c.click).then(function () {

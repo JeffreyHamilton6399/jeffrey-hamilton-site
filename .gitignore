@@ -32,3 +32,4 @@ package.json
 package-lock.json
 scripts/me/work/
 __pycache__/
+scripts/me/generated/
