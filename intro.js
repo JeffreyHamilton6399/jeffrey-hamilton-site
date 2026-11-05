@@ -2071,7 +2071,16 @@
     return opened.then(function () {
       if (deskUi.app) deskUi.app.textContent = 'Camera';
       stu.cam.classList.add('open');
-      return real(420);
+      return real(900);
+    }).then(function () {
+      /* me as I am, for a moment; then the Comic filter */
+      var chip = stu.cam.querySelector('[data-f="comic"]');
+      var cr = center(rect(chip));
+      return c.move(cr.x, cr.y).then(c.click).then(function () {
+        [].slice.call(stu.cam.querySelectorAll('.bi-filters i')).forEach(function (i) { i.classList.toggle('on', i === chip); });
+        stu.cam.classList.add('filtered');
+        return real(420);
+      });
     }).then(function () {
       placeBubble();
       ui.press.classList.add('on');
@@ -2286,7 +2295,9 @@
     var cam = stu.cam = make('div', 'bi-win bi-win-cam');
     root.insertBefore(cam, deskUi.bar);
     cam.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i></i></span><span class="bi-win-title">Camera</span></div>' +
-      '<div class="bi-cam-view"></div><div class="bi-cam-ctl"><span class="bi-shutter" aria-hidden="true"><i></i></span></div>';
+      '<div class="bi-cam-view"><img class="bi-raw" alt="" src="' + ME + 'raw.jpg"></div>' +
+      '<div class="bi-cam-ctl"><span class="bi-filters"><i class="on">Normal</i><i>Mono</i><i data-f="comic">Comic</i></span>' +
+        '<span class="bi-shutter" aria-hidden="true"><i></i></span></div>';
     /* a window on the desk, not the desk: the chat opens over part of it */
     /* landscape, like a webcam: the frames are me from the chest up */
     var cw = phone ? W() - 40 : Math.round(Math.min(W() * 0.3, 440));
