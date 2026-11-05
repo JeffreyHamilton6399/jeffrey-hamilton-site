@@ -4,7 +4,7 @@ from the edges (the drawing's own outline stops it), lined up by the hair
 (the same place and size in every pose), then given the same sticker
 treatment as before (build.py's write).
 
-    python3 scripts/me/toon.py SHEET_A SHEET_B
+    python3 scripts/me/toon.py scripts/me/sheets/A.webp scripts/me/sheets/B.webp
 """
 import os, sys, json
 import numpy as np
