@@ -1689,8 +1689,7 @@
 
   /* inside the click: the audio has to be woken by the visitor's gesture */
   function wakeAudio() {
-    var AC = window.AudioContext || window.webkitAudioContext;
-    try { if (AC) { snd.ctx = new AC(); snd.ctx.resume(); } } catch (e) { snd.ctx = null; }
+    enableDeskAudio().then(function () { deskSound(false); });
     try {
       if (window.speechSynthesis) {
         var u = new SpeechSynthesisUtterance(' ');
@@ -1699,22 +1698,57 @@
       }
     } catch (e) {}
   }
+  var deskMuted = false;
+  function desktopContext() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    try { if (!snd.ctx && AC) snd.ctx = new AC(); } catch (e) {}
+    return snd.ctx;
+  }
+  function enableDeskAudio() {
+    var ctx = desktopContext();
+    if (!ctx) return Promise.resolve();
+    return ctx.resume().catch(function () {});
+  }
+  function addDeskSoundControl(bar) {
+    var button = make('button', 'bi-desk-sound');
+    button.type = 'button';
+    button.setAttribute('aria-label', 'Desktop sound effects');
+    bar.querySelector('.bi-mb-r').prepend(button);
+    var ctx = desktopContext();
+    function update() {
+      var on = ctx && ctx.state === 'running' && !deskMuted;
+      button.textContent = on ? 'Sound on' : 'Enable sound';
+      button.setAttribute('aria-pressed', String(!!on));
+    }
+    update();
+    if (ctx) ctx.addEventListener('statechange', update);
+    root.addEventListener('click', function (event) {
+      if (!event.isTrusted || deskMuted || event.target.closest('.bi-desk-sound, .bi-shutter')) return;
+      enableDeskAudio().then(function () { deskSound(false); });
+    });
+    button.onclick = function () {
+      deskMuted = !deskMuted && ctx && ctx.state === 'running';
+      if (deskMuted) { update(); return; }
+      enableDeskAudio().then(function () { update(); deskSound(false); });
+    };
+  }
   // A short filtered noise burst gives the keys and mouse a mechanical tap.
   function deskSound(key) {
     var ctx = snd.ctx;
-    if (dead || !ctx || ctx.state !== 'running') return;
+    if (dead || deskMuted || !ctx || ctx.state !== 'running') return;
     if (!snd.tapNoise) {
-      snd.tapNoise = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.032), ctx.sampleRate);
+      snd.tapNoise = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.062), ctx.sampleRate);
       var samples = snd.tapNoise.getChannelData(0);
       for (var i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
     }
     var source = ctx.createBufferSource(), filter = ctx.createBiquadFilter(), gain = ctx.createGain();
     source.buffer = snd.tapNoise;
-    filter.type = 'bandpass';
-    filter.frequency.value = key ? rnd(700, 1150) : 2050;
+    filter.type = 'lowpass';
+    filter.frequency.value = key ? rnd(1500, 2300) : 3800;
     var t = ctx.currentTime;
-    gain.gain.setValueAtTime(key ? 0.054 : 0.075, t);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + (key ? 0.031 : 0.017));
+    gain.gain.setValueAtTime(key ? 0.17 : 0.22, t);
+    gain.gain.exponentialRampToValueAtTime(key ? 0.038 : 0.045, t + 0.013);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + (key ? 0.060 : 0.036));
     source.connect(filter).connect(gain).connect(ctx.destination);
     source.onended = function () { source.disconnect(); filter.disconnect(); gain.disconnect(); };
     source.start();
@@ -2004,6 +2038,7 @@
         '<span class="bi-mb-r">' + WIFI + BATT + '<span class="bi-mb-clock"></span></span>';
     }
     deskUi.bar = bar;
+    addDeskSoundControl(bar);
     deskUi.app = bar.querySelector('.bi-mb-app');
     var clock = bar.querySelector('.bi-mb-clock');
     var tick = function () { clock.textContent = clockText(phone); };
@@ -2423,7 +2458,7 @@
     /* Position the hint when the desktop choreography finishes. */
     ui.press.classList.add('bi-bubble');
     if (window.fetch) {
-      fetch(ME + 'me.json?v=4').then(function (r) { if (!r.ok) throw r; return r.json(); }).then(function (m) {
+      fetch(ME + 'me.json?v=5').then(function (r) { if (!r.ok) throw r; return r.json(); }).then(function (m) {
         if (dead) return;
         me.meta = m;
         preload(posesLike('point_').concat(posesLike('look_'), ['whoa', 'thumbs', 'wave']));
@@ -2483,6 +2518,11 @@
   /* Measure each side from the head so all five pointing rows are reachable. */
   function aimPose(now) {
     var a = aim, recent = a && now - a.t < 1600;
+    var camera = rect(stu.cam);
+    // Keep the upward pose while the visitor rests in the gap above the windows.
+    var upperGap = a && a.y <= camera.top + camera.height * 0.12 &&
+      a.x >= camera.right - camera.width * 0.15 && a.x <= W() * 0.43;
+    if (upperGap && hasPose('point_up')) { setPose('point_up'); return; }
     if (!a) {
       /* nobody pointing yet: look about now and then */
       if (now > me.extra) {
@@ -2525,6 +2565,7 @@
           col = dx < 0 ? (nx < -0.55 ? 0 : 1) : (nx > 0.55 ? 4 : 3);
         }
       }
+      if (recent && dy < 0 && slope > 2.4 && hasPose('point_up')) { setPose('point_up'); return; }
       name = kind + row + '_' + col;
       if (!hasPose(name)) {
         var nearest = Infinity;

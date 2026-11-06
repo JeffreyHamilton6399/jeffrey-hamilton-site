@@ -142,6 +142,13 @@ def main():
             poses[n] = canvas
             heads[n] = (CW / 2, HY, T * 0.62)
     build.write(poses, heads)
+    # The individually drawn upright sticker is already aligned to this frame.
+    manifest = os.path.join(build.OUT, 'me.json')
+    with open(manifest) as f:
+        meta = json.load(f)
+    meta['poses']['point_up'] = meta['poses']['point_0_3']
+    with open(manifest, 'w') as f:
+        json.dump(meta, f, indent=1)
 
 
 if __name__ == '__main__':

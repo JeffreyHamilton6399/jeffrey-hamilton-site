@@ -3803,3 +3803,15 @@ html.bi-desk-on .bi-press.bi-bubble::after {
   bottom: -5px;
 }
 html.bi-desk-on .bi-press.bi-bubble.on { animation: none; }
+
+.bi-desk-sound {
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .4);
+  border-radius: 5px;
+  padding: 3px 8px;
+  cursor: pointer;
+  pointer-events: auto;
+}
