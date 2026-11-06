@@ -53,9 +53,9 @@ A first visit starts on a computer, asks for the site, and watches it built.
    Browser from Terminal and enters the old portfolio's address. Visitors can
    explore that site inside the window. Pressing Camera's red record button
    closes the preview, unlocks audio and starts Aria Math. The cursor opens
-   Assistant from the dock and types "Create Jeffrey's portfolio". Jeffrey
-   puts in his earbuds, the cursor clicks the microphone, and
-   my recorded voice adds "and play Loser by Tame Impala". The reply is
+   Assistant from the dock and types "Create Jeffrey's portfolio". At the
+   microphone I hold the earbud and ask it to play Loser by Tame Impala.
+   I put in the earbuds as the Assistant answers. The reply is
    written and spoken, Aria Math fades out and Loser cuts in on the band.
    Then a cursor opens the design app, Canvas. Its window is a hole cut in
    the desktop, so what shows through it is the real page, blank; nothing on

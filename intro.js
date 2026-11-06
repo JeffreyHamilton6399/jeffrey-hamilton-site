@@ -324,6 +324,7 @@
         });
       },
       press: function () {
+        if (c === opener) deskSound(false);
         el.classList.add('down');
         ring(c);
         return wait(rnd(60, 100));
@@ -1698,6 +1699,26 @@
       }
     } catch (e) {}
   }
+  // A short filtered noise burst gives the keys and mouse a mechanical tap.
+  function deskSound(key) {
+    var ctx = snd.ctx;
+    if (dead || !ctx || ctx.state !== 'running') return;
+    if (!snd.tapNoise) {
+      snd.tapNoise = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.032), ctx.sampleRate);
+      var samples = snd.tapNoise.getChannelData(0);
+      for (var i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+    }
+    var source = ctx.createBufferSource(), filter = ctx.createBiquadFilter(), gain = ctx.createGain();
+    source.buffer = snd.tapNoise;
+    filter.type = 'bandpass';
+    filter.frequency.value = key ? rnd(700, 1150) : 2050;
+    var t = ctx.currentTime;
+    gain.gain.setValueAtTime(key ? 0.054 : 0.075, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + (key ? 0.031 : 0.017));
+    source.connect(filter).connect(gain).connect(ctx.destination);
+    source.onended = function () { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+    source.start();
+  }
   var decoded = null;
   function decodeAudio() {
     if (decoded) return decoded;
@@ -2084,6 +2105,7 @@
       return c.move(cr.x, cr.y).then(c.click).then(function () {
         [].slice.call(stu.cam.querySelectorAll('.bi-filters i')).forEach(function (i) { i.classList.toggle('on', i === chip); });
         stu.cam.classList.add('filtered');
+        c.el.querySelector('.bi-cur-tag').classList.add('retired');
         return real(420);
       });
     }).then(function () {
@@ -2117,7 +2139,7 @@
     await real(480);
     icon.classList.add('open');
     var win = make('section', 'bi-preview bi-browser', root);
-    win.innerHTML = '<header>Browser <span>Jeffrey Hamilton</span></header><nav><button aria-label="Back" disabled>←</button><button aria-label="Forward" disabled>→</button><button aria-label="Reload" disabled>↻</button><output aria-label="Address"></output></nav>';
+    win.innerHTML = '<header><span>Jeffrey Hamilton</span></header><nav><button aria-label="Back" disabled>←</button><button aria-label="Forward" disabled>→</button><button aria-label="Reload" disabled>↻</button><output aria-label="Address"></output></nav>';
     deskUi.app.textContent = 'Browser';
     var address = win.querySelector('output'), buttons = win.querySelectorAll('button');
     var cc = center(rect(address));
@@ -2389,9 +2411,9 @@
         '<button type="button" class="bi-shutter" aria-label="Record and start intro" disabled><i></i></button></div>';
     /* a window on the desk, not the desk: the chat opens over part of it */
     /* landscape, like a webcam: the frames are me from the chest up */
-    var cw = phone ? W() - 40 : Math.round(Math.min(W() * 0.3, 440));
+    var cw = phone ? W() - 40 : Math.round(Math.min(W() * 0.34, 490));
     var ch = Math.round(cw / 1.24) + 37 + 50;      /* + the title bar and the controls */
-    cam.style.left = (phone ? 20 : Math.round(W() * 0.06)) + 'px';
+    cam.style.left = (phone ? 20 : Math.round(W() * 0.035)) + 'px';
     cam.style.top = (phone ? 46 : Math.round(Math.max(48, (H() - 96 - ch) / 2 + 10))) + 'px';
     cam.style.width = cw + 'px';
     cam.style.height = ch + 'px';
@@ -2479,7 +2501,7 @@
     var kind = recent ? 'point_' : 'look_';
     var name;
     var dx = a.x - h.x, dy = a.y - h.y;
-    if (Math.hypot(dx, dy) < h.r * 1.6) name = kind + 'center';
+    if (Math.hypot(dx, dy) < h.r * 0.55) name = kind + 'center';
     else {
       /* Where the pointer is from me, not where it is on the screen: I sit
          on the left, so most of the screen is to my right. Each side is
@@ -2488,6 +2510,21 @@
       var ny = dy / Math.max(80, dy < 0 ? h.y : H() - h.y);
       var col = clamp(Math.round((nx + 1) * 2), 0, 4);
       var row = recent ? clamp(Math.round((ny + 1) * 2), 0, 4) : ny < -0.3 ? 0 : ny > 0.3 ? 2 : 1;
+      if (recent) {
+        // Match the drawn arm angle. Scaling X and Y by screen dimensions
+        // makes a diagonal near the face look straight ahead on wide screens.
+        var slope = Math.abs(dy) / Math.max(1, Math.abs(dx));
+        if (dy < 0 && slope > 0.24) {
+          row = slope > 0.82 ? 0 : 1;
+          col = dx < 0 ? (slope > 1.4 ? 2 : slope > 0.65 ? 1 : 0) : (slope > 0.82 ? 3 : 4);
+        } else if (dy > 0 && slope > 0.28) {
+          row = slope > 1 ? 4 : 3;
+          col = slope > 2.5 ? 2 : dx < 0 ? (slope > 0.75 ? 1 : 0) : (slope > 0.75 ? 3 : 4);
+        } else {
+          row = 2;
+          col = dx < 0 ? (nx < -0.55 ? 0 : 1) : (nx > 0.55 ? 4 : 3);
+        }
+      }
       name = kind + row + '_' + col;
       if (!hasPose(name)) {
         var nearest = Infinity;
@@ -2806,6 +2843,7 @@
     var i = 0;
     function next() {
       if (i >= text.length) return Promise.resolve();
+      deskSound(true);
       el.textContent += text[i++];
       if (el === ui.typed) chat.classList.add('has-text');
       if (i === text.length) { mouseMode(); return Promise.resolve(); }
@@ -2906,15 +2944,8 @@
     }).then(function () {
       return typeInto(ui.typed, "Create Jeffrey's portfolio", 78);
     }).then(function () {
-      me.mode = 'earbuds';
-      setPose('earbuds_0');
-      return real(260);
-    }).then(function () {
-      setPose('earbuds_1');
-      return real(300);
-    }).then(function () {
-      me.earbuds = true;
-      mouseMode();
+      me.mode = 'holding';
+      setPose('talk_closed');
       var mr = center(rect(ui.mic));
       return real(260).then(function () { return c.move(mr.x, mr.y); });
     }).then(c.click).then(function () {
@@ -2945,23 +2976,34 @@
       chat.classList.remove('has-text');
       bubble('me').textContent = said;
       /* sent — and while it thinks, the hand opens the design app */
-      canvasOpen = real(350).then(function () { mouseMode(); return openCanvas(c); }).then(function () {
-        playSeq([['listen', 500], ['nod_0', 160], ['nod_1', 160], ['nod_2', 160], ['smile', 600]], 'hold');
-      });
+      canvasOpen = real(350).then(function () { mouseMode(); return openCanvas(c); });
       canvasOpen.catch(function () {});
       chat.classList.add('has-thread');
       return real(260);
     }).then(function () {
       var t = bubble('ai', '<span class="bi-thinking">Thinking</span>');
-      return real(950).then(function () { return t; });
+      return Promise.all([real(950), canvasOpen]).then(function () { return t; });
     }).then(function (t) {
       /* the answer, written and said — and when it has been said, the song
          cuts in, on the beat the band arrives */
       t.textContent = '';
       bgTo(BGM_UNDER, 0.3);
       var spoken = say('Okay. Playing Loser, by Tame Impala.');
+      var listening = canvasOpen.then(function () {
+        me.seq = null;
+        me.mode = 'earbuds';
+        setPose('earbuds_0');
+        return real(370);
+      }).then(function () {
+        setPose('earbuds_1');
+        return real(480);
+      }).then(function () {
+        me.earbuds = true;
+        setPose('listen');
+        playSeq([['listen', 500], ['nod_0', 180], ['nod_1', 180], ['smile', 420]], 'hold');
+      });
       return streamInto(t, 'Okay. Playing Loser by Tame Impala, and creating Jeffrey’s portfolio.').then(function () {
-        return spoken;
+        return Promise.all([spoken, listening]);
       }).then(function () {
         stopBgm(0.45);                     /* out, and Loser cuts in */
         startMusic();
