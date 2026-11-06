@@ -2157,6 +2157,35 @@
   var legacyOrigin = new URL(legacyUrl).origin;
   var legacyPreview = legacyUrl + '?nointro&preview=1';
   var closePreview;
+  function recordGuide(frame) {
+    var guide = make('div', 'bi-record-guide', root);
+    guide.setAttribute('aria-hidden', 'true');
+    guide.innerHTML = '<svg class="bi-guide-line"><g fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path class="bi-guide-edge"/><path class="bi-guide-ink" pathLength="1"/></g></svg>' +
+      '<span class="bi-guide-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">' +
+      '<rect x="5.5" y="10" width="13" height="10" rx="2.5"/><path d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3"/>' +
+      '<circle cx="12" cy="15" r="1" fill="currentColor"/></svg></span>';
+    function position() {
+      var page = rect(frame), button = rect(stu.cam.querySelector('.bi-shutter'));
+      var x = page.left + Math.min(86, page.width * 0.17);
+      var y = clamp(button.top - 72, page.top + 26, page.bottom - 28);
+      var endX = button.right + 7, endY = button.top + button.height / 2;
+      var mid = (x + endX) / 2;
+      var lock = guide.querySelector('.bi-guide-lock');
+      lock.style.left = x + 'px';
+      lock.style.top = y + 'px';
+      var curve = 'M ' + (x - 23) + ' ' + (y + 9) +
+        ' C ' + (x - 65) + ' ' + (y + 48) + ', ' + mid + ' ' + (endY - 42) + ', ' + mid + ' ' + (endY - 13) +
+        ' S ' + (mid + 29) + ' ' + (endY - 45) + ', ' + (mid - 4) + ' ' + (endY - 25) +
+        ' Q ' + (endX + 30) + ' ' + (endY + 9) + ', ' + endX + ' ' + endY +
+        ' m 10 -5 l -10 5 8 7';
+      guide.querySelectorAll('path.bi-guide-edge, path.bi-guide-ink').forEach(function (p) { p.setAttribute('d', curve); });
+    }
+    position();
+    window.addEventListener('resize', position);
+    return function () { window.removeEventListener('resize', position); guide.remove(); };
+  }
+
   async function openLegacyBrowser(c) {
     await launch(c, 'terminal');
     var terminal = make('section', 'bi-preview bi-terminal', root);
@@ -2191,6 +2220,7 @@
     frame.title = "Jeffrey Hamilton’s previous portfolio";
     frame.allow = "autoplay 'none'";
     frame.src = legacyPreview;
+    var removeGuide = recordGuide(frame);
     var entries = [''], index = 0;
     function sync() {
       buttons[0].disabled = index === 0;
@@ -2214,6 +2244,7 @@
     window.addEventListener('message', receive);
     closePreview = function () {
       window.removeEventListener('message', receive);
+      removeGuide();
       win.remove();
       icon.classList.remove('open');
       deskUi.app.textContent = 'Camera';

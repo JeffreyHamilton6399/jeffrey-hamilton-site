@@ -3815,3 +3815,27 @@ html.bi-desk-on .bi-press.bi-bubble.on { animation: none; }
   cursor: pointer;
   pointer-events: auto;
 }
+
+.bi-browser iframe { filter: grayscale(.8) contrast(.83); }
+.bi-record-guide, .bi-guide-line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.bi-record-guide { z-index: 4; }
+.bi-guide-edge { stroke: #28252c; stroke-width: 5; opacity: .72; }
+.bi-guide-ink { stroke: #fff1bd; stroke-width: 2.5; }
+.bi-guide-lock {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  transform: translate(-50%, -50%);
+  color: #fff1bd;
+  background: #363338;
+  border: 1px solid #fff1bd;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px #0003;
+}
+.bi-guide-lock svg { width: 22px; height: 22px; }
+@media (prefers-reduced-motion: no-preference) {
+  .bi-guide-ink { stroke-dasharray: 1; animation: biTraceGuide 1.1s ease-out both; }
+  @keyframes biTraceGuide { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+}
