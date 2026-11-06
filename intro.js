@@ -2148,42 +2148,102 @@
     }).then(function () {
       me.mode = 'aim';
       stu.cam.querySelector('.bi-shutter').disabled = false;
-      placeBubble();
-      ui.press.classList.add('on');
+      /* with the old site up, the bubble waits for the guide */
+      if (!guided) { placeBubble(); ui.press.classList.add('on'); }
     });
   }
 
   var legacyUrl = 'https://jeffreyhamilton6399.github.io/jeffrey-hamilton-portfolio/';
   var legacyOrigin = new URL(legacyUrl).origin;
   var legacyPreview = legacyUrl + '?nointro&preview=1';
-  var closePreview;
-  function recordGuide(frame) {
+  var closePreview, guided = false;
+  /* Once the visitor has had a look at the old site (scrolled it, or a
+     while has gone by), it is crossed out: the page fades, a big marker X
+     goes over it, a line runs from the X to the camera's record button,
+     the bubble says "Press to start", everything else goes dark and the
+     record button glows gold. Until then, the old site is theirs to use. */
+  function recordGuide(frame, win) {
+    var NS = 'http://www.w3.org/2000/svg';
     var guide = make('div', 'bi-record-guide', root);
     guide.setAttribute('aria-hidden', 'true');
-    guide.innerHTML = '<svg class="bi-guide-line"><g fill="none" stroke-linecap="round" stroke-linejoin="round">' +
-      '<path class="bi-guide-edge"/><path class="bi-guide-ink" pathLength="1"/></g></svg>' +
-      '<span class="bi-guide-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">' +
-      '<rect x="5.5" y="10" width="13" height="10" rx="2.5"/><path d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3"/>' +
-      '<circle cx="12" cy="15" r="1" fill="currentColor"/></svg></span>';
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'bi-guide-line');
+    guide.appendChild(svg);
+    function path(cls) {
+      var p = document.createElementNS(NS, 'path');
+      p.setAttribute('class', cls);
+      p.setAttribute('pathLength', '1');
+      svg.appendChild(p);
+      return p;
+    }
+    /* the X: a misprint of each stroke under the ink, then the line */
+    var x1 = [path('bi-x bi-x-c'), path('bi-x bi-x-m'), path('bi-x bi-x-ink')];
+    var x2 = [path('bi-x bi-x-c'), path('bi-x bi-x-m'), path('bi-x bi-x-ink')];
+    var line = [path('bi-guide-edge'), path('bi-guide-ink')];
+    var dim = null, started = false, timer = 0;
+    function stroke(ax, ay, bx, by, wob) {
+      var mx = (ax + bx) / 2, my = (ay + by) / 2, dx = bx - ax, dy = by - ay, d = Math.hypot(dx, dy) || 1;
+      var nx = -dy / d * wob, ny = dx / d * wob;
+      return 'M ' + ax + ' ' + ay + ' Q ' + (mx + nx) + ' ' + (my + ny) + ' ' + bx + ' ' + by;
+    }
     function position() {
       var page = rect(frame), button = rect(stu.cam.querySelector('.bi-shutter'));
-      var x = page.left + Math.min(86, page.width * 0.17);
-      var y = clamp(button.top - 72, page.top + 26, page.bottom - 28);
-      var endX = button.right + 7, endY = button.top + button.height / 2;
-      var mid = (x + endX) / 2;
-      var lock = guide.querySelector('.bi-guide-lock');
-      lock.style.left = x + 'px';
-      lock.style.top = y + 'px';
-      var curve = 'M ' + (x - 23) + ' ' + (y + 9) +
-        ' C ' + (x - 65) + ' ' + (y + 48) + ', ' + mid + ' ' + (endY - 42) + ', ' + mid + ' ' + (endY - 13) +
-        ' S ' + (mid + 29) + ' ' + (endY - 45) + ', ' + (mid - 4) + ' ' + (endY - 25) +
-        ' Q ' + (endX + 30) + ' ' + (endY + 9) + ', ' + endX + ' ' + endY +
-        ' m 10 -5 l -10 5 8 7';
-      guide.querySelectorAll('path.bi-guide-edge, path.bi-guide-ink').forEach(function (p) { p.setAttribute('d', curve); });
+      var p = Math.min(page.width, page.height) * 0.12;
+      var l = page.left + p, t = page.top + p, r = page.right - p, b = page.bottom - p;
+      var d1 = stroke(l, t, r, b, 14), d2 = stroke(r, t, l, b, -10);
+      x1.forEach(function (q) { q.setAttribute('d', d1); });
+      x2.forEach(function (q) { q.setAttribute('d', d2); });
+      var x = (l + r) / 2, y = (t + b) / 2;
+      var endX = button.right + 8, endY = button.top + button.height / 2;
+      var curve = 'M ' + x + ' ' + y +
+        ' C ' + (x - 60) + ' ' + (y + 160) + ', ' + (endX + 160) + ' ' + (endY - 120) + ', ' + endX + ' ' + endY +
+        ' m 13 -7 l -13 7 11 8';
+      line.forEach(function (q) { q.setAttribute('d', curve); });
+      if (started) placeBubble();
     }
+    function run() {
+      if (started || dead || !stu.cam) return;
+      started = true;
+      clearTimeout(timer);
+      position();
+      root.classList.add('bi-spot');
+      win.classList.add('crossed');                       /* the page fades */
+      setTimeout(function () { if (!dead) guide.classList.add('x1'); }, 900);
+      setTimeout(function () { if (!dead) guide.classList.add('x2'); }, 1300);
+      setTimeout(function () { if (!dead) guide.classList.add('drawn'); }, 1750);
+      setTimeout(function () {
+        if (dead || !stu.cam) return;
+        placeBubble();
+        ui.press.classList.add('on');
+        dim = make('div', 'bi-dim', root);
+        /* clicks anywhere but the record button only nudge it */
+        dim.addEventListener('click', function () {
+          var sh = stu.cam && stu.cam.querySelector('.bi-shutter');
+          if (!sh) return;
+          sh.classList.remove('nudge');
+          void sh.offsetWidth;
+          sh.classList.add('nudge');
+        });
+        requestAnimationFrame(function () { if (dim) dim.classList.add('on'); });
+        stu.cam.querySelector('.bi-shutter').classList.add('gold');
+      }, 2650);
+    }
+    /* nobody scrolls: it happens anyway, after a while */
+    timer = setTimeout(run, 12000);
     position();
     window.addEventListener('resize', position);
-    return function () { window.removeEventListener('resize', position); guide.remove(); };
+    return {
+      run: run,
+      remove: function () {
+        clearTimeout(timer);
+        window.removeEventListener('resize', position);
+        guide.remove();
+        if (dim) dim.remove();
+        root.classList.remove('bi-spot');
+        var sh = stu.cam && stu.cam.querySelector('.bi-shutter');
+        if (sh) sh.classList.remove('gold', 'nudge');
+      }
+    };
   }
 
   async function openLegacyBrowser(c) {
@@ -2220,7 +2280,8 @@
     frame.title = "Jeffrey Hamilton’s previous portfolio";
     frame.allow = "autoplay 'none'";
     frame.src = legacyPreview;
-    var removeGuide = recordGuide(frame);
+    var guide = recordGuide(frame, win);
+    guided = true;
     var entries = [''], index = 0;
     function sync() {
       buttons[0].disabled = index === 0;
@@ -2230,6 +2291,7 @@
     function receive(e) {
       if (e.source !== frame.contentWindow || e.origin !== legacyOrigin || !e.data) return;
       if (e.data.legacy === 'escape') finish(true);
+      if (e.data.legacy === 'scroll') guide.run();
       if (e.data.legacy === 'pointer') {
         var r = rect(frame);
         onPointer({clientX: r.left + e.data.x, clientY: r.top + e.data.y});
@@ -2244,7 +2306,7 @@
     window.addEventListener('message', receive);
     closePreview = function () {
       window.removeEventListener('message', receive);
-      removeGuide();
+      guide.remove();
       win.remove();
       icon.classList.remove('open');
       deskUi.app.textContent = 'Camera';

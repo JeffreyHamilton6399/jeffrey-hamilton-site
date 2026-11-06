@@ -3817,25 +3817,46 @@ html.bi-desk-on .bi-press.bi-bubble.on { animation: none; }
 }
 
 .bi-browser iframe { filter: grayscale(.8) contrast(.83); }
+/* The old site, crossed out: it fades, a marker X goes over it, a line
+   runs to the record button, the rest goes dark, the button glows gold. */
 .bi-record-guide, .bi-guide-line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .bi-record-guide { z-index: 4; }
-.bi-guide-edge { stroke: #28252c; stroke-width: 5; opacity: .72; }
-.bi-guide-ink { stroke: #fff1bd; stroke-width: 2.5; }
-.bi-guide-lock {
+.bi-guide-line path { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.bi-x { stroke-width: 18; transition: stroke-dashoffset .38s cubic-bezier(.6, 0, .3, 1); }
+.bi-x-ink { stroke: #14121E; }
+.bi-x-c { stroke: rgba(0, 190, 230, .7); transform: translate(-5px, 1px); }
+.bi-x-m { stroke: rgba(240, 40, 140, .7); transform: translate(5px, 3px); }
+.bi-record-guide.x1 path.bi-x:nth-child(-n+3) { stroke-dashoffset: 0; }
+.bi-record-guide.x2 path.bi-x { stroke-dashoffset: 0; }
+.bi-guide-edge { stroke: #14121E; stroke-width: 9; }
+.bi-guide-ink { stroke: #E9B33F; stroke-width: 4; }
+.bi-guide-edge, .bi-guide-ink { transition: stroke-dashoffset .9s cubic-bezier(.5, 0, .25, 1); }
+.bi-record-guide.drawn .bi-guide-edge, .bi-record-guide.drawn .bi-guide-ink { stroke-dashoffset: 0; }
+.bi-browser iframe { transition: opacity 1.2s ease; }
+.bi-browser.crossed iframe { opacity: .35; }
+/* the spotlight: everything dark but the camera, the line and the bubble */
+.bi-dim {
   position: absolute;
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  transform: translate(-50%, -50%);
-  color: #fff1bd;
-  background: #363338;
-  border: 1px solid #fff1bd;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px #0003;
+  inset: 0;
+  z-index: 6;
+  background: rgba(8, 6, 16, .72);
+  opacity: 0;
+  transition: opacity .6s ease;
+  pointer-events: auto;
 }
-.bi-guide-lock svg { width: 22px; height: 22px; }
-@media (prefers-reduced-motion: no-preference) {
-  .bi-guide-ink { stroke-dasharray: 1; animation: biTraceGuide 1.1s ease-out both; }
-  @keyframes biTraceGuide { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.bi-dim.on { opacity: 1; }
+.bi.bi-spot .bi-win-cam { z-index: 7; }
+.bi.bi-spot .bi-record-guide { z-index: 8; }
+.bi.bi-spot .bi-press { z-index: 8; }
+.bi.bi-spot .bi-layer, .bi.bi-spot .bi-cursors { z-index: 9; }
+.bi-shutter.gold {
+  border-color: #E9B33F;
+  box-shadow: 0 0 0 3px rgba(233, 179, 63, .55), 0 0 22px 6px rgba(233, 179, 63, .55);
+  animation: biGold 1.6s ease-in-out infinite;
 }
+.bi-shutter.gold i { background: #E9B33F; }
+@keyframes biGold {
+  50% { box-shadow: 0 0 0 6px rgba(233, 179, 63, .35), 0 0 34px 12px rgba(233, 179, 63, .7); }
+}
+.bi-shutter.gold.nudge { animation: biNudge .35s ease, biGold 1.6s ease-in-out .35s infinite; }
+@keyframes biNudge { 25% { transform: scale(1.18); } 60% { transform: scale(.94); } }
