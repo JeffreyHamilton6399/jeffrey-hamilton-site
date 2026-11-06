@@ -2155,10 +2155,10 @@
 
   var legacyUrl = 'https://jeffreyhamilton6399.github.io/jeffrey-hamilton-portfolio/';
   var legacyOrigin = new URL(legacyUrl).origin;
-  var legacyPreview = legacyUrl + '?nointro&preview=1';
+  var legacyPreview = legacyUrl + '?nointro&preview=2';
   var closePreview, guided = false;
-  /* Once the visitor has had a look at the old site (scrolled it, or a
-     while has gone by), it is crossed out: the page fades, a big marker X
+  /* Once the visitor has had a look at the old site (scrolled about a
+     window height), it is crossed out: the page fades, a big marker X
      goes over it, a line runs from the X to the camera's record button,
      the bubble says "Press to start", everything else goes dark and the
      record button glows gold. Until then, the old site is theirs to use. */
@@ -2180,7 +2180,9 @@
     var x1 = [path('bi-x bi-x-c'), path('bi-x bi-x-m'), path('bi-x bi-x-ink')];
     var x2 = [path('bi-x bi-x-c'), path('bi-x bi-x-m'), path('bi-x bi-x-ink')];
     var line = [path('bi-guide-edge'), path('bi-guide-ink')];
-    var dim = null, started = false, timer = 0;
+    var tip = [path('bi-guide-tip bi-tip-edge'), path('bi-guide-tip bi-tip-ink')];
+    var dim = null, started = false, timers = [];
+    function later(callback, delay) { timers.push(setTimeout(callback, delay)); }
     function stroke(ax, ay, bx, by, wob) {
       var mx = (ax + bx) / 2, my = (ay + by) / 2, dx = bx - ax, dy = by - ay, d = Math.hypot(dx, dy) || 1;
       var nx = -dy / d * wob, ny = dx / d * wob;
@@ -2195,23 +2197,26 @@
       x2.forEach(function (q) { q.setAttribute('d', d2); });
       var x = (l + r) / 2, y = (t + b) / 2;
       var endX = button.right + 8, endY = button.top + button.height / 2;
+      var bend = (endX + x) / 2;
       var curve = 'M ' + x + ' ' + y +
-        ' C ' + (x - 60) + ' ' + (y + 160) + ', ' + (endX + 160) + ' ' + (endY - 120) + ', ' + endX + ' ' + endY +
-        ' m 13 -7 l -13 7 11 8';
+        ' C ' + (x - 55) + ' ' + (y + 100) + ', ' + bend + ' ' + (endY - 70) + ', ' + bend + ' ' + (endY - 26) +
+        ' S ' + (endX + 60) + ' ' + endY + ', ' + endX + ' ' + endY;
       line.forEach(function (q) { q.setAttribute('d', curve); });
+      var head = 'M ' + (endX + 13) + ' ' + (endY - 8) + ' L ' + endX + ' ' + endY +
+        ' L ' + (endX + 13) + ' ' + (endY + 8);
+      tip.forEach(function (q) { q.setAttribute('d', head); });
       if (started) placeBubble();
     }
     function run() {
       if (started || dead || !stu.cam) return;
       started = true;
-      clearTimeout(timer);
       position();
       root.classList.add('bi-spot');
       win.classList.add('crossed');                       /* the page fades */
-      setTimeout(function () { if (!dead) guide.classList.add('x1'); }, 900);
-      setTimeout(function () { if (!dead) guide.classList.add('x2'); }, 1300);
-      setTimeout(function () { if (!dead) guide.classList.add('drawn'); }, 1750);
-      setTimeout(function () {
+      later(function () { if (!dead) guide.classList.add('x1'); }, 900);
+      later(function () { if (!dead) guide.classList.add('x2'); }, 1300);
+      later(function () { if (!dead) guide.classList.add('drawn'); }, 1750);
+      later(function () {
         if (dead || !stu.cam) return;
         placeBubble();
         ui.press.classList.add('on');
@@ -2228,14 +2233,12 @@
         stu.cam.querySelector('.bi-shutter').classList.add('gold');
       }, 2650);
     }
-    /* nobody scrolls: it happens anyway, after a while */
-    timer = setTimeout(run, 12000);
     position();
     window.addEventListener('resize', position);
     return {
       run: run,
       remove: function () {
-        clearTimeout(timer);
+        timers.forEach(clearTimeout);
         window.removeEventListener('resize', position);
         guide.remove();
         if (dim) dim.remove();

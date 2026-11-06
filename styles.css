@@ -3816,7 +3816,7 @@ html.bi-desk-on .bi-press.bi-bubble.on { animation: none; }
   pointer-events: auto;
 }
 
-.bi-browser iframe { filter: grayscale(.8) contrast(.83); }
+
 /* The old site, crossed out: it fades, a marker X goes over it, a line
    runs to the record button, the rest goes dark, the button glows gold. */
 .bi-record-guide, .bi-guide-line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -3832,8 +3832,8 @@ html.bi-desk-on .bi-press.bi-bubble.on { animation: none; }
 .bi-guide-ink { stroke: #E9B33F; stroke-width: 4; }
 .bi-guide-edge, .bi-guide-ink { transition: stroke-dashoffset .9s cubic-bezier(.5, 0, .25, 1); }
 .bi-record-guide.drawn .bi-guide-edge, .bi-record-guide.drawn .bi-guide-ink { stroke-dashoffset: 0; }
-.bi-browser iframe { transition: opacity 1.2s ease; }
-.bi-browser.crossed iframe { opacity: .35; }
+.bi-browser iframe { transition: opacity 1.2s ease, filter 1.2s ease; }
+.bi-browser.crossed iframe { opacity: .35; filter: grayscale(.8); }
 /* the spotlight: everything dark but the camera, the line and the bubble */
 .bi-dim {
   position: absolute;
@@ -3860,3 +3860,8 @@ html.bi-desk-on .bi-press.bi-bubble.on { animation: none; }
 }
 .bi-shutter.gold.nudge { animation: biNudge .35s ease, biGold 1.6s ease-in-out .35s infinite; }
 @keyframes biNudge { 25% { transform: scale(1.18); } 60% { transform: scale(.94); } }
+
+.bi-guide-line .bi-guide-tip { stroke-dasharray: none; opacity: 0; }
+.bi-tip-edge { stroke: #14121e; stroke-width: 9; }
+.bi-tip-ink { stroke: #e9b33f; stroke-width: 4; }
+.bi-record-guide.drawn .bi-guide-tip { opacity: 1; transition: opacity .12s ease .82s; }
