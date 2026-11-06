@@ -48,12 +48,13 @@ measured a screen wide enough to hold it.
 
 A first visit starts on a computer, asks for the site, and watches it built.
 
-1. **The desktop** (`intro.js`). Rain running down the glass over a city at
-   night (drawn in canvas, no video), a menu bar and a dock; on a phone, a
-   home screen. *Press to start* is the one click sound needs: Aria Math
-   fades in, a cursor opens the Assistant from the dock (it bounces and gets
-   its dot) and the chat window grows out of it. The text box opens from its
-   middle; a cursor types "Create Jeffrey's portfolio", clicks the mic, and
+1. **The desktop** (`intro.js`). Camera opens over the aurora wallpaper, and
+   Jeffrey's cursor selects the Comic filter. On wider screens, it launches
+   Browser from Terminal and enters the old portfolio's address. Visitors can
+   explore that site inside the window. Pressing Camera's red record button
+   closes the preview, unlocks audio and starts Aria Math. The cursor opens
+   Assistant from the dock and types "Create Jeffrey's portfolio". Jeffrey
+   puts in his earbuds, the cursor clicks the microphone, and
    my recorded voice adds "and play Loser by Tame Impala". The reply is
    written and spoken, Aria Math fades out and Loser cuts in on the band.
    Then a cursor opens the design app, Canvas. Its window is a hole cut in

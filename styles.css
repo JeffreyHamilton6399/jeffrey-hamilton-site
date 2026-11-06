@@ -2992,7 +2992,6 @@ html.bi-face .hero:not(.is-spiral) .hero-center {
 .bi-press.gone { opacity: 0; animation: none; transition: opacity .35s var(--ease-out); pointer-events: none; }
 .bi-press:focus-visible { outline: 1px solid var(--iris); outline-offset: 6px; }
 @keyframes biBreathe { 50% { opacity: .45; } }
-.bi:has(.bi-press:not(.gone)) { cursor: pointer; }
 
 /* the dots on their way out to become cursors */
 .bi-fly {
@@ -3419,7 +3418,7 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
 .bi-win-cam.open { opacity: 1; transform: none; }
 /* its viewfinder marks stay inside it, under the chat's window */
 .bi-win-cam { isolation: isolate; }
-/* the record button, at the foot of the picture, never pressed */
+/* Camera filters and the record button sit below the viewfinder. */
 .bi-cam-ctl {
   position: absolute;
   left: 0; right: 0; bottom: 0;
@@ -3496,8 +3495,10 @@ html.bi-desk-on .bi-skip { bottom: 96px; transition: bottom .6s var(--ease-out),
   left: 50%;
   translate: -50% 0;
   bottom: 0;
-  height: 90%;
+  height: auto;
   width: auto;
+  max-width: 100%;
+  max-height: 90%;
   transform-origin: 50% 100%;
   user-select: none;
   -webkit-user-drag: none;
@@ -3667,3 +3668,97 @@ html.bi-desk-on .bi-press.bi-bubble.on { animation: biBob 1.4s steps(3, end) inf
 /* the design app's window: a light bar over the page it shows */
 .bi-win-canvas { box-shadow: 0 0 0 1px rgba(255, 255, 255, .14); }
 .bi-win-canvas .bi-win-bar { background: #ECE9E2; border-bottom: 1px solid rgba(0, 0, 0, .08); color: rgba(20, 18, 30, .7); }
+
+.bi-preview {
+  position: absolute;
+  left: 39%;
+  right: 3%;
+  top: 10%;
+  z-index: 3;
+  border: 2px solid #272438;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 14px 45px #17132744;
+  pointer-events: auto;
+  color: #242334;
+  background: #f5f3f6;
+  font: 14px system-ui,sans-serif;
+}
+.bi-preview header {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 14px;
+  background: #e2dfe6;
+  font-weight: 600;
+}
+.bi-terminal {
+  top: 22%;
+  right: 15%;
+  background: #201e2a;
+}
+.bi-terminal code {
+  display: block;
+  padding: 18px;
+  color: #f5edef;
+}
+.bi-browser {
+  bottom: max(135px, 15%);
+  display: flex;
+  flex-direction: column;
+}
+.bi-browser header span {
+  background: #f5f3f6;
+  padding: 4px 13px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.bi-browser nav {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px;
+}
+.bi-browser nav button {
+  border: 0;
+  background: transparent;
+  font-size: 19px;
+  cursor: pointer;
+}
+.bi-browser output {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  background: white;
+  border-radius: 12px;
+  padding: 5px 10px;
+  font-size: 12px;
+  min-height: 24px;
+}
+.bi-browser iframe {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  border: 0;
+  background: white;
+  pointer-events: auto;
+}
+.bi-ic-browser { background: #267abe; color: white; }
+.bi-shutter:enabled { pointer-events: auto; cursor: pointer; }
+.bi-shutter:focus-visible { outline: 3px solid #3654cc; outline-offset: 3px; }
+html.bi-desk-on .bi-press.bi-bubble { pointer-events: none; }
+html.bi-desk-on .bi-press.bi-bubble::after {
+  left: calc(50% - 8px);
+  bottom: -9px;
+  width: 13px;
+  height: 13px;
+  transform: rotate(-45deg);
+}
+.bi:has(.bi-preview) .bi-layer { z-index: 4; }
+.bi:has(.bi-preview) .bi-cursors { z-index: 5; }
+.bi-browser output.editing::after { content: '|'; }
+.bi-browser output.entered { box-shadow: 0 0 0 2px #88a9cd; }
+.bi-chat:not(.on) { visibility: hidden; }

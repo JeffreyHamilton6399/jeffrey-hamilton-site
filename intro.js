@@ -168,7 +168,7 @@
   /* ------------------------------------------------------------ the overlay */
 
   var root   = make('div', 'bi');
-  root.setAttribute('aria-hidden', 'true');
+  root.setAttribute('aria-label', 'Portfolio intro desktop');
   var layer  = make('div', 'bi-layer', root);
   var curs   = make('div', 'bi-cursors', root);
 
@@ -1900,8 +1900,7 @@
         '<span class="bi-btn bi-mic">' + MIC + '</span>' +
         '<span class="bi-btn bi-send">' + SEND + '</span>' +
       '</div>';
-    ui.press = make('button', 'bi-press');
-    ui.press.type = 'button';
+    ui.press = make('span', 'bi-press');
     ui.press.textContent = 'Press to start';
     root.insertBefore(ui.press, layer);
     ui.thread = chat.querySelector('.bi-thread');
@@ -1944,6 +1943,7 @@
     canvas: '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="8.5" cy="8.5" r="4" fill="#E08A00"/><rect x="12.5" y="4.5" width="7" height="7" rx="1.6" fill="#0B93D6"/><path d="M8.5 13.5 13 20.5H4Z" fill="#E23D8A"/><rect x="13.2" y="13.8" width="6.3" height="6.3" rx="3.15" fill="#0E9F6E"/></svg>',
     files: '<svg viewBox="0 0 24 24" width="26" height="26"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.4l1.8 1.8h8.8A1.5 1.5 0 0 1 21 9.3v8.2a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5Z" fill="#fff" opacity=".95"/><path d="M3 10h18" stroke="#3B8BEA" stroke-width="1.2"/></svg>',
     music: '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M9.5 17.2V6.8l9-2v10.4" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/><circle cx="7.4" cy="17.4" r="2.3" fill="#fff"/><circle cx="16.4" cy="15.3" r="2.3" fill="#fff"/></svg>',
+    browser: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>',
     terminal: '<svg viewBox="0 0 24 24" width="24" height="24"><path d="m6 8 4 4-4 4" fill="none" stroke="#7CF0A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 16.5h6" stroke="#E9E6F0" stroke-width="2" stroke-linecap="round"/></svg>',
     settings: '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="6.6" fill="none" stroke="#3a3a44" stroke-width="3.2" stroke-dasharray="2.6 2.6"/><circle cx="12" cy="12" r="5" fill="none" stroke="#3a3a44" stroke-width="2"/><circle cx="12" cy="12" r="1.8" fill="#3a3a44"/></svg>'
   };
@@ -1955,6 +1955,14 @@
     var t = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     if (phone) return t.replace(/\s?[AP]M$/i, '');
     return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }).replace(',', '') + ' ' + t;
+  }
+
+  function addDockApp(name, label) {
+    var app = make('div', 'bi-app', deskUi.dock);
+    app.innerHTML = '<span class="bi-app-ic bi-ic-' + name + '">' + ICONS[name] + '</span>' +
+      '<span class="bi-app-tip">' + label + '</span><i class="bi-app-dot"></i>';
+    deskUi.icons[name] = app;
+    return app;
   }
 
   function buildDesk() {
@@ -1987,10 +1995,7 @@
     deskUi.icons = {};
     DOCK.forEach(function (d) {
       if (phone && DOCK_PHONE.indexOf(d[0]) < 0) return;
-      var it = make('div', 'bi-app', dock);
-      it.innerHTML = '<span class="bi-app-ic bi-ic-' + d[0] + '">' + ICONS[d[0]] + '</span>' +
-        '<span class="bi-app-tip">' + d[1] + '</span><i class="bi-app-dot"></i>';
-      deskUi.icons[d[0]] = it;
+      addDockApp(d[0], d[1]);
     });
     deskUi.icons.assistant.classList.add('hint');
     buildCamera();
@@ -2082,11 +2087,91 @@
         return real(420);
       });
     }).then(function () {
+      if (!phone) return openLegacyBrowser(c);
+    }).then(function () {
+      me.mode = 'aim';
+      stu.cam.querySelector('.bi-shutter').disabled = false;
       placeBubble();
       ui.press.classList.add('on');
-      /* out of the way while I talk to the visitor */
-      return c.move(W() * (phone ? 0.85 : 0.78), H() * (phone ? 0.62 : 0.66));
     });
+  }
+
+  var legacyUrl = 'https://jeffreyhamilton6399.github.io/jeffrey-hamilton-portfolio/';
+  var legacyOrigin = new URL(legacyUrl).origin;
+  var legacyPreview = legacyUrl + '?nointro&preview=1';
+  var closePreview;
+  async function openLegacyBrowser(c) {
+    await launch(c, 'terminal');
+    var terminal = make('section', 'bi-preview bi-terminal', root);
+    terminal.innerHTML = '<header>Terminal</header><code>$ <span></span></code>';
+    deskUi.app.textContent = 'Terminal';
+    var line = rect(terminal.querySelector('code'));
+    await c.move(line.left + 34, line.top + line.height / 2);
+    await typeInto(terminal.querySelector('span'), 'open -a Browser', 58);
+    c.chip('Enter');
+    await real(260);
+    var icon = addDockApp('browser', 'Browser');
+    icon.classList.add('launch');
+    terminal.remove();
+    deskUi.icons.terminal.classList.remove('open');
+    await real(480);
+    icon.classList.add('open');
+    var win = make('section', 'bi-preview bi-browser', root);
+    win.innerHTML = '<header>Browser <span>Jeffrey Hamilton</span></header><nav><button aria-label="Back" disabled>←</button><button aria-label="Forward" disabled>→</button><button aria-label="Reload" disabled>↻</button><output aria-label="Address"></output></nav>';
+    deskUi.app.textContent = 'Browser';
+    var address = win.querySelector('output'), buttons = win.querySelectorAll('button');
+    var cc = center(rect(address));
+    await c.move(cc.x, cc.y);
+    await c.click();
+    address.classList.add('editing');
+    await typeInto(address, legacyUrl.replace('https://', ''), 33);
+    c.chip('Enter');
+    address.classList.remove('editing');
+    address.classList.add('entered');
+    await real(180);
+    address.classList.remove('entered');
+    var frame = make('iframe', '', win);
+    frame.title = "Jeffrey Hamilton’s previous portfolio";
+    frame.allow = "autoplay 'none'";
+    frame.src = legacyPreview;
+    var entries = [''], index = 0;
+    function sync() {
+      buttons[0].disabled = index === 0;
+      buttons[1].disabled = index === entries.length - 1;
+      address.textContent = legacyUrl.slice(8) + entries[index];
+    }
+    function receive(e) {
+      if (e.source !== frame.contentWindow || e.origin !== legacyOrigin || !e.data) return;
+      if (e.data.legacy === 'escape') finish(true);
+      if (e.data.legacy === 'pointer') {
+        var r = rect(frame);
+        onPointer({clientX: r.left + e.data.x, clientY: r.top + e.data.y});
+      }
+      if (e.data.legacy === 'location' && e.data.hash !== entries[index]) {
+        index++;
+        entries.splice(index);
+        entries.push(e.data.hash);
+        sync();
+      }
+    }
+    window.addEventListener('message', receive);
+    closePreview = function () {
+      window.removeEventListener('message', receive);
+      win.remove();
+      icon.classList.remove('open');
+      deskUi.app.textContent = 'Camera';
+      closePreview = null;
+    };
+    function navigate(delta) {
+      index += delta;
+      frame.contentWindow.postMessage({legacyHash: entries[index]}, legacyOrigin);
+      sync();
+    }
+    buttons[0].onclick = function () { navigate(-1); };
+    buttons[1].onclick = function () { navigate(1); };
+    buttons[2].disabled = false;
+    buttons[2].onclick = function () { frame.src = legacyPreview + entries[index]; };
+    icon.classList.remove('launch');
   }
 
   /* The cursor's way into an app: onto its icon (the name comes up), a
@@ -2249,11 +2334,11 @@
      picture (it stays until halfway), and the chat becomes the panel. */
 
   var ME = 'assets/me/';
-  var me = { meta: null, el: null, imgs: {}, mode: 'aim', pose: '', seq: null, next: 0, extra: 0 };
+  var me = { meta: null, el: null, imgs: {}, earbuds: false, mode: 'mouse', pose: '', seq: null, next: 0, extra: 0 };
   var stu = {};
   var aim = null;                       /* where the visitor last pointed or tapped */
 
-  function poseUrl(n) { return ME + n + '.webp'; }
+  function poseUrl(n) { return ME + n + '.webp?v=4'; }
   function hasPose(n) { return !!(me.meta && me.meta.poses[n]); }
   function preload(names) {
     names.forEach(function (n) {
@@ -2267,7 +2352,11 @@
   function posesLike(prefix) {
     return me.meta ? Object.keys(me.meta.poses).filter(function (k) { return k.indexOf(prefix) === 0; }) : [];
   }
+  function resolvePose(n) {
+    return me.earbuds && hasPose(n + '_eb') ? n + '_eb' : n;
+  }
   function setPose(n, el) {
+    n = resolvePose(n);
     el = el || me.el;
     if (!el || !hasPose(n)) return;
     if (el === me.el) { if (me.pose === n) return; me.pose = n; }
@@ -2297,7 +2386,7 @@
     cam.innerHTML = '<div class="bi-win-bar"><span class="bi-pn-dots"><i></i><i></i><i></i></span><span class="bi-win-title">Camera</span></div>' +
       '<div class="bi-cam-view"><img class="bi-raw" alt="" src="' + ME + 'raw.jpg"></div>' +
       '<div class="bi-cam-ctl"><span class="bi-filters"><i class="on">Normal</i><i>Mono</i><i data-f="comic">Comic</i></span>' +
-        '<span class="bi-shutter" aria-hidden="true"><i></i></span></div>';
+        '<button type="button" class="bi-shutter" aria-label="Record and start intro" disabled><i></i></button></div>';
     /* a window on the desk, not the desk: the chat opens over part of it */
     /* landscape, like a webcam: the frames are me from the chest up */
     var cw = phone ? W() - 40 : Math.round(Math.min(W() * 0.3, 440));
@@ -2309,14 +2398,14 @@
     var view = cam.querySelector('.bi-cam-view');
     me.el = make('img', 'bi-figure', view);
     me.el.alt = '';
-    /* "Press to start" is my line: a speech bubble from me */
+    /* Position the hint when the desktop choreography finishes. */
     ui.press.classList.add('bi-bubble');
     if (window.fetch) {
-      fetch(ME + 'me.json').then(function (r) { if (!r.ok) throw r; return r.json(); }).then(function (m) {
+      fetch(ME + 'me.json?v=4').then(function (r) { if (!r.ok) throw r; return r.json(); }).then(function (m) {
         if (dead) return;
         me.meta = m;
         preload(posesLike('point_').concat(posesLike('look_'), ['whoa', 'thumbs', 'wave']));
-        setPose(hasPose('look_1_2') ? 'look_1_2' : Object.keys(m.poses)[0]);
+        setPose(hasPose('mouse_0') ? 'mouse_0' : 'look_1_2');
         /* the rest, while the visitor reads */
         setTimeout(function () { if (!dead) preload(Object.keys(m.poses)); }, 600);
       }).catch(function () { cam.classList.add('no-me'); });
@@ -2324,13 +2413,12 @@
     followers.push(meTick);
   }
 
-  /* the speech bubble beside my head */
+  /* Anchor the speech bubble to the only start control. */
   function placeBubble() {
-    var h = headAt();
-    if (!h || !ui.press) return;
-    var phone = !wideScreen();
-    ui.press.style.left = Math.round(phone ? h.x + h.r * 0.6 : h.x + h.r * 1.15) + 'px';
-    ui.press.style.top = Math.round(phone ? h.y - h.r * 1.6 : h.y - h.r * 1.5) + 'px';
+    if (!stu.cam || !ui.press) return;
+    var r = rect(stu.cam.querySelector('.bi-shutter'));
+    ui.press.style.left = Math.round(r.left + (r.width - ui.press.offsetWidth) / 2) + 'px';
+    ui.press.style.top = Math.round(r.top - ui.press.offsetHeight - 12) + 'px';
     ui.press.classList.add('placed');
   }
 
@@ -2354,8 +2442,13 @@
       if (me.mode === 'aim' || !me.seq) { playSeq([['blink', 140]], me.mode); return; }
     }
     if (me.mode === 'aim') return aimPose(now);
+    if (me.mode === 'mouse') {
+      var mouse = me.earbuds || Math.random() < 0.5 ? 'mouse_0' : 'mouse_1';
+      setPose(Math.random() < 0.22 ? 'mouse_glance' : mouse);
+      me.next = now + rnd(450, 850);
+      return;
+    }
     if (me.mode === 'type') {
-      if (Math.random() < 0.05) { playSeq([['glance', 420]], 'type'); return; }
       var ty = posesLike('type_');
       setPose(ty[Math.floor(Math.random() * ty.length)]);
       me.next = now + rnd(110, 190);
@@ -2365,7 +2458,7 @@
   }
   function playSeq(list, then) { me.seq = { list: list, i: 0, t: 0, then: then }; me.next = 0; }
 
-  /* pointing: the cell of a 5 x 3 grid of the screen the pointer is in */
+  /* Measure each side from the head so all five pointing rows are reachable. */
   function aimPose(now) {
     var a = aim, recent = a && now - a.t < 1600;
     if (!a) {
@@ -2382,7 +2475,7 @@
       var bits = ['wave', 'thumbs', 'whoa', 'think', 'huh', 'laugh', 'fist', 'crossed', 'wave_small', 'nod_yes'].filter(hasPose);
       if (bits.length) { playSeq([[bits[Math.floor(Math.random() * bits.length)], 900, true]], 'aim'); return; }
     }
-    var h = headAt('look_1_2') || { x: W() * 0.2, y: H() * 0.3, r: 60 };
+    var h = headAt() || { x: W() * 0.2, y: H() * 0.3, r: 60 };
     var kind = recent ? 'point_' : 'look_';
     var name;
     var dx = a.x - h.x, dy = a.y - h.y;
@@ -2394,8 +2487,17 @@
       var nx = dx / Math.max(80, dx < 0 ? h.x : W() - h.x);
       var ny = dy / Math.max(80, dy < 0 ? h.y : H() - h.y);
       var col = clamp(Math.round((nx + 1) * 2), 0, 4);
-      var row = ny < -0.3 ? 0 : ny > 0.3 ? 2 : 1;
+      var row = recent ? clamp(Math.round((ny + 1) * 2), 0, 4) : ny < -0.3 ? 0 : ny > 0.3 ? 2 : 1;
       name = kind + row + '_' + col;
+      if (!hasPose(name)) {
+        var nearest = Infinity;
+        posesLike(kind).forEach(function (pose) {
+          var cell = pose.slice(kind.length).match(/^(\d)_(\d)$/);
+          if (!cell) return;
+          var distance = Math.hypot(row - Number(cell[1]), col - Number(cell[2]));
+          if (distance < nearest) { nearest = distance; name = pose; }
+        });
+      }
     }
     if (!hasPose(name)) name = name.replace(kind, kind === 'point_' ? 'look_' : 'point_');
     if (name !== me.pose) setPose(name);
@@ -2417,14 +2519,9 @@
     set(hasPose(name) ? name : 'talk_open');
   }
 
-  /* the press: a jump, the lean in, and at the keys; the title cuts away
-     and the chat opens on the right, where I am looking */
+  /* React to the record click before reaching for the Assistant. */
   function pulledIn() {
-    var list = [['startle_0', 130, true], ['startle_1', 160], ['lean_0', 150, true], ['lean_1', 200],
-      ['earbuds_0', 260, true], ['earbuds_1', 300]]
-      .filter(function (s) { return hasPose(s[0]); });
-    playSeq(list, 'type');
-
+    playSeq([['startle_0', 130, true], ['lean_0', 150]], 'mouse');
   }
 
   /* Full screen, and the camera still up: a hand screenshots my face out of
@@ -2450,7 +2547,7 @@
       y: clamp(h.y - side * 0.52, vr.top + 8, vr.bottom - side - 8),
       w: side, h: side
     };
-    var shot = snapFace(box);
+    var shot;
     var sel = Box(c.color);
     var thumb = null;
     /* first the camera to the front: a click on its title bar brings it
@@ -2478,6 +2575,7 @@
       return c.release();
     }).then(function () {
       sel.remove();
+      shot = snapFace(box);
       /* the flash, and the shot, left where it was taken */
       var fl = make('span', 'bi-flash', layer);
       fl.style.left = box.x + 'px'; fl.style.top = box.y + 'px';
@@ -2635,6 +2733,7 @@
     cv.width = cv.height = 120;
     var cx = cv.getContext('2d');
     function draw(n) {
+      n = resolvePose(n);
       var im = me.imgs[n], p = me.meta.poses[n];
       if (!im || !p || !im.naturalWidth) return;
       var w = im.naturalWidth, h = im.naturalHeight, side = p.head[2] * w * 2.6;
@@ -2696,12 +2795,20 @@
     });
   }
 
+  function mouseMode() {
+    me.seq = null;
+    me.mode = 'mouse';
+    me.next = 0;
+    setPose('mouse_0');
+  }
   function typeInto(el, text, base) {
+    me.seq = null; me.mode = 'type'; me.next = 0; setPose('type_0');
     var i = 0;
     function next() {
       if (i >= text.length) return Promise.resolve();
       el.textContent += text[i++];
-      chat.classList.add('has-text');
+      if (el === ui.typed) chat.classList.add('has-text');
+      if (i === text.length) { mouseMode(); return Promise.resolve(); }
       var d = base * rnd(0.6, 1.5) + (text[i - 1] === ' ' ? 40 : 0);
       return real(d).then(next);
     }
@@ -2762,24 +2869,16 @@
   function act1(cs0) {
     var c = cs0;
     var canvasOpen = Promise.resolve();
-    /* A white screen and two words. Anywhere will do — the screen is the
-       button — and Enter or Space works too. Nothing plays yet. */
-    var started = new Promise(function (res) {
-      var go = function (e) {
-        if (e && e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
-        if (e && e.type === 'keydown') e.preventDefault();
-        root.removeEventListener('click', go);
-        document.removeEventListener('keydown', go);
-        wakeAudio();
-        res();
-      };
-      root.addEventListener('click', go);
-      document.addEventListener('keydown', go);
-    });
-    var camOpen = openCamera(c);
-    camOpen.catch(function () {});
-
-    return Promise.all([started, camOpen]).then(function () {
+    return openCamera(c).then(function () {
+      return new Promise(function (resolve) {
+        stu.cam.querySelector('.bi-shutter').addEventListener('click', function () {
+          wakeAudio();
+          this.disabled = true;
+          resolve();
+        }, { once: true });
+      });
+    }).then(function () {
+      if (closePreview) closePreview();
       T0 = performance.now();
       ui.press.classList.add('gone');
       decodeAudio().then(startBgm);       /* Aria Math, faded in */
@@ -2787,6 +2886,7 @@
       pulledIn();
       return real(600);
     }).then(function () {
+      mouseMode();
       return launch(c, 'assistant');
     }).then(openAssistant).then(function () {
       return real(250);
@@ -2804,9 +2904,17 @@
       chat.classList.add('is-focused');
       return real(220);
     }).then(function () {
-      c.move(c.x + 30, c.y + 26, { overshoot: false }).catch(function () {});
       return typeInto(ui.typed, "Create Jeffrey's portfolio", 78);
     }).then(function () {
+      me.mode = 'earbuds';
+      setPose('earbuds_0');
+      return real(260);
+    }).then(function () {
+      setPose('earbuds_1');
+      return real(300);
+    }).then(function () {
+      me.earbuds = true;
+      mouseMode();
       var mr = center(rect(ui.mic));
       return real(260).then(function () { return c.move(mr.x, mr.y); });
     }).then(c.click).then(function () {
@@ -2826,7 +2934,7 @@
       return c.click();
     }).then(function () {
       waveOff();
-      me.mode = 'type';
+      mouseMode();
       bgTo(BGM_VOL * 0.8, 0.8);
       var sr = center(rect(ui.send));
       return c.move(sr.x, sr.y);
@@ -2837,13 +2945,11 @@
       chat.classList.remove('has-text');
       bubble('me').textContent = said;
       /* sent — and while it thinks, the hand opens the design app */
-      canvasOpen = real(350).then(function () { return openCanvas(c); });
+      canvasOpen = real(350).then(function () { mouseMode(); return openCanvas(c); }).then(function () {
+        playSeq([['listen', 500], ['nod_0', 160], ['nod_1', 160], ['nod_2', 160], ['smile', 600]], 'hold');
+      });
       canvasOpen.catch(function () {});
       chat.classList.add('has-thread');
-      /* and I listen for the answer */
-      playSeq([['submit', 320, true], ['listen', 500, true], ['nod_0', 160], ['nod_1', 160], ['nod_2', 160], ['listen', 900], ['smile', 600]]
-        .filter(function (q) { return hasPose(q[0]); }), 'hold');
-      me.mode = 'hold';
       return real(260);
     }).then(function () {
       var t = bubble('ai', '<span class="bi-thinking">Thinking</span>');
@@ -2865,7 +2971,7 @@
         return at(0.45);
       });
     }).then(function () {
-      return canvasOpen.then(function () { return fullCanvas(c); });
+      return canvasOpen.then(function () { mouseMode(); return fullCanvas(c); });
     }).then(function () {
       return pickUp(c);
     }).then(function () {
@@ -3276,6 +3382,7 @@
   var finished = false;
   function finish(instant) {
     if (finished) return;
+    if (closePreview) closePreview();
     finished = true;
     dead = true;
     hush(instant);
